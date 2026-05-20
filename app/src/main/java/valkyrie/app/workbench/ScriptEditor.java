@@ -552,9 +552,9 @@ public class ScriptEditor extends SplitPane implements EventListener
                                         }
                                 } catch (Throwable e) {
                                         Platform.runLater(() -> {
+                                                LOG.error("run task error", e);
                                                 sqlMessagePane.appendError(Causes.message(e));
                                                 showResultSetTableViewPane(QUERY_MESSAGE_LOG_FIRST);
-                                                LOG.error("run task error", e);
                                         });
                                 } finally {
                                         Platform.runLater(() -> {

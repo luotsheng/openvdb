@@ -62,13 +62,14 @@ public class RedisDriver extends Driver
         }
 
         @Override
-        public QueryResult execute(long jobId, Session session, SQL sql)
+        public QueryResult execute(long jobId, Session session, SQL sql, SQLExecuteCallback callback)
         {
                 String currentCommandRef = null;
 
                 try {
                         jedis.select(Integer.parseInt(session.catalog()));
                         currentCommandRef = sql.getRaw();
+                        callback.execute(currentCommandRef);
                         String[] parts = strip(currentCommandRef).split("\\s+");
                         ProtocolCommand cmd = () -> parts[0].getBytes(StandardCharsets.UTF_8);
                         byte[][] args = new byte[parts.length - 1][];
@@ -106,6 +107,7 @@ public class RedisDriver extends Driver
                         };
 
                         long endTime = System.currentTimeMillis();
+                        callback.cost(endTime - startTime);
 
                         return ret;
                 } catch (Exception e) {
