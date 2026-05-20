@@ -13,11 +13,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.layout.MainLayout;
 import valkyrie.monacofx.MonacoEditor;
+import valkyrie.utils.system.OS;
 
 import java.awt.*;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * @author Luo Tiansheng
@@ -94,7 +96,7 @@ public class Application extends javafx.application.Application
         public void start(Stage stage)
         {
                 new MonacoEditor();
-                setDockIcon("/assets/icons/main_2.png");
+                setDockIcon(stage, "/assets/icons/main_2.png");
 
                 primaryStage = stage;
 
@@ -124,9 +126,17 @@ public class Application extends javafx.application.Application
                 launch();
         }
 
-        public static void setDockIcon(String iconPath)
+        public static void setDockIcon(Stage stage, String iconPath)
         {
                 try {
+                        // Windows
+                        if (OS.isWindows()) {
+                                var icon = new javafx.scene.image.Image(Objects.requireNonNull(
+                                        Application.class.getResourceAsStream(iconPath)));
+                                stage.getIcons().add(icon);
+                        }
+
+                        // MacOS
                         if (!Taskbar.isTaskbarSupported())
                                 return;
 
