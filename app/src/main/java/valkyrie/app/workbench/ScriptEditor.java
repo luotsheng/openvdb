@@ -23,6 +23,7 @@ import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.event.workbench.ConnectionOpenedNotifyEvent;
 import valkyrie.app.explorer.UICatalogNode;
 import valkyrie.app.explorer.UIConnectionNode;
+import valkyrie.app.explorer.UITableNode;
 import valkyrie.app.model.UIExplorerStatus;
 import valkyrie.app.pane.ResultViewPane;
 import valkyrie.app.pane.ExecuteLoggerPane;
@@ -32,16 +33,17 @@ import valkyrie.app.widgets.VkSeparator;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.core.model.ScriptFile;
 import valkyrie.core.repository.ScriptFileRepository;
-import valkyrie.driver.api.QueryResult;
-import valkyrie.driver.api.Driver;
-import valkyrie.driver.api.SQLExecuteCallback;
-import valkyrie.driver.api.Session;
+import valkyrie.driver.api.*;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.monacofx.MonacoEditor;
+import valkyrie.utils.collection.Lists;
 import valkyrie.utils.exception.Causes;
 
 import java.io.FileReader;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static valkyrie.utils.string.StaticLibrary.fmt;
 import static valkyrie.utils.string.StaticLibrary.strempty;
@@ -79,6 +81,7 @@ public class ScriptEditor extends SplitPane implements EventListener
         private boolean saveFlag = true;
         private VkComboBox<UIConnectionNode> connectionComboBox;
         private VkComboBox<UICatalogNode> catalogComboBox;
+        private UICatalogNode currentCatalogNode;
 
         private static int numberCount = 0;
 
@@ -127,6 +130,8 @@ public class ScriptEditor extends SplitPane implements EventListener
                 setOwnerTabName(name);
 
                 getItems().addAll(topBorderPane);
+
+                initializeDriver();
 
                 EventBus.subscribe(ConnectionOpenedNotifyEvent.class, this);
         }
@@ -186,16 +191,42 @@ public class ScriptEditor extends SplitPane implements EventListener
                         new KeyCodeCombination(KeyCode.V, KeyCodeCombination.SHORTCUT_DOWN)
                 );
 
-                contextMenu.getItems().addAll(
-                        runSelectedSQLItem,
-                        beautifySelectedSQLItem,
-                        new SeparatorMenuItem(),
-                        copyItem,
-                        pasteItem
-                );
-
                 editor.bindContextMenu(contextMenu);
                 editor.setShowContextMenuRequestEvent(ignored -> {
+                        contextMenu.getItems().clear();
+
+                        UITableNode uiTableNode;
+
+                        if (currentCatalogNode != null) {
+                                String selectedValue = editor.getSelectedValue();
+                                uiTableNode = currentCatalogNode.getUITableNodeIgnoreCase(selectedValue);
+                        } else {
+                                uiTableNode = null;
+                        }
+
+                        if (uiTableNode != null) {
+                                MenuItem openTableDesignItem = new MenuItem("打开设计表");
+                                openTableDesignItem.setGraphic(Assets.use("table"));
+                                openTableDesignItem.setOnAction(event -> uiTableNode.openTableDesignerPane());
+                                contextMenu.getItems().addAll(
+                                        runSelectedSQLItem,
+                                        beautifySelectedSQLItem,
+                                        new SeparatorMenuItem(),
+                                        openTableDesignItem,
+                                        new SeparatorMenuItem(),
+                                        copyItem,
+                                        pasteItem
+                                );
+                        } else {
+                                contextMenu.getItems().addAll(
+                                        runSelectedSQLItem,
+                                        beautifySelectedSQLItem,
+                                        new SeparatorMenuItem(),
+                                        copyItem,
+                                        pasteItem
+                                );
+                        }
+
                         boolean isUnselected = strempty(editor.getSelectedValue());
                         runSelectedSQLItem.setDisable(isUnselected);
                         beautifySelectedSQLItem.setDisable(isUnselected);
@@ -276,6 +307,23 @@ public class ScriptEditor extends SplitPane implements EventListener
         {
                 resultViewPane.setOnClosedListener(() ->
                         getItems().remove(resultViewPane));
+        }
+
+        private UICatalogNode initializeDriver()
+        {
+                UIConnectionNode connection = connectionComboBox.getSelectionModel()
+                        .getSelectedItem();
+
+                if (connection == null)
+                        return null;
+
+                UICatalogNode catalog = catalogComboBox.getSelectionModel()
+                        .getSelectedItem();
+
+                this.driver = connection.getDriver();
+                this.currentCatalogNode = catalog;
+
+                return catalog;
         }
 
         private VkComboBox<UIConnectionNode> newConnectionComboBox()
@@ -482,16 +530,10 @@ public class ScriptEditor extends SplitPane implements EventListener
 
                         new Thread(() -> {
                                 try {
-                                        UIConnectionNode connection = connectionComboBox.getSelectionModel()
-                                                .getSelectedItem();
-
-                                        UICatalogNode catalog = catalogComboBox.getSelectionModel()
-                                                .getSelectedItem();
-
-                                        driver = connection.getDriver();
-                                        currentTaskId = System.currentTimeMillis();
+                                        UICatalogNode catalog = initializeDriver();
 
                                         Session session = catalog.getSession();
+                                        currentTaskId = System.currentTimeMillis();
                                         SQL sql = new SQL(finalScriptText);
 
                                         QueryResult queryResult = driver.execute(currentTaskId, session, sql, new SQLExecuteCallback()
