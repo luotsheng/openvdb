@@ -532,6 +532,11 @@ public class ScriptEditor extends SplitPane implements EventListener
                                 try {
                                         UICatalogNode catalog = initializeDriver();
 
+                                        if (catalog == null) {
+                                                Platform.runLater(() -> VkDialogHelper.alert("未选择数据源"));
+                                                return;
+                                        }
+
                                         Session session = catalog.getSession();
                                         currentTaskId = System.currentTimeMillis();
                                         SQL sql = new SQL(finalScriptText);
