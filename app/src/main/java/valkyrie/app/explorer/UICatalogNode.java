@@ -30,6 +30,7 @@ import java.sql.SQLException;
 import java.text.Collator;
 import java.util.*;
 
+import static valkyrie.utils.string.StaticLibrary.lowercase;
 import static valkyrie.utils.string.StaticLibrary.streq;
 
 /**
@@ -48,6 +49,7 @@ public class UICatalogNode extends UIExplorerNode implements EventListener
         private boolean openFlag = false;
         private final List<Table> tables = new ArrayList<>();
         private final Map<String, UITableNode> tableNodes = Maps.newHashMap();
+        private final Map<String, UITableNode> tableIgnoreCaseNodes = Maps.newHashMap();
         @Getter
         private final Session session;
 
@@ -195,12 +197,14 @@ public class UICatalogNode extends UIExplorerNode implements EventListener
                 reloadTable();
 
                 tableNodes.clear();
+                tableIgnoreCaseNodes.clear();
                 tableItem.getChildren().clear();
 
                 for (Table table : tables) {
                         UITableNode tableNode = new UITableNode(driver, this, table);
                         tableNode.setSelectedEvent(this::onSelected);
                         tableNodes.put(table.getName(), tableNode);
+                        tableIgnoreCaseNodes.put(lowercase(table.getName()), tableNode);
                         tableItem.getChildren().add(tableNode);
                 }
 
@@ -319,6 +323,12 @@ public class UICatalogNode extends UIExplorerNode implements EventListener
         {
                 return tableNodes.get(name);
         }
+
+        public UITableNode getUITableNodeIgnoreCase(String name)
+        {
+                return tableIgnoreCaseNodes.get(lowercase(name));
+        }
+
 
         public boolean isOpen()
         {
