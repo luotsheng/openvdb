@@ -1,6 +1,7 @@
 package valkyrie.monacofx;
 
 import com.alibaba.fastjson.JSONObject;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.control.ContextMenu;
@@ -11,6 +12,7 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.layout.StackPane;
 import javafx.scene.web.WebEngine;
 import javafx.scene.web.WebView;
+import javafx.util.Duration;
 import lombok.Setter;
 import netscape.javascript.JSObject;
 
@@ -29,14 +31,22 @@ public class MonacoEditor extends StackPane
 {
         private final WebView webView = new WebView();
         private final WebEngine engine = webView.getEngine();
-        private final JavaHook javaHook = new JavaHook();
+        private final MonacoHook hook = new MonacoHook(this);
+        private final PauseTransition pauseTransition = new PauseTransition(Duration.millis(500));
         private ContextMenu contextMenu = null;
 
         @Setter
         private ShowContextMenuRequestEvent showContextMenuRequestEvent = null;
 
+        @Setter
+        private OnDidChangeModelContent onDidChangeModelContent = null;
+
         public interface ShowContextMenuRequestEvent {
                 void onRequest(ContextMenu contextMenu);
+        }
+
+        public interface OnDidChangeModelContent {
+                void onChange();
         }
 
         @SuppressWarnings("DataFlowIssue")
@@ -52,6 +62,11 @@ public class MonacoEditor extends StackPane
                         } else {
                                 hideContextMenu();
                         }
+                });
+
+                pauseTransition.setOnFinished(event -> {
+                        if (onDidChangeModelContent != null)
+                                onDidChangeModelContent.onChange();
                 });
 
                 setHook();
@@ -85,7 +100,7 @@ public class MonacoEditor extends StackPane
                         """);
 
                 JSObject window = (JSObject) engine.executeScript("window");
-                window.setMember("javaHook", null);
+                window.setMember("hook", null);
 
                 System.gc();
         }
@@ -94,7 +109,15 @@ public class MonacoEditor extends StackPane
          * 钩子函数
          */
         @SuppressWarnings("unused")
-        public static class JavaHook {
+        public static class MonacoHook {
+
+                private final MonacoEditor editor;
+
+                public MonacoHook(MonacoEditor editor)
+                {
+                        this.editor = editor;
+                }
+
                 /**
                  * 打印日志
                  */
@@ -102,6 +125,7 @@ public class MonacoEditor extends StackPane
                 {
                         System.out.println(message);
                 }
+
                 /**
                  * 写入剪贴板
                  */
@@ -111,21 +135,29 @@ public class MonacoEditor extends StackPane
                         content.putString(atos(text));
                         Clipboard.getSystemClipboard().setContent(content);
                 }
+
+                /**
+                 * 用户输入监听
+                 */
+                public void onDidChangeModelContent()
+                {
+                        editor.pauseTransition.playFromStart();
+                }
         }
 
         private void setHook()
         {
                 waitAndRun(() -> {
                         JSObject window = (JSObject) engine.executeScript("window");
-                        window.setMember("javaHook", javaHook);
+                        window.setMember("hook", hook);
                         engine.executeScript(
                                 """
                                    console.log = function(message) {
-                                       window.javaHook.println(message);
+                                       window.hook.println(message);
                                    };
                                    
                                    window.writeClipboard = function(message) {
-                                       window.javaHook.writeClipboard(message);
+                                       window.hook.writeClipboard(message);
                                    };
                                    """
                         );

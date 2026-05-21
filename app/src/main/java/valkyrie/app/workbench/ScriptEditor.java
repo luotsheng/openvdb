@@ -127,6 +127,7 @@ public class ScriptEditor extends SplitPane implements EventListener
                 setupToolbar(conn);
                 setupCodeArea();
                 setupResultSetCloseEvent();
+                setupMonacoEditor();
                 setOwnerTabName(name);
 
                 getItems().addAll(topBorderPane);
@@ -307,6 +308,14 @@ public class ScriptEditor extends SplitPane implements EventListener
         {
                 resultViewPane.setOnClosedListener(() ->
                         getItems().remove(resultViewPane));
+        }
+
+        private void setupMonacoEditor()
+        {
+                editor.setOnDidChangeModelContent(() -> {
+                        if (scriptFile != null)
+                                autoSave();
+                });
         }
 
         private UICatalogNode initializeDriver()

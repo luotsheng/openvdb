@@ -125,6 +125,13 @@
             }
         });
 
+        editor.onDidChangeModelContent((event) => {
+            if (event.isFlush)
+                return;
+
+            window.hook.onDidChangeModelContent();
+        });
+
         /**
          * Ctrl + W
          * 智能扩大选择
