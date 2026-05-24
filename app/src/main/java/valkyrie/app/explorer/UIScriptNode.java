@@ -11,6 +11,7 @@ import valkyrie.app.dialog.RenameScriptDialog;
 import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.OpenScriptEditorPaneEvent;
+import valkyrie.app.platform.Explorer;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.core.model.ScriptFile;
 
@@ -90,10 +91,7 @@ public class UIScriptNode extends UIExplorerNode
 
         private void openDesktop()
         {
-                VkDialogHelper.runWith(() -> {
-                        Desktop desktop = Desktop.getDesktop();
-                        desktop.browseFileDirectory(scriptFile);
-                });
+                VkDialogHelper.runWith(() -> Explorer.browseFileDirectory(scriptFile));
         }
 
         private void deleteQuery()

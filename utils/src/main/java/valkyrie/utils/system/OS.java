@@ -75,7 +75,7 @@ public class OS
     /**
      * @return 返回当前操作系统枚举对象
      */
-    private static OperatorSystem getos() {
+    public static OperatorSystem getos() {
         // initialize
         String _OS_NAME = System.getProperty("os.name");
         if (strihas(_OS_NAME, "Windows"))
