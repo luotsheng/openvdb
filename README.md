@@ -66,3 +66,4 @@ VALKYRIE DB 是一款跨平台的数据库可视化工具，集成 VS Code Monac
 - [customicondesign-1](https://www.flaticon.com/authors/customicondesign-1)
 - [Lee.m.yin](https://www.iconfont.cn/user/detail?spm=a313x.search_index.0.d214f71f6.590f3a81Iyg8Pg&uid=6074964&nid=qsTMfc2rGezP)
 - [Adrly](https://www.flaticon.com/authors/adrly)
+- [meaicon](https://www.flaticon.com/authors/meaicon)
