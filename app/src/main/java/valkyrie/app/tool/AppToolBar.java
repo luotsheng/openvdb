@@ -12,6 +12,7 @@ import valkyrie.app.menu.ConnectionMenuBuilder;
 import valkyrie.app.model.UIExplorerStatus;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
+import valkyrie.blueprint.Blueprint;
 import valkyrie.utils.Generator;
 
 /**
@@ -68,7 +69,7 @@ public class AppToolBar extends ToolBar
                         @Override
                         public Node createPane(Tab tab)
                         {
-                                return new StackPane();
+                                return new Blueprint();
                         }
                 });
         }

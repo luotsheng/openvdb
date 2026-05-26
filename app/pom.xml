@@ -31,6 +31,10 @@
     <dependencies>
         <dependency>
             <groupId>com.changhong.valkyrie</groupId>
+            <artifactId>blueprint</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.changhong.valkyrie</groupId>
             <artifactId>monacofx</artifactId>
         </dependency>
         <dependency>
