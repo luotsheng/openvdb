@@ -1,16 +1,30 @@
 package valkyrie.blueprint;
 
+import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 
 /**
  * 蓝图编辑器
+ * <p>
+ * 架构应该是长这样：
+ * <pre>
+ * RootPane
+ *   |- GridCanvas
+ *   |- Viewport
+ *         |- CameraGroup
+ *                |- ContentRoot
+ *                       |- ConnectionLayer
+ *                       |- NodeLayer
+ *                       |- OverlayLayer
+ * </pre>
  *
  * @author Luo Tiansheng
  * @since 2026/5/26
@@ -24,11 +38,9 @@ public class Blueprint extends StackPane
 
         private final Pane contentRoot = new Pane();
 
-        private final Pane gridLayer = new Pane();
-
         private final Pane connectionLayer = new Pane();
 
-        private final Pane nodeLLayer = new Pane();
+        private final Pane nodeLayer = new Pane();
 
         private final Pane overlayLayer = new Pane();
 
@@ -40,15 +52,15 @@ public class Blueprint extends StackPane
         private double btnMouseMiddleLastY = 0.0f;
         private boolean btnMouseMiddlePanding = false;
 
-        private final static float SENSITIVITY = 1.0f;
         private final static float BASE_GRID_SIZE = 32.0f;
+        private final static float MIN_ZOOM = 0.5f;
+        private final static float MAX_ZOOM = 3.0f;
 
         public Blueprint()
         {
                 contentRoot.getChildren().addAll(
-                        gridLayer,
                         connectionLayer,
-                        nodeLLayer,
+                        nodeLayer,
                         overlayLayer
                 );
 
@@ -103,6 +115,30 @@ public class Blueprint extends StackPane
                                 btnMouseMiddlePanding = false;
                         }
                 });
+
+                viewport.addEventFilter(ScrollEvent.SCROLL, event -> {
+                        double mouseX = event.getSceneX();
+                        double mouseY = event.getSceneY();
+
+                        Point2D worldBefore = screenToWorld(mouseX, mouseY);
+
+                        double zoomFactor = 1.05;
+
+                        if (event.getDeltaY() > 0.0f) {
+                                camera.zoom *= zoomFactor;
+                        } else {
+                                camera.zoom /= zoomFactor;
+                        }
+
+                        camera.zoom = Math.clamp(camera.zoom, MIN_ZOOM, MAX_ZOOM);
+
+                        Point2D worldAfter = screenToWorld(mouseX, mouseY);
+
+                        camera.x += worldAfter.getX() - worldBefore.getX();
+                        camera.y += worldAfter.getY() - worldBefore.getY();
+
+                        updateCameraModel();
+                });
         }
 
         private void updateCameraModel()
@@ -142,4 +178,14 @@ public class Blueprint extends StackPane
                 for (double y = -offsetY; y < height; y += scaledGridSize)
                         gc.strokeLine(0, y, width, y);
         }
+
+        private Point2D screenToWorld(double screenX, double screenY)
+        {
+                double worldX = (screenX / camera.zoom) - camera.x;
+                double worldY = (screenY / camera.zoom) - camera.y;
+                return new Point2D(worldX, worldY);
+        }
+
+
+
 }
