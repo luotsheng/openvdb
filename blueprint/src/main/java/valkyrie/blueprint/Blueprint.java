@@ -76,16 +76,29 @@ public class Blueprint extends StackPane
                         drawGrid();
                 });
 
+                NodeModel exampleModel = new NodeModel("Example", 0.0f, 0.0f, 200.0f, 80.0f);
+                NodeView exampleNodeView = new NodeView(exampleModel);
+                nodeLayer.getChildren().add(exampleNodeView);
+
                 bindKey();
         }
 
         private void bindKey()
         {
                 viewport.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
-                        if (event.getButton() == MouseButton.MIDDLE) {
-                                btnMouseMiddleLastX = event.getSceneX();
-                                btnMouseMiddleLastY = event.getSceneY();
-                                btnMouseMiddlePanding = true;
+                        switch (event.getButton()) {
+                                case PRIMARY -> {
+                                        double sceneX = event.getSceneX();
+                                        double sceneY = event.getSceneY();
+                                }
+
+                                case MIDDLE -> {
+                                        btnMouseMiddleLastX = event.getSceneX();
+                                        btnMouseMiddleLastY = event.getSceneY();
+                                        btnMouseMiddlePanding = true;
+                                }
+
+                                default -> {}
                         }
                 });
 
@@ -143,8 +156,8 @@ public class Blueprint extends StackPane
 
         private void updateCameraModel()
         {
-                cameraGroup.setTranslateX(-camera.x * camera.zoom);
-                cameraGroup.setTranslateY(-camera.y * camera.zoom);
+                cameraGroup.setTranslateX(camera.x * camera.zoom);
+                cameraGroup.setTranslateY(camera.y * camera.zoom);
                 cameraGroup.setScaleX(camera.zoom);
                 cameraGroup.setScaleY(camera.zoom);
 
@@ -166,8 +179,8 @@ public class Blueprint extends StackPane
                 double width = gridCanvas.getWidth();
                 double height = gridCanvas.getHeight();
 
-                double offsetX = (-camera.x * camera.zoom) % scaledGridSize;
-                double offsetY = (-camera.y * camera.zoom) % scaledGridSize;
+                double offsetX = (camera.x * camera.zoom) % scaledGridSize;
+                double offsetY = (camera.y * camera.zoom) % scaledGridSize;
 
                 gc.setStroke(Color.rgb(60, 60, 60));
                 gc.setLineWidth(0.3f);
@@ -185,7 +198,5 @@ public class Blueprint extends StackPane
                 double worldY = (screenY / camera.zoom) - camera.y;
                 return new Point2D(worldX, worldY);
         }
-
-
 
 }
