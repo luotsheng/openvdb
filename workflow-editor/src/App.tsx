@@ -87,6 +87,11 @@ export default function App() {
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
                 onEdgeContextMenu={onEdgeClick}
+                defaultEdgeOptions={{
+                    style: {
+                        strokeWidth: 3
+                    }
+                }}
                 fitView
             >
                 <Background/>
