@@ -1,7 +1,9 @@
-import StartNode from "./StartNode";
-import EndNode from "./EndNode";
-import ActionNode from "./ActionNode.tsx";
-import BranchNode from "./BranchNode.tsx";
+import {
+    StartNode,
+    EndNode,
+    ActionNode,
+    BranchNode
+} from "./FlowNodeBase";
 
 export const nodetypes = {
     start: StartNode,

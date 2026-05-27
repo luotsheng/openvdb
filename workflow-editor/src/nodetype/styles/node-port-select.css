@@ -1,0 +1,34 @@
+.rf-select {
+    width: 100%;
+    margin-top: 4px;
+    padding: 7px 10px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #374151;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(229, 231, 235, 0.9);
+    border-radius: 10px;
+    font-family: Inter, system-ui, sans-serif;
+    cursor: pointer;
+    transition: all 120ms ease;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.rf-select:hover {
+    border-color: #6366f1;
+    background: white;
+}
+
+.rf-select:focus {
+    outline: none;
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+    background: white;
+}
+
+/* 下拉选项样式 */
+.rf-select option {
+    padding: 8px 10px;
+    background: white;
+    color: #374151;
+}

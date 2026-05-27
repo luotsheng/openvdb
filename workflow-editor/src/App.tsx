@@ -21,7 +21,7 @@ export const initialNodes: Node[] = [
         position: { x: 100, y: 100 },
         data: {
             title: "开始",
-            outputs: [{ id: "out-exec", label: "", type: "exec" }]
+            outputs: [{ id: "out-exec", label: "", portType: "exec" }]
         },
     },
     {
@@ -31,11 +31,23 @@ export const initialNodes: Node[] = [
         data: {
             title: "打开连接",
             inputs: [
-                { id: "in-exec", label: "", type: "exec" }
+                { id: "in-exec", label: "", portType: "exec" }
             ],
             outputs: [
-                { id: "out-exec", label: "", type: "exec" },
-                { id: "out-conn", label: "连接对象", type: "data", dataType: "object" }
+                { id: "out-exec", label: "", portType: "exec" },
+                {
+                    id: "out-conn",
+                    label: "连接对象",
+                    portType: "data",
+                    dataType: "object",
+                    control: "select",
+                    options: [
+                        { value: "conn-openser-1", label: "OPENSER 主数据库" },
+                        { value: "conn-mysql-prod", label: "MySQL 生产库" },
+                        { value: "conn-test", label: "测试环境" }
+                    ],
+                    defaultValue: "conn-openser-1"
+                }
             ]
         }
     },
@@ -46,12 +58,12 @@ export const initialNodes: Node[] = [
         data: {
             title: "获取数据库名称",
             inputs: [
-                { id: "in-exec", label: "", type: "exec" },
-                { id: "in-conn", label: "连接对象", type: "data", dataType: "object" }
+                { id: "in-exec", label: "", portType: "exec" },
+                { id: "in-conn", label: "连接对象", portType: "data", dataType: "object" }
             ],
             outputs: [
-                { id: "out-exec", label: "", type: "exec" },
-                { id: "out-name", label: "数据库名", type: "data", dataType: "string" }
+                { id: "out-exec", label: "", portType: "exec" },
+                { id: "out-name", label: "数据库名", portType: "data", dataType: "string" }
             ]
         }
     },
@@ -62,12 +74,12 @@ export const initialNodes: Node[] = [
         data: {
             title: "是否为 OPENSER 数据库？",
             inputs: [
-                { id: "in-exec", label: "", type: "exec" },
-                { id: "in-name", label: "数据库名", type: "data", dataType: "string" }
+                { id: "in-exec", label: "", portType: "exec" },
+                { id: "in-name", label: "数据库名", portType: "data", dataType: "string" }
             ],
             outputs: [
-                { id: "out-true", label: "是", type: "exec" },
-                { id: "out-false", label: "否", type: "exec" }
+                { id: "out-true", label: "是", portType: "exec" },
+                { id: "out-false", label: "否", portType: "exec" }
             ],
             properties: { condition: "dbName === 'OPENSER'" }
         }
