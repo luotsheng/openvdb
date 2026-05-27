@@ -103,7 +103,7 @@ function FlowNodeBase({
                                 {port.control === "select" && (
                                     <select
                                         value={port.defaultValue ?? ''}
-                                        onChange={(e) => {
+                                        onChange={(_e) => {
 
                                         }}
                                         className="rf-select"
