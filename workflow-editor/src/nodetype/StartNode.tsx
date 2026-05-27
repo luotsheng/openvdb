@@ -1,6 +1,6 @@
 import { memo } from "react";
 import { Handle, Position, type NodeProps } from "reactflow";
-import "./style-flow-node.css";
+import "./styles/react-flow-styles.css";
 
 type Port = {
     id: string;
@@ -38,7 +38,7 @@ function StartNode(props: NodeProps<Data>) {
                                     type="source"
                                     position={Position.Right}
                                     id={port.id}
-                                    className="rf-handle"
+                                    className="rf-handle rf-handle-exec"
                                 />
                             </div>
                         ))}
