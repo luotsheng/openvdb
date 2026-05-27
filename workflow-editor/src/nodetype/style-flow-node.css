@@ -1,0 +1,122 @@
+.rf-node {
+    position: relative;
+
+    min-width: 240px;
+
+    background: rgba(255, 255, 255, 0.78);
+
+    backdrop-filter: blur(24px);
+
+    border: 1px solid rgba(255, 255, 255, 0.95);
+
+    border-radius: 22px;
+
+    box-shadow:
+            0 10px 30px rgba(15, 23, 42, 0.08),
+            0 2px 10px rgba(15, 23, 42, 0.04);
+
+    overflow: hidden;
+
+    transition:
+            transform 120ms ease,
+            box-shadow 120ms ease,
+            border-color 120ms ease;
+}
+
+.rf-node:hover {
+    transform: translateY(-1px);
+
+    box-shadow:
+            0 14px 40px rgba(15, 23, 42, 0.12),
+            0 4px 14px rgba(15, 23, 42, 0.06);
+}
+
+.rf-node.selected {
+    border-color: #f472b6;
+}
+
+.rf-node-header {
+    padding:
+            8px
+            12px
+            8px;
+
+    font-size: 14px;
+    font-weight: 600;
+
+    color: #111827;
+
+    border-bottom: 1px solid rgba(229, 231, 235, 0.8);
+
+    font-family:
+            Inter,
+            system-ui,
+            sans-serif;
+}
+
+.rf-node-body {
+    padding: 14px 18px 18px;
+}
+
+.rf-node-ports {
+    display: flex;
+    justify-content: space-between;
+    gap: 32px;
+}
+
+.rf-node-column {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rf-port {
+    position: relative;
+
+    display: flex;
+    align-items: center;
+
+    min-height: 20px;
+}
+
+.rf-port-left {
+    padding-left: 12px;
+}
+
+.rf-port-right {
+    padding-right: 12px;
+}
+
+.rf-port-label {
+    font-size: 12px;
+    font-weight: 500;
+
+    color: #6b7280;
+
+    white-space: nowrap;
+
+    font-family:
+            Inter,
+            system-ui,
+            sans-serif;
+}
+
+.rf-handle {
+    width: 10px !important;
+    height: 10px !important;
+
+    background: #9ca3af !important;
+
+    border: 0 !important;
+
+    box-shadow:
+            0 0 0 4px rgba(255, 255, 255, 0.96);
+
+    transition:
+            transform 120ms ease,
+            background 120ms ease;
+}
+
+.rf-handle:hover {
+    background: #ec4899 !important;
+}
