@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import {useCallback} from "react";
 import {
     Background,
     Controls,
@@ -10,130 +10,27 @@ import {
     type Node,
     type Edge
 } from "reactflow";
-import { nodetypes } from "./nodetype/types.ts";
+import {blueprintNodeTypes} from "./nodetype/types.ts";
+import {StartNode, EndNode} from "./nodetype/nodes/event-node.tsx";
 // css
 import "reactflow/dist/style.css";
 
 export const initialNodes: Node[] = [
     {
-        id: "start-1",
-        type: "start",
-        position: { x: 100, y: 100 },
-        data: {
-            title: "开始",
-            outputs: [{ id: "out-exec", label: "", portType: "exec" }]
-        },
+        id: "1",
+        type: "bp",
+        position: {x: 100, y: 100},
+        data: {definition: StartNode},
     },
     {
-        id: "open-conn-1",
-        type: "action",
-        position: { x: 380, y: 100 },
-        data: {
-            title: "打开连接",
-            inputs: [
-                { id: "in-exec", label: "", portType: "exec" }
-            ],
-            outputs: [
-                { id: "out-exec", label: "", portType: "exec" },
-                {
-                    id: "out-conn",
-                    label: "连接对象",
-                    portType: "data",
-                    dataType: "object",
-                    control: "select",
-                    options: [
-                        { value: "conn-openser-1", label: "OPENSER 主数据库" },
-                        { value: "conn-mysql-prod", label: "MySQL 生产库" },
-                        { value: "conn-test", label: "测试环境" }
-                    ],
-                    defaultValue: "conn-openser-1"
-                }
-            ]
-        }
+        id: "2",
+        type: "bp",
+        position: {x: 500, y: 100},
+        data: {definition: EndNode},
     },
-    {
-        id: "get-dbname-1",
-        type: "action",
-        position: { x: 680, y: 80 },
-        data: {
-            title: "获取数据库名称",
-            inputs: [
-                { id: "in-exec", label: "", portType: "exec" },
-                { id: "in-conn", label: "连接对象", portType: "data", dataType: "object" }
-            ],
-            outputs: [
-                { id: "out-exec", label: "", portType: "exec" },
-                { id: "out-name", label: "数据库名", portType: "data", dataType: "string" }
-            ]
-        }
-    },
-    {
-        id: "branch-1",
-        type: "branch",
-        position: { x: 980, y: 70 },
-        data: {
-            title: "是否为 OPENSER 数据库？",
-            inputs: [
-                { id: "in-exec", label: "", portType: "exec" },
-                { id: "in-name", label: "数据库名", portType: "data", dataType: "string" }
-            ],
-            outputs: [
-                { id: "out-true", label: "是", portType: "exec" },
-                { id: "out-false", label: "否", portType: "exec" }
-            ],
-            properties: { condition: "dbName === 'OPENSER'" }
-        }
-    },
-    {
-        id: "query-1",
-        type: "action",
-        position: { x: 1280, y: 20 },
-        data: {
-            title: "执行查询",
-            inputs: [
-                { id: "in-exec", label: "", type: "exec" }
-            ],
-            outputs: [
-                { id: "out-exec", label: "", type: "exec" },
-                { id: "out-data", label: "查询结果", type: "data", dataType: "array" }
-            ]
-        }
-    },
-    {
-        id: "export-excel-1",
-        type: "action",
-        position: { x: 1580, y: 20 },
-        data: {
-            title: "导出为 Excel",
-            inputs: [
-                { id: "in-exec", label: "", type: "exec" },
-                { id: "in-data", label: "数据", type: "data", dataType: "array" }
-            ],
-            outputs: [
-                { id: "out-exec", label: "", type: "exec" }
-            ]
-        }
-    },
-    {
-        id: "end-1",
-        type: "end",
-        position: { x: 1880, y: 100 },
-        data: {
-            title: "结束",
-            inputs: [
-                { id: "in-exec", label: "", type: "exec" }
-            ]
-        }
-    }
 ];
 
-const initialEdges = [
-    {
-        id: "e1-2",
-        source: "1",
-        target: "2"
-    }
-];
+const initialEdges: Edge[] = [];
 
 export default function App() {
     const [nodes, _setNodes, onNodesChange] =
@@ -160,15 +57,13 @@ export default function App() {
             <ReactFlow
                 nodes={nodes}
                 edges={edges}
-                nodeTypes={nodetypes}
+                nodeTypes={blueprintNodeTypes}
                 onNodesChange={onNodesChange}
                 onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
                 onEdgeContextMenu={onEdgeClick}
                 defaultEdgeOptions={{
-                    style: {
-                        strokeWidth: 3
-                    }
+                    style: {strokeWidth: 3}
                 }}
                 connectionLineStyle={{
                     strokeWidth: 3

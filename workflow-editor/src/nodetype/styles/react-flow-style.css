@@ -28,17 +28,9 @@
     font-family: Inter, system-ui, sans-serif;
 }
 
-.branch-header {
-    background: #f59e0b;
-    color: white;
-    border-bottom: 1px solid #d97706;
-}
-
-.action-header {
-    background: #F472B6FF;
-    color: white;
-    border-bottom: 1px solid #F472B6FF;
-}
+.event-header {background: #C31919FF; color: white; border-bottom: 1px solid #C31919FF;}
+.branch-header {background: #d97706; color: white; border-bottom: 1px solid #d97706;}
+.action-header {background: #F472B6FF; color: white; border-bottom: 1px solid #F472B6FF;}
 
 .rf-node-body {
     padding: 14px 18px 18px;

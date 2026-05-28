@@ -1,13 +1,5 @@
-import {
-    StartNode,
-    EndNode,
-    ActionNode,
-    BranchNode
-} from "./FlowNodeBase";
+import {NodeView} from "./renderer/node-view";
 
-export const nodetypes = {
-    start: StartNode,
-    end: EndNode,
-    action: ActionNode,
-    branch: BranchNode
-};
+export const blueprintNodeTypes = {
+    bp: NodeView
+}
