@@ -18,6 +18,12 @@ export enum PortDataType {
     Array = "array",
 }
 
+export enum PortControl {
+    Select = "select",
+    Input = "input",
+    Checkbox = "checkbox"
+}
+
 export interface PortDefinition {
     id: string;
     name: string;
@@ -25,7 +31,11 @@ export interface PortDefinition {
     type: PortType;
     dataType?: PortDataType;
     multiple?: boolean;
-    optional?: boolean;
-    defaultValue?: unknown;
-    control?: string;
+    placeholder?: string;
+    control?: PortControl;
+    value?: string;
+    options?: {
+        label: string;
+        value: string;
+    }[];
 }

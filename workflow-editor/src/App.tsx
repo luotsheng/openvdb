@@ -1,4 +1,4 @@
-import {useCallback} from "react";
+import {useCallback,useEffect} from "react";
 import {
     Background,
     Controls,
@@ -12,11 +12,11 @@ import {
 } from "reactflow";
 import {blueprintNodeTypes} from "./nodetype/types";
 import {StartNode, EndNode} from "./nodetype/nodes/event-node";
-import {IfNode} from "./nodetype/nodes/branch-node";
 import {
     GetConnectionNode,
     GetDatabaseNode
-} from "./nodetype/nodes/action-node.tsx";
+} from "./nodetype/nodes/action-node";
+import {IsNullNode} from "./nodetype/nodes/branch-node";
 // css
 import "reactflow/dist/style.css";
 
@@ -36,20 +36,20 @@ export const initialNodes: Node[] = [
     {
         id: "3",
         type: "bp",
-        position: {x: 600, y: 100},
+        position: {x: 800, y: 100},
         data: {definition: GetConnectionNode},
-    },
-    {
-        id: "5",
-        type: "bp",
-        position: {x: 600, y: 300},
-        data: {definition: GetDatabaseNode},
     },
     {
         id: "4",
         type: "bp",
-        position: {x: 200, y: 400},
-        data: {definition: IfNode},
+        position: {x: 900, y: 300},
+        data: {definition: GetDatabaseNode},
+    },
+    {
+        id: "5",
+        type: "bp",
+        position: {x: 1300, y: 350},
+        data: {definition: IsNullNode},
     },
 ];
 
@@ -74,6 +74,17 @@ export default function App() {
         setEdges((eds) =>
             eds.filter((e) => e.id !== edge.id));
     };
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+                e.preventDefault();
+                console.log('导出流程图数据：', {nodes, edges,});
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [nodes, edges]);
 
     return (
         <div style={{position: 'fixed', inset: 0, background: '#fff'}}>
