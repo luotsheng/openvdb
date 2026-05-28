@@ -1,7 +1,7 @@
 import type {NodeDefinition} from "../types/node";
 import {PortDataType, type PortDefinition, PortDirection, PortType} from "../types/port";
 
-function createEventNode(
+function createNode(
     title: string,
     type: string,
     inputs: PortDefinition[],
@@ -10,13 +10,36 @@ function createEventNode(
     return {
         title,
         type,
-        headerClass: "branch-header",
+        headerClass: "action-header",
         inputs,
         outputs,
     }
 }
 
-export const IfNode: NodeDefinition = createEventNode("比较器", "if", [
+export const GetConnectionNode: NodeDefinition = createNode("获取连接对象", "get-connection", [
+    {
+        id: "in-exec",
+        name: "IN",
+        type: PortType.Exec,
+        direction: PortDirection.Input
+    }
+], [
+    {
+        id: "out-exec-1",
+        name: "OUT",
+        type: PortType.Exec,
+        direction: PortDirection.Output
+    },
+    {
+        id: "out-value-1",
+        name: "选择连接",
+        type: PortType.Data,
+        dataType: PortDataType.Object,
+        direction: PortDirection.Output
+    }
+]);
+
+export const GetDatabaseNode: NodeDefinition = createNode("获取数据库对象", "get-database", [
     {
         id: "in-exec",
         name: "IN",
@@ -24,30 +47,24 @@ export const IfNode: NodeDefinition = createEventNode("比较器", "if", [
         direction: PortDirection.Input
     },
     {
-        id: "in-cond-a",
-        name: "A值",
+        id: "in-connection-value",
+        name: "连接对象",
         type: PortType.Data,
         dataType: PortDataType.Object,
         direction: PortDirection.Input
-    },
-    {
-        id: "in-cond-b",
-        name: "B值",
-        type: PortType.Data,
-        dataType: PortDataType.Object,
-        direction: PortDirection.Input
-    },
+    }
 ], [
     {
         id: "out-exec-1",
-        name: "是",
+        name: "OUT",
         type: PortType.Exec,
         direction: PortDirection.Output
     },
     {
-        id: "out-exec-2",
-        name: "否",
-        type: PortType.Exec,
+        id: "out-value-1",
+        name: "选择数据库",
+        type: PortType.Data,
+        dataType: PortDataType.Object,
         direction: PortDirection.Output
-    },
+    }
 ]);

@@ -13,6 +13,10 @@ import {
 import {blueprintNodeTypes} from "./nodetype/types";
 import {StartNode, EndNode} from "./nodetype/nodes/event-node";
 import {IfNode} from "./nodetype/nodes/branch-node";
+import {
+    GetConnectionNode,
+    GetDatabaseNode
+} from "./nodetype/nodes/action-node.tsx";
 // css
 import "reactflow/dist/style.css";
 
@@ -31,6 +35,18 @@ export const initialNodes: Node[] = [
     },
     {
         id: "3",
+        type: "bp",
+        position: {x: 600, y: 100},
+        data: {definition: GetConnectionNode},
+    },
+    {
+        id: "5",
+        type: "bp",
+        position: {x: 600, y: 300},
+        data: {definition: GetDatabaseNode},
+    },
+    {
+        id: "4",
         type: "bp",
         position: {x: 200, y: 400},
         data: {definition: IfNode},
