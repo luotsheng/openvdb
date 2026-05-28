@@ -1,5 +1,5 @@
-import type { NodeDefinition } from "../types/node";
-import {type PortDefinition, PortType} from "../types/port";
+import type {NodeDefinition} from "../types/node";
+import {type PortDefinition, PortDirection, PortType} from "../types/port";
 
 function createEventNode(
     title: string,
@@ -20,7 +20,8 @@ export const StartNode: NodeDefinition = createEventNode("Start Event", "start",
     {
         id: "out-exec",
         name: "开始执行",
-        portType: PortType.Exec,
+        type: PortType.Exec,
+        direction: PortDirection.Output
     },
 ]);
 
@@ -28,6 +29,7 @@ export const EndNode: NodeDefinition = createEventNode("End Event", "end", [
     {
         id: "in-exec",
         name: "结束执行",
-        portType: PortType.Exec,
+        type: PortType.Exec,
+        direction: PortDirection.Input
     }
 ], []);

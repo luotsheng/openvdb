@@ -1,3 +1,8 @@
+export enum PortDirection {
+    Input = "input",
+    Output = "output"
+}
+
 export enum PortType {
     Exec = "exec",
     Data = "data"
@@ -16,7 +21,8 @@ export enum PortDataType {
 export interface PortDefinition {
     id: string;
     name: string;
-    portType: PortType;
+    direction: PortDirection;
+    type: PortType;
     dataType?: PortDataType;
     multiple?: boolean;
     optional?: boolean;

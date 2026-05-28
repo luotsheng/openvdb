@@ -10,8 +10,9 @@ import {
     type Node,
     type Edge
 } from "reactflow";
-import {blueprintNodeTypes} from "./nodetype/types.ts";
-import {StartNode, EndNode} from "./nodetype/nodes/event-node.tsx";
+import {blueprintNodeTypes} from "./nodetype/types";
+import {StartNode, EndNode} from "./nodetype/nodes/event-node";
+import {IfNode} from "./nodetype/nodes/branch-node";
 // css
 import "reactflow/dist/style.css";
 
@@ -27,6 +28,12 @@ export const initialNodes: Node[] = [
         type: "bp",
         position: {x: 500, y: 100},
         data: {definition: EndNode},
+    },
+    {
+        id: "3",
+        type: "bp",
+        position: {x: 200, y: 400},
+        data: {definition: IfNode},
     },
 ];
 
