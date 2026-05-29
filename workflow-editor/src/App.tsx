@@ -15,7 +15,8 @@ import {blueprintNodeTypes} from "./nodetype/types";
 import {StartNode, EndNode} from "./nodetype/nodes/event-node";
 import {
     GetConnectionNode,
-    GetDatabaseNode
+    GetDatabaseNode,
+    GetExecuteScript
 } from "./nodetype/nodes/action-node";
 import {IsNullNode} from "./nodetype/nodes/branch-node";
 // css
@@ -57,6 +58,13 @@ export const initialNodes: Node[] = [
         position: {x: 1300, y: 350},
         data: {definition: IsNullNode},
     },
+    {
+        id: "6",
+        type: "bp",
+        selected: false,
+        position: {x: 1500, y: 350},
+        data: {definition: GetExecuteScript},
+    },
 ];
 
 const initialEdges: Edge[] = [];
@@ -81,9 +89,12 @@ function ReactFlowImplements() {
             eds.filter((e) => e.id !== edge.id));
     };
 
+    const getSelectedNodes = () =>
+        getNodes().filter((node) => node.selected)
+
     const onCopy = useCallback(() => {
-        const allNodes = getNodes();
-        const selectedNodes = allNodes.filter((node) => node.selected);
+        const selectedNodes =
+            getSelectedNodes().filter((node) => node.selected);
         if (selectedNodes.length === 0)
             return;
         nodeClipboardRef.current = selectedNodes;
@@ -105,6 +116,21 @@ function ReactFlowImplements() {
 
         setNodes((prevNodes) => [...prevNodes, ...newNodes]);
     }, [setNodes]);
+
+    const onDelete = useCallback(() => {
+        const selectedNodes = getSelectedNodes();
+        const selectedIds = new Set(selectedNodes.map((n) => n.id));
+
+        setNodes((nodes) =>
+            nodes.filter((n) => !selectedIds.has(n.id))
+        );
+
+        setEdges((edges) =>
+            edges.filter(
+                (e) => !selectedIds.has(e.source) && !selectedIds.has(e.target)
+            )
+        );
+    }, [getNodes, setNodes, setEdges]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -131,6 +157,10 @@ function ReactFlowImplements() {
                     onPaste();
                     return;
                 }
+            }
+
+            if (e.key === "Delete") {
+                onDelete();
             }
         };
         window.addEventListener('keydown', handleKeyDown);

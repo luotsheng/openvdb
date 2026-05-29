@@ -77,3 +77,35 @@ export const GetDatabaseNode: NodeDefinition = createNode("获取数据库对象
         control: PortControl.Input
     }
 ]);
+
+export const GetExecuteScript: NodeDefinition = createNode("获取执行脚本", "get-execute-script", [
+    {
+        id: "in-exec",
+        name: "EXEC IN",
+        type: PortType.Exec,
+        direction: PortDirection.Input
+    },
+    {
+        id: "in-database-value",
+        name: "数据库对象",
+        type: PortType.Data,
+        dataType: PortDataType.Object,
+        direction: PortDirection.Input,
+    }
+], [
+    {
+        id: "out-exec-1",
+        name: "EXEC OUT",
+        type: PortType.Exec,
+        direction: PortDirection.Output
+    },
+    {
+        id: "out-value-1",
+        name: "",
+        type: PortType.Data,
+        dataType: PortDataType.Object,
+        direction: PortDirection.Output,
+        placeholder: "执行脚本名称",
+        control: PortControl.Input
+    }
+]);
