@@ -1,4 +1,4 @@
-import {useCallback, useState, useEffect, useRef} from "react";
+import {useCallback, useEffect, useRef} from "react";
 import {
     Background,
     Controls,
@@ -87,7 +87,7 @@ function ReactFlowImplements() {
         if (selectedNodes.length === 0)
             return;
         nodeClipboardRef.current = selectedNodes;
-    });
+    }, []);
 
     const onPaste = useCallback(() => {
         if (!nodeClipboardRef.current || nodeClipboardRef.current.length === 0)
