@@ -23,6 +23,10 @@ import static valkyrie.utils.TypeConverter.atobool;
 @SuppressWarnings("unused")
 public class ConnectionPropertyModel
 {
+        public static final ConnectionPropertyModel MySQL = createMySQL();
+        public static final ConnectionPropertyModel DM = createDM();
+        public static final ConnectionPropertyModel Redis = createRedis();
+
         private final StringProperty name = new SimpleStringProperty();
         private final StringProperty type = new SimpleStringProperty();
         private final StringProperty host = new SimpleStringProperty();
@@ -33,15 +37,15 @@ public class ConnectionPropertyModel
         private final BooleanProperty savePassword = new SimpleBooleanProperty();
         private final StringProperty jdbcUrl = new SimpleStringProperty();
         private final StringProperty timezone = new SimpleStringProperty();
-        private final BooleanProperty useSSL = new SimpleBooleanProperty();
-        private final BooleanProperty tinyint1isBit = new SimpleBooleanProperty();
+        private final BooleanProperty useSSL = new SimpleBooleanProperty(true);
+        private final BooleanProperty tinyint1isBit = new SimpleBooleanProperty(false);
 
         /* jdbc url 属性 */
         private final Map<String, String> jdbcQuery = new HashMap<>();
 
         public ConnectionPropertyModel()
         {
-                /* DO NOTHING */
+                setupListener();
         }
 
         public ConnectionPropertyModel(ConnectionProfile profile)
@@ -58,20 +62,6 @@ public class ConnectionPropertyModel
                 this.timezone.set(profile.getTimezone());
                 this.useSSL.set(profile.getUseSSL());
                 this.tinyint1isBit.set(profile.getTinyint1isBit());
-
-                setupListener();
-        }
-
-        public ConnectionPropertyModel(String type)
-        {
-                this.name.set("本地数据库");
-                this.host.set("127.0.0.1");
-                this.port.set("3306");
-                this.username.set("root");
-                this.useSSL.set(true);
-                this.tinyint1isBit.set(false);
-
-                this.type.set(type);
 
                 setupListener();
         }
@@ -167,6 +157,39 @@ public class ConnectionPropertyModel
 
                 }
 
+        }
+
+        public static ConnectionPropertyModel createMySQL()
+        {
+                ConnectionPropertyModel model = new ConnectionPropertyModel();
+                model.name.set("MySQL");
+                model.type.set("mysql");
+                model.host.set("127.0.0.1");
+                model.port.set("3306");
+                model.username.set("root");
+                return model;
+        }
+
+        public static ConnectionPropertyModel createDM()
+        {
+                ConnectionPropertyModel model = new ConnectionPropertyModel();
+                model.name.set("达梦数据库");
+                model.type.set("dm");
+                model.host.set("127.0.0.1");
+                model.port.set("5236");
+                model.username.set("SYSDBA");
+                return model;
+        }
+
+        public static ConnectionPropertyModel createRedis()
+        {
+                ConnectionPropertyModel model = new ConnectionPropertyModel();
+                model.name.set("Redis");
+                model.type.set("redis");
+                model.host.set("127.0.0.1");
+                model.port.set("6379");
+                model.username.set("");
+                return model;
         }
 
         /* property */

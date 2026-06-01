@@ -20,6 +20,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Luo Tiansheng
@@ -95,7 +96,8 @@ public class Application extends javafx.application.Application
         @SuppressWarnings("CommentedOutCode")
         public void start(Stage stage)
         {
-                new MonacoEditor();
+                CompletableFuture.runAsync(MonacoEditor::new);
+
                 setDockIcon(stage, "/assets/icons/main_2.png");
 
                 primaryStage = stage;

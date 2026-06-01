@@ -54,9 +54,11 @@ public class CreateOrEditConnectionDialog extends Stage
                 this.isUpdate = newProperty != null;
                 this.dbType = dbType;
 
-                this.newProperty = isUpdate
-                        ? newProperty
-                        : new ConnectionPropertyModel("MySQL");
+                this.newProperty = isUpdate ? newProperty : switch (dbType) {
+                        case mysql -> ConnectionPropertyModel.createMySQL();
+                        case dm -> ConnectionPropertyModel.createDM();
+                        case redis -> ConnectionPropertyModel.createRedis();
+                };
 
                 this.oldProperty = isUpdate
                         ? JSONUtils.deepCopy(newProperty)
