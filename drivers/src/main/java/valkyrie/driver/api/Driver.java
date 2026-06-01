@@ -11,7 +11,6 @@ import valkyrie.driver.utils.SQLUtils;
 import valkyrie.utils.Captor;
 import valkyrie.utils.Optional;
 import valkyrie.utils.collection.Lists;
-import valkyrie.utils.exception.Causes;
 
 import javax.sql.DataSource;
 import java.sql.*;

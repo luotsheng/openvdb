@@ -1,7 +1,7 @@
 package valkyrie.driver.api.sql;
 
-import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.Dialect;
+import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.Session;
 
 /**

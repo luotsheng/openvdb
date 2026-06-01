@@ -15,8 +15,6 @@ import valkyrie.app.platform.Explorer;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.core.model.ScriptFile;
 
-import java.awt.*;
-
 /**
  * @author Luo Tiansheng
  * @since 2026/3/25

@@ -1,9 +1,9 @@
 package valkyrie.driver.utils;
 
 import valkyrie.driver.api.Column;
-import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.Dialect;
 import valkyrie.driver.api.GridRow;
+import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.exception.DriverException;
 import valkyrie.driver.api.sql.SQLParsedStatement;
 import valkyrie.utils.collection.Lists;

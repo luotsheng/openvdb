@@ -1,9 +1,11 @@
 package valkyrie.app.tool;
 
 import javafx.scene.Node;
-import javafx.scene.control.*;
+import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Tab;
+import javafx.scene.control.ToolBar;
 import javafx.scene.input.MouseButton;
-import javafx.scene.layout.StackPane;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.OpenScriptEditorPaneEvent;
 import valkyrie.app.event.workbench.OpenTabEvent;

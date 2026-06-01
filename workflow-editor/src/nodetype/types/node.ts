@@ -1,4 +1,4 @@
-import type { PortDefinition } from "./port.ts";
+import type {PortDefinition} from "./port.ts";
 
 export interface NodeDefinition {
     type: string;

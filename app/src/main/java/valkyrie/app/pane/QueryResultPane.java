@@ -6,8 +6,8 @@ import javafx.scene.control.Tab;
 import javafx.scene.layout.BorderPane;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
-import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.Driver;
+import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.Session;
 import valkyrie.driver.api.Table;
 

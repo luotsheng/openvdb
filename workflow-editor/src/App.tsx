@@ -1,23 +1,20 @@
 import {useCallback, useEffect, useRef} from "react";
 import {
+    addEdge,
     Background,
     Controls,
+    type Edge,
     MiniMap,
+    type Node,
     ReactFlow,
-    useReactFlow,
-    addEdge,
+    ReactFlowProvider,
     useEdgesState,
     useNodesState,
-    type Node,
-    type Edge, ReactFlowProvider
+    useReactFlow
 } from "reactflow";
 import {blueprintNodeTypes} from "./nodetype/types";
-import {StartNode, EndNode} from "./nodetype/nodes/event-node";
-import {
-    GetConnectionNode,
-    GetDatabaseNode,
-    GetExecuteScript
-} from "./nodetype/nodes/action-node";
+import {EndNode, StartNode} from "./nodetype/nodes/event-node";
+import {GetConnectionNode, GetDatabaseNode, GetExecuteScript} from "./nodetype/nodes/action-node";
 import {IsNullNode} from "./nodetype/nodes/branch-node";
 // css
 import "reactflow/dist/style.css";

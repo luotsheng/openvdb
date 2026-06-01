@@ -1,4 +1,4 @@
-import type { NodeDefinition } from "./types/node.ts";
+import type {NodeDefinition} from "./types/node.ts";
 
 const registry = new Map<string, NodeDefinition>();
 

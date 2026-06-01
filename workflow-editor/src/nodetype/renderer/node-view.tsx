@@ -1,8 +1,7 @@
-import {Handle, Position} from "reactflow";
-
 import type {NodeProps} from "reactflow";
+import {Handle, Position} from "reactflow";
 import type {NodeDefinition} from "../types/node";
-import {PortDataType, PortType, type PortDefinition} from "../types/port";
+import {PortDataType, type PortDefinition, PortType} from "../types/port";
 import {PortControlView} from "./port-control-view";
 
 import "../styles/react-flow-style.css";

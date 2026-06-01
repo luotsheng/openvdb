@@ -1,18 +1,9 @@
 // src/editor/components/PortControlView.tsx
 
-import {
-    useEffect,
-    useRef,
-    useState,
-} from "react";
+import {useEffect, useRef, useState,} from "react";
 
-import {
-    PortControl,
-} from "../types/port";
-
-import type {
-    PortDefinition,
-} from "../types/port";
+import type {PortDefinition,} from "../types/port";
+import {PortControl,} from "../types/port";
 
 import "../styles/port-control-style.css";
 

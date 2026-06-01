@@ -1,6 +1,5 @@
 package valkyrie.app.widgets;
 
-import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.layout.BorderPane;
 
