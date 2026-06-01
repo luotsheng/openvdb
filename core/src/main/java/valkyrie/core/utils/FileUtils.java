@@ -1,14 +1,11 @@
 package valkyrie.core.utils;
 
 import valkyrie.core.exception.CoreException;
-import valkyrie.utils.Captor;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Comparator;
 import java.util.stream.Stream;
 
 /**
@@ -32,30 +29,5 @@ public class FileUtils
                 } catch (IOException e) {
                         throw new CoreException(e);
                 }
-        }
-
-        public static void forceDelete(File file)
-        {
-                forceDelete(file.getPath());
-        }
-
-        /**
-         * 强制删除文件
-         */
-        @SuppressWarnings({"resource", "CodeBlock2Expr"})
-        public static void forceDelete(String pathname)
-        {
-                Path path = Paths.get(pathname);
-
-                if (Files.isRegularFile(path)) {
-                        Captor.call(() -> Files.deleteIfExists(path));
-                        return;
-                }
-
-                Captor.call(() -> {
-                        Files.walk(path)
-                                .sorted(Comparator.reverseOrder())
-                                .forEach(pathVal -> Captor.call(() -> Files.delete(pathVal)));
-                });
         }
 }

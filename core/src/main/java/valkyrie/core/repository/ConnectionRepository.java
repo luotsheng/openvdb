@@ -27,8 +27,8 @@ public class ConnectionRepository
         @SuppressWarnings("ResultOfMethodCallIgnored")
         public static void saveConnection(String name, String content)
         {
-                File dir = new File(Users.connectionDir, name);
-                File vdbc = new File(dir, ".vdbc");
+                UFile dir = new UFile(Users.connectionDir, name);
+                UFile vdbc = new UFile(dir, ".vdbc");
 
                 if (vdbc.exists())
                         throw new CoreException(name + "已存在！");
@@ -39,12 +39,10 @@ public class ConnectionRepository
                         Captor.call(vdbc::createNewFile);
 
                 try (FileOutputStream fos = new FileOutputStream(vdbc)) {
-
                         fos.write(content.getBytes(StandardCharsets.UTF_8));
-
                 } catch (IOException e) {
                         /* 删除文件夹 */
-                        FileUtils.forceDelete(dir);
+                        dir.forceDelete();
                         throw new CoreException(e);
                 }
         }
@@ -59,9 +57,8 @@ public class ConnectionRepository
                         oldDir.renameTo(newDir);
                 }
 
-                File vdbc = new File(newDir, ".vdbc");
-
-                FileUtils.forceDelete(vdbc);
+                UFile vdbc = new UFile(newDir, ".vdbc");
+                vdbc.forceDelete();
 
                 saveConnection(newName, content);
         }
@@ -73,17 +70,17 @@ public class ConnectionRepository
 
         public static List<ConnectionProfile> loadConnections()
         {
-                File[] files = Users.connectionDir.listFiles();
+                UFile[] files = Users.connectionDir.listFiles();
                 List<ConnectionProfile> ret = new ArrayList<>();
 
                 if (files == null)
                         return ret;
 
-                for (File file : files) {
-                        File vdbc = new File(file, ".vdbc");
+                for (UFile file : files) {
+                        UFile vdbc = new UFile(file, ".vdbc");
 
                         if (FileUtils.isDeepEmptyDirectory(file)) {
-                                FileUtils.forceDelete(file);
+                                file.forceDelete();
                                 continue;
                         }
 
