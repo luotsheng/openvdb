@@ -16,7 +16,7 @@ import java.util.Objects;
  */
 public class Assets
 {
-        private static final int DEFAULT_SIZE = 18;
+        private static final int DEFAULT_SIZE = 19;
         private static final Map<String, Image> IMAGES = new HashMap<>();
 
         static {
@@ -37,20 +37,33 @@ public class Assets
                 ImageView imageView = new ImageView();
                 String scale = split.length > 1 ? split[1] : "1x";
 
-                int size = switch (scale) {
-                        case "2x" -> 24;
-                        case "3x" -> 32;
-                        case "4x" -> 40;
-                        case "5x" -> 50;
-                        case "6x" -> 64;
-                        default   -> DEFAULT_SIZE;
-                };
+                int size = parseScale(scale);
 
                 Image image = IMAGES.get(split[0]);
                 Image scaledImage = new Image(image.getUrl(), size, size, true, true);
                 imageView.setImage(scaledImage);
 
                 return imageView;
+        }
+
+        private static int parseScale(String scale)
+        {
+                int size;
+
+                if (scale.endsWith("px")) {
+                        size = Integer.parseInt(scale.substring(0, scale.length() - 2));
+                } else {
+                        size = switch (scale) {
+                                case "2x" -> 24;
+                                case "3x" -> 32;
+                                case "4x" -> 40;
+                                case "5x" -> 50;
+                                case "6x" -> 64;
+                                default   -> DEFAULT_SIZE;
+                        };
+                }
+
+                return size;
         }
 
         private static void loadImages()
