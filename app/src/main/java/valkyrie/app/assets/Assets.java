@@ -34,8 +34,7 @@ public class Assets
         {
                 String[] split = name.split("@");
 
-                ImageView imageView = new ImageView(IMAGES.get(split[0]));
-
+                ImageView imageView = new ImageView();
                 String scale = split.length > 1 ? split[1] : "1x";
 
                 int size = switch (scale) {
@@ -47,10 +46,9 @@ public class Assets
                         default   -> DEFAULT_SIZE;
                 };
 
-                imageView.setFitWidth(size);
-                imageView.setFitHeight(size);
-                imageView.setPreserveRatio(true);
-                imageView.setSmooth(true);
+                Image image = IMAGES.get(split[0]);
+                Image scaledImage = new Image(image.getUrl(), size, size, true, true);
+                imageView.setImage(scaledImage);
 
                 return imageView;
         }
