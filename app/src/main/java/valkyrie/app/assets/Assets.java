@@ -16,7 +16,7 @@ import java.util.Objects;
  */
 public class Assets
 {
-        private static final int DEFAULT_SIZE = 16;
+        private static final int DEFAULT_SIZE = 18;
         private static final Map<String, Image> IMAGES = new HashMap<>();
 
         static {
