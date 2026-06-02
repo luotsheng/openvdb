@@ -367,9 +367,11 @@ public class ScriptEditor extends SplitPane implements EventListener
         {
                 comboBox.getSelectionModel().selectedItemProperty()
                         .addListener((obs, oldVal, newVal) -> {
-                                editor.registerSuggestion(newVal.getCatalogSuggestion());
-                                newVal.getCatalogNodes().forEach(catalog ->
-                                        editor.registerSuggestion(catalog.getTableNameSuggestions()));
+                                new Thread(() -> {
+                                        editor.registerSuggestion(newVal.getCatalogSuggestion());
+                                        newVal.getCatalogNodes().forEach(catalog ->
+                                                editor.registerSuggestion(catalog.getTableNameSuggestions()));
+                                }).start();
                         });
 
                 comboBox.setOnAction(event -> {
@@ -429,7 +431,7 @@ public class ScriptEditor extends SplitPane implements EventListener
         {
                 comboBox.getSelectionModel().selectedItemProperty()
                                 .addListener((obs, oldVal, newVal) -> {
-                                        editor.registerSuggestion(newVal.getSuggestion());
+                                        new Thread(() -> editor.registerSuggestion(newVal.getSuggestion())).start();
                                 });
 
                 comboBox.setButtonCell(new ListCell<>()
