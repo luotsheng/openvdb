@@ -6,6 +6,7 @@ import javafx.collections.ObservableList;
 import javafx.scene.Scene;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.web.WebView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import lombok.Getter;
@@ -96,7 +97,7 @@ public class Application extends javafx.application.Application
         @SuppressWarnings("CommentedOutCode")
         public void start(Stage stage)
         {
-                CompletableFuture.runAsync(MonacoEditor::new);
+                new Thread(() -> Platform.runLater(WebView::new)).start();
 
                 setDockIcon(stage, "/assets/icons/main_2.png");
 
