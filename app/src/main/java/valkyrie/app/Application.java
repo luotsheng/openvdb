@@ -13,7 +13,6 @@ import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.layout.MainLayout;
-import valkyrie.monacofx.MonacoEditor;
 import valkyrie.utils.system.OS;
 
 import java.awt.*;
@@ -21,7 +20,6 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Luo Tiansheng
