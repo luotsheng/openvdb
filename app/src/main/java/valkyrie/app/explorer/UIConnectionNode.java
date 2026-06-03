@@ -241,8 +241,7 @@ public class UIConnectionNode extends UIExplorerNode
         @Override
         public void onSelectedEvent(UIExplorerNode node)
         {
-                if (openFlag)
-                        UIExplorerStatus.getInstance().selectedConnection(this);
+                UIExplorerStatus.getInstance().selectedConnection(this);
         }
 
         private void setupListenerEvent()
