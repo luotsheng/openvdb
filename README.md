@@ -2,7 +2,6 @@
 
 ![img.png](misc/images/img_3.png)
 
-VALKYRIE DB 是一款跨平台的数据库可视化工具，集成 VS Code Monaco 编辑器，支持
 ---
 
 ## 核心特性
