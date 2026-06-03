@@ -127,7 +127,8 @@ public class ConnectionPropertyModel
 
                         jdbcUrl.setValue(builder.toString());
                 } else {
-                        jdbcUrl.setValue("jdbc:sqlite:" + sqlitePath.get());
+                        String path = sqlitePath.get();
+                        jdbcUrl.setValue("jdbc:sqlite:" + (path == null ? "" : path));
                 }
         }
 
