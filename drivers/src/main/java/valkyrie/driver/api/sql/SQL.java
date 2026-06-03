@@ -13,6 +13,7 @@ import java.util.List;
 
 import static valkyrie.utils.collection.Lists.last;
 import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StaticLibrary.lowercase;
 
 /**
  * SQL 执行单元
@@ -65,8 +66,16 @@ public class SQL implements Iterable<SQLParsedStatement>
                         }
                 } catch (Exception e) {
                         this.statements.clear();
+                        type = checkType(raw);
                         this.statements.add(new SQLParsedStatement(raw, type != null ? type : SQLCommandType.EXECUTE));
                 }
+        }
+
+        private static SQLCommandType checkType(String raw)
+        {
+                if (lowercase(raw).startsWith("pragma"))
+                        return SQLCommandType.EXECUTE_QUERY;
+                return null;
         }
 
         public SQLParsedStatement getLast()

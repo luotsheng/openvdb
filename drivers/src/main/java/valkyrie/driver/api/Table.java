@@ -63,4 +63,6 @@ public class Table
          * 表注释
          */
         private String comment;
+
+        public Table(String name) { this.name = name; }
 }

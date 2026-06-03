@@ -33,7 +33,7 @@ import static valkyrie.utils.string.StaticLibrary.*;
  * @author Luo Tiansheng
  * @since 2026/4/11
  */
-@SuppressWarnings("SqlSourceToSinkFlow")
+@SuppressWarnings({"SqlSourceToSinkFlow", "DuplicatedCode"})
 public class MySQLDriver extends Driver
 {
         private static final Logger LOG = LoggerFactory.getLogger(MySQLDriver.class);
