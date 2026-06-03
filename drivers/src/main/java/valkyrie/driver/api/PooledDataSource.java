@@ -32,11 +32,10 @@ public class PooledDataSource
                 hconf.setMinimumIdle(1);
                 hconf.setConnectionTimeout(30000);
 
-                switch (conf.getType()) {
-                        case mysql -> hconf.setDriverClassName("com.mysql.cj.jdbc.Driver");
-                        case dm -> hconf.setDriverClassName("dm.jdbc.driver.DmDriver");
-                        default -> {}
-                }
+                String driverClass = conf.getType().getDriverClass();
+
+                if (driverClass != null)
+                        hconf.setDriverClassName(driverClass);
 
                 ds = new HikariDataSource(hconf);
         }

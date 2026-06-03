@@ -23,12 +23,9 @@ import static valkyrie.utils.TypeConverter.atobool;
 @SuppressWarnings("unused")
 public class ConnectionPropertyModel
 {
-        public static final ConnectionPropertyModel MySQL = createMySQL();
-        public static final ConnectionPropertyModel DM = createDM();
-        public static final ConnectionPropertyModel Redis = createRedis();
-
         private final StringProperty name = new SimpleStringProperty();
         private final StringProperty type = new SimpleStringProperty();
+        private final StringProperty sqlitePath = new SimpleStringProperty();
         private final StringProperty host = new SimpleStringProperty();
         private final StringProperty port = new SimpleStringProperty();
         private final StringProperty db = new SimpleStringProperty();
@@ -73,6 +70,7 @@ public class ConnectionPropertyModel
                 timezone.addListener(event -> update());
                 useSSL.addListener(event -> update());
                 tinyint1isBit.addListener(event -> update());
+                sqlitePath.addListener(event -> update());
 
                 jdbcUrl.addListener(event -> parse());
         }
@@ -116,17 +114,21 @@ public class ConnectionPropertyModel
 
         private void update()
         {
-                StringBuilder builder = new StringBuilder(
-                        String.format("jdbc:%s://%s:%s?", type.get(), host.get(), port.get())
-                );
+                if (getDbType() != DbType.sqlite) {
+                        StringBuilder builder = new StringBuilder(
+                                String.format("jdbc:%s://%s:%s?", type.get(), host.get(), port.get())
+                        );
 
-                jdbcQuery.put("timezone", timezone.get());
-                jdbcQuery.put("useSSL", String.valueOf(useSSL.get()));
-                jdbcQuery.put("tinyint1isBit", String.valueOf(tinyint1isBit.get()));
+                        jdbcQuery.put("timezone", timezone.get());
+                        jdbcQuery.put("useSSL", String.valueOf(useSSL.get()));
+                        jdbcQuery.put("tinyint1isBit", String.valueOf(tinyint1isBit.get()));
 
-                updateQuery(builder);
+                        updateQuery(builder);
 
-                jdbcUrl.setValue(builder.toString());
+                        jdbcUrl.setValue(builder.toString());
+                } else {
+                        jdbcUrl.setValue("jdbc:sqlite:" + sqlitePath.get());
+                }
         }
 
         private void parse()
@@ -170,6 +172,14 @@ public class ConnectionPropertyModel
                 return model;
         }
 
+        public static ConnectionPropertyModel createSQLite()
+        {
+                ConnectionPropertyModel model = new ConnectionPropertyModel();
+                model.name.set("SQLite");
+                model.type.set("sqlite");
+                return model;
+        }
+
         public static ConnectionPropertyModel createDM()
         {
                 ConnectionPropertyModel model = new ConnectionPropertyModel();
@@ -195,6 +205,7 @@ public class ConnectionPropertyModel
         /* property */
         public StringProperty nameProperty() { return name; }
         public StringProperty typeProperty() { return type; }
+        public StringProperty sqlitePathProperty() { return sqlitePath; }
         public StringProperty hostProperty() { return host; }
         public StringProperty portProperty() { return port; }
         public StringProperty dbProperty() { return db; }
@@ -209,6 +220,7 @@ public class ConnectionPropertyModel
         /* get */
         public String getName() { return name.get();  }
         public String getType() { return type.get();  }
+        public String getSQLitePath() { return sqlitePath.get();  }
         public String getHost() { return host.get();  }
         public String getPort() { return port.get();  }
         public String getDb() { return db.get();  }
@@ -223,6 +235,7 @@ public class ConnectionPropertyModel
         /* get */
         public void setName(String name) { this.name.set(name);  }
         public void setType(String type) { this.type.set(type);  }
+        public void setSqlitePath(String path) { this.sqlitePath.set(path);  }
         public void setHost(String host) { this.host.set(host);  }
         public void setPort(String port) { this.port.set(port);  }
         public void setDb(String db) { this.db.set(db);  }

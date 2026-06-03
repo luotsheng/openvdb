@@ -13,6 +13,7 @@ public class ConnectionProfile
 {
         private String name;
         private String type;
+        private String sqlitePath;
         private String host;
         private String port;
         private String db;

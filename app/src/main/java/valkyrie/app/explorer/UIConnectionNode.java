@@ -98,24 +98,14 @@ public class UIConnectionNode extends UIExplorerNode
         @Override
         public ImageView getIcon()
         {
-                return switch (this.dbType) {
-                        case mysql -> Assets.use("mysql");
-                        case dm -> Assets.use("dm2");
-                        case redis -> Assets.use("redis");
-                };
+                return Assets.use(dbType.getIcon());
         }
 
         private void createDriver()
         {
                 ConnectionConfig config = propertyModel.toConnectionConfig();
                 dataSource = VkDataSourceFactory.create(config);
-
-                driver = switch (config.getType()) {
-                        case mysql -> new MySQLDriver(dataSource);
-                        case dm -> new DMDriver(dataSource);
-                        case redis -> new RedisDriver(dataSource);
-                };
-
+                driver = config.getType().createDriver(dataSource);
                 driver.registerExecuteHook(DRIVER_EXECUTE_HOOK);
         }
 

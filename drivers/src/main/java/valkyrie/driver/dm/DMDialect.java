@@ -11,12 +11,6 @@ import static valkyrie.utils.string.StaticLibrary.strcut;
 public class DMDialect implements Dialect
 {
         @Override
-        public String limit(String sql, int off, int size)
-        {
-                return sql + " LIMIT " + size + " OFFSET " + off;
-        }
-
-        @Override
         public String normalize(String sql)
         {
                 sql = sql.replaceAll("NOT\\s+CLUSTER\\s+PRIMARY\\s+KEY", "PRIMARY KEY");

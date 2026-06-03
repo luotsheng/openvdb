@@ -5,6 +5,7 @@ import javafx.scene.control.TextField;
 import valkyrie.app.model.ConnectionPropertyModel;
 import valkyrie.app.pane.PropertyGridPane;
 import valkyrie.app.widgets.VkComboBox;
+import valkyrie.driver.api.DbType;
 
 /**
  * @author Luo Tiansheng
@@ -64,8 +65,11 @@ class ConnectionAdvancedPane extends PropertyGridPane
         private void setupPaneLayout()
         {
                 addRow("JDBC URL：", jdbcUrl);
-                addRow("时区：", timezone);
-                addRow(null, useSSL);
-                addRow(null, tinyint1isBit);
+
+                if (propertyModel.getDbType() != DbType.sqlite) {
+                        addRow("时区：", timezone);
+                        addRow(null, useSSL);
+                        addRow(null, tinyint1isBit);
+                }
         }
 }

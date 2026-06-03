@@ -44,7 +44,10 @@ public interface Dialect
          * @throws IllegalArgumentException 如果 {@code off < 0} 或 {@code size <= 0}，或原始 SQL 无效
          * @throws NullPointerException 如果 {@code sql} 为 {@code null}
          */
-        String limit(String sql, int off, int size);
+        default String limit(String sql, int off, int size)
+        {
+                return sql + " LIMIT " + size + " OFFSET " + off;
+        }
 
         /**
          * 对 SQL 语句进行规范化处理。
@@ -61,7 +64,7 @@ public interface Dialect
          * @return 规范化后的 SQL 语句
          * @throws NullPointerException 如果 {@code sql} 为 {@code null}
          */
-        String normalize(String sql);
+        default String normalize(String sql) { return sql; }
 
         /**
          * 转义数据库标识符（如表名、列名）。

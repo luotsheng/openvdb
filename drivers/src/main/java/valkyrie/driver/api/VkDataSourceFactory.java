@@ -11,7 +11,7 @@ public class VkDataSourceFactory
         public static VkDataSource create(ConnectionConfig config)
         {
                 return switch (config.getType()) {
-                        case mysql, dm -> new PooledDataSource(config);
+                        case mysql, sqlite, dm -> new PooledDataSource(config);
                         case redis -> new RedisDataSource(config);
                 };
         }

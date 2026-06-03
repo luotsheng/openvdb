@@ -99,6 +99,7 @@ public class Assets
                 IMAGES.put("export", load("/assets/icons/export.png"));
                 IMAGES.put("redis", load("/assets/icons/redis.png"));
                 IMAGES.put("code", load("/assets/icons/code.png"));
+                IMAGES.put("sqlite", load("/assets/icons/sqlite.png"));
         }
 
         private static Image load(String path)

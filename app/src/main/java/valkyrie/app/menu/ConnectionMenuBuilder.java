@@ -17,18 +17,22 @@ public class ConnectionMenuBuilder
                 Menu newConnectionMenu = new Menu("新建连接");
 
                 MenuItem mysqlItem = new MenuItem(DbType.mysql.getAlias());
-                mysqlItem.setGraphic(Assets.use("mysql"));
+                mysqlItem.setGraphic(Assets.use(DbType.mysql.getIcon()));
                 mysqlItem.setOnAction(e -> openConnectionDialog(DbType.mysql));
 
+                MenuItem sqliteItem = new MenuItem(DbType.sqlite.getAlias());
+                sqliteItem.setGraphic(Assets.use(DbType.sqlite.getIcon()));
+                sqliteItem.setOnAction(e -> openConnectionDialog(DbType.sqlite));
+
                 MenuItem dmItem = new MenuItem(DbType.dm.getAlias());
-                dmItem.setGraphic(Assets.use("dm2"));
+                dmItem.setGraphic(Assets.use(DbType.dm.getIcon()));
                 dmItem.setOnAction(e -> openConnectionDialog(DbType.dm));
 
                 MenuItem redisItem = new MenuItem(DbType.redis.getAlias());
-                redisItem.setGraphic(Assets.use("redis"));
+                redisItem.setGraphic(Assets.use(DbType.redis.getIcon()));
                 redisItem.setOnAction(e -> openConnectionDialog(DbType.redis));
 
-                newConnectionMenu.getItems().addAll(mysqlItem, dmItem, redisItem);
+                newConnectionMenu.getItems().addAll(mysqlItem, sqliteItem, dmItem, redisItem);
 
                 return newConnectionMenu;
         }
