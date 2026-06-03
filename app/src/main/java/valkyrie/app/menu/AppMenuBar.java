@@ -47,11 +47,23 @@ public class AppMenuBar extends MenuBar
                 MenuItem pasteItem = new MenuItem("粘贴");
                 editMenu.getItems().addAll(copyItem, pasteItem);
 
+                // 代码菜单
+                Menu codeMenu = new Menu("代码");
+
+                // 运行菜单
+                Menu runMenu = new Menu("运行");
+
                 // 帮助菜单
                 Menu helpMenu = new Menu("帮助");
                 MenuItem aboutItem = new MenuItem("关于");
                 helpMenu.getItems().add(aboutItem);
 
-                getMenus().addAll(fileMenu, editMenu, helpMenu);
+                getMenus().addAll(
+                        fileMenu,
+                        editMenu,
+                        codeMenu,
+                        runMenu,
+                        helpMenu
+                );
         }
 }
