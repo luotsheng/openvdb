@@ -167,38 +167,43 @@ public class SQLiteDriver extends Driver
         }
 
         @Override
-        public void dropIndexKeys(Session session, String table, Collection<Index> selectionItems)
+        public void dropIndexKeys(Session session, String table, Collection<Index> indexes)
         {
-                throw new UnsupportedOperationException("SQLite 不支持删除索引约束，需要重建表");
-        }
-
-        @Override
-        public void dropPrimaryKey(Session session, String table)
-        {
-                throw new UnsupportedOperationException("SQLite 不支持删除主键约束，需要重建表");
-        }
-
-        @Override
-        public void addPrimaryKey(Session session, String table, Collection<Column> primaryKeys)
-        {
-                throw new UnsupportedOperationException("SQLite 不支持添加主键约束，需要重建表");
+                try {
+                        for (Index index : indexes)
+                                execute(session, "DROP INDEX IF EXISTS " + dialect.quote(index.getName()));
+                } catch (Exception e) {
+                        throw new UnsupportedOperationException("不支持删除 UNIQUE/PRIMARY KEY 约束索引，需要重建表");
+                }
         }
 
         @Override
         public void alterIndexKeys(Session session, String table, Collection<Index> indexes)
         {
-                throw new UnsupportedOperationException("SQLite 不支持索引类型，需要重建表");
-        }
-
-        @Override
-        public void alterChange(Session session, String table, Collection<Column> columns)
-        {
-                throw new UnsupportedOperationException("SQLite 不支持直接修改列，需要重建表");
+                throw new UnsupportedOperationException("不支持删除修改索引信息，需要重新建表");
         }
 
         @Override
         public void alterVisible(Session session, String table, Collection<Index> indexes)
         {
-                throw new UnsupportedOperationException("SQLite 不支持修改索引可见性");
+                throw new UnsupportedOperationException("不支持索引可见性(Invisible Index)");
+        }
+
+        @Override
+        public void dropPrimaryKey(Session session, String table)
+        {
+                throw new UnsupportedOperationException("不支持直接删除主键，需要重建表");
+        }
+
+        @Override
+        public void addPrimaryKey(Session session, String table, Collection<Column> primaryKeys)
+        {
+                throw new UnsupportedOperationException("不支持直接添加主键，需要重建表");
+        }
+
+        @Override
+        public void alterChange(Session session, String table, Collection<Column> columns)
+        {
+                throw new UnsupportedOperationException("不支持直接修改列定义，需要重建表");
         }
 }
