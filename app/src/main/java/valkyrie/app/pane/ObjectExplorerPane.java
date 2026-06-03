@@ -100,7 +100,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
                                         return;
                                 }
 
-                                TreeItem<String> filteredRoot = filterTree(treeView.getRoot(), newVal);
+                                TreeItem<String> filteredRoot = filterTree(root, newVal);
 
                                 filteredRoot.setExpanded(true);
                                 treeView.setRoot(filteredRoot);
@@ -116,8 +116,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
         }
 
         private TreeItem<String> filterTree(TreeItem<String> root, String keyword)
-        {
-                TreeItem<String> result = new TreeItem<>(root.getValue(), root.getGraphic());
+        {TreeItem<String> result = new TreeItem<>(root.getValue(), root.getGraphic());
 
                 for (TreeItem<String> child : root.getChildren()) {
                         TreeItem<String> filteredChild = filterTree(child, keyword);
