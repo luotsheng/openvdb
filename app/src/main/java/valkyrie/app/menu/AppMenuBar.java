@@ -28,13 +28,16 @@ public class AppMenuBar extends MenuBar
                 MenuItem newScriptEditorItem = new MenuItem("新建查询");
                 newScriptEditorItem.setOnAction(event -> Publisher.openScriptEditor());
 
-                MenuItem openItem = new MenuItem("打开");
+                MenuItem importItem = new MenuItem("导入");
+                MenuItem exportItem = new MenuItem("导出");
+
                 MenuItem exitItem = new MenuItem("退出");
                 fileMenu.getItems().addAll(
                         ConnectionMenuBuilder.buildMenu(),
                         newScriptEditorItem,
                         new SeparatorMenuItem(),
-                        openItem,
+                        importItem,
+                        exportItem,
                         new SeparatorMenuItem(),
                         exitItem);
 
