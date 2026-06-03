@@ -6,6 +6,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Tab;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.MouseButton;
+import valkyrie.app.Publisher;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.OpenScriptEditorPaneEvent;
 import valkyrie.app.event.workbench.OpenTabEvent;
@@ -37,7 +38,7 @@ public class AppToolBar extends ToolBar
 
                 Button newQueryButton = new VkIconButton("查询", "sql");
                 newQueryButton.setText("新建查询");
-                newQueryButton.setOnAction(event -> newScriptEditor());
+                newQueryButton.setOnAction(event -> Publisher.openScriptEditor());
 
                 Button debugButton = new VkIconButton("Debug", "code");
                 debugButton.setText("Debug Pane");
@@ -49,13 +50,6 @@ public class AppToolBar extends ToolBar
                         new VkSeparator(),
                         debugButton
                 );
-        }
-
-        private void newScriptEditor()
-        {
-                UIExplorerStatus instance = UIExplorerStatus.getInstance();
-                UIConnectionNode selectedConnection = instance.getSelectedConnection();
-                EventBus.publish(new OpenScriptEditorPaneEvent(null, selectedConnection));
         }
 
         private void debugPane()
