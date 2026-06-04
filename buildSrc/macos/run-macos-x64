@@ -1,4 +1,4 @@
 #!/bin/bash
 
-cd ../build/valkyrie.app/Contents/MacOS
-./valkyrie
+cd '../../build/Valkyrie DB.app/Contents/MacOS'
+./Valkyrie\ DB
