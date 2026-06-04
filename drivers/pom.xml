@@ -12,6 +12,7 @@
     <artifactId>drivers</artifactId>
 
     <properties>
+        <postgresql.version>42.7.11</postgresql.version>
         <sqlite.version>3.53.1.0</sqlite.version>
         <jedis.version>7.4.1</jedis.version>
         <dmdriver.version>8.1.2.79</dmdriver.version>
@@ -24,6 +25,11 @@
     </properties>
 
     <dependencies>
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <version>${postgresql.version}</version>
+        </dependency>
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>

@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static valkyrie.utils.TypeConverter.atobool;
+import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StaticLibrary.strempty;
 
 /**
  * 连接属性
@@ -67,6 +69,7 @@ public class ConnectionPropertyModel
         {
                 host.addListener(event -> update());
                 port.addListener(event -> update());
+                db.addListener(event -> update());
                 timezone.addListener(event -> update());
                 useSSL.addListener(event -> update());
                 tinyint1isBit.addListener(event -> update());
@@ -116,7 +119,11 @@ public class ConnectionPropertyModel
         {
                 if (getDbType() != DbType.sqlite) {
                         StringBuilder builder = new StringBuilder(
-                                String.format("jdbc:%s://%s:%s?", type.get(), host.get(), port.get())
+                                fmt("jdbc:%s://%s:%s%s?",
+                                        type.get(),
+                                        host.get(),
+                                        port.get(),
+                                        strempty(db.get()) ? "" : ("/" + db.get()))
                         );
 
                         jdbcQuery.put("timezone", timezone.get());
@@ -170,6 +177,18 @@ public class ConnectionPropertyModel
                 model.host.set("127.0.0.1");
                 model.port.set("3306");
                 model.username.set("root");
+                return model;
+        }
+
+        public static ConnectionPropertyModel createPostgresql()
+        {
+                ConnectionPropertyModel model = new ConnectionPropertyModel();
+                model.name.set("PostgreSQL");
+                model.type.set("postgresql");
+                model.db.set("postgres");
+                model.host.set("127.0.0.1");
+                model.port.set("5432");
+                model.username.set("postgres");
                 return model;
         }
 

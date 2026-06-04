@@ -3,6 +3,7 @@ package valkyrie.driver.api;
 import lombok.Getter;
 import valkyrie.driver.dm.DMDriver;
 import valkyrie.driver.mysql.MySQLDriver;
+import valkyrie.driver.postgresql.PostgresqlDriver;
 import valkyrie.driver.redis.RedisDriver;
 import valkyrie.driver.sqlite.SQLiteDriver;
 
@@ -18,6 +19,7 @@ import static valkyrie.utils.string.StaticLibrary.lowercase;
 public enum DbType
 {
         mysql("MySQL", "mysql", "com.mysql.cj.jdbc.Driver", true),
+        postgresql("Postgresql", "postgresql", "org.postgresql.Driver", true),
         sqlite("SQLite", "sqlite", "org.sqlite.JDBC", true),
         dm("达梦数据库", "dm2", "dm.jdbc.driver.DmDriver", true),
         redis("Redis", "redis", null, false),
@@ -45,6 +47,7 @@ public enum DbType
         {
                 return switch (this) {
                         case mysql -> new MySQLDriver(dataSource);
+                        case postgresql -> new PostgresqlDriver(dataSource);
                         case sqlite -> new SQLiteDriver(dataSource);
                         case dm -> new DMDriver(dataSource);
                         case redis -> new RedisDriver(dataSource);

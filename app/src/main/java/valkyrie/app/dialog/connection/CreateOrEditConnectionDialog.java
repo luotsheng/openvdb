@@ -56,6 +56,7 @@ public class CreateOrEditConnectionDialog extends Stage
 
                 this.newProperty = isUpdate ? newProperty : switch (dbType) {
                         case mysql -> ConnectionPropertyModel.createMySQL();
+                        case postgresql -> ConnectionPropertyModel.createPostgresql();
                         case sqlite -> ConnectionPropertyModel.createSQLite();
                         case dm -> ConnectionPropertyModel.createDM();
                         case redis -> ConnectionPropertyModel.createRedis();
@@ -83,7 +84,7 @@ public class CreateOrEditConnectionDialog extends Stage
                 tabPane.getTabs().add(generalTab);
 
                 switch (dbType) {
-                        case mysql, sqlite, dm -> {
+                        case mysql, postgresql, sqlite, dm -> {
                                 Tab advanceTab = new Tab("高级属性");
                                 advanceTab.setClosable(false);
                                 advanceTab.setContent(new ConnectionAdvancedPane(newProperty));

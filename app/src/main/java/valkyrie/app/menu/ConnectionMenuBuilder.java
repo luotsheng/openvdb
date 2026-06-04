@@ -20,6 +20,10 @@ public class ConnectionMenuBuilder
                 mysqlItem.setGraphic(Assets.use(DbType.mysql.getIcon()));
                 mysqlItem.setOnAction(e -> openConnectionDialog(DbType.mysql));
 
+                MenuItem postgresqlItem = new MenuItem(DbType.postgresql.getAlias());
+                postgresqlItem.setGraphic(Assets.use(DbType.postgresql.getIcon()));
+                postgresqlItem.setOnAction(e -> openConnectionDialog(DbType.postgresql));
+
                 MenuItem sqliteItem = new MenuItem(DbType.sqlite.getAlias());
                 sqliteItem.setGraphic(Assets.use(DbType.sqlite.getIcon()));
                 sqliteItem.setOnAction(e -> openConnectionDialog(DbType.sqlite));
@@ -32,7 +36,7 @@ public class ConnectionMenuBuilder
                 redisItem.setGraphic(Assets.use(DbType.redis.getIcon()));
                 redisItem.setOnAction(e -> openConnectionDialog(DbType.redis));
 
-                newConnectionMenu.getItems().addAll(mysqlItem, sqliteItem, dmItem, redisItem);
+                newConnectionMenu.getItems().addAll(mysqlItem, postgresqlItem, sqliteItem, dmItem, redisItem);
 
                 return newConnectionMenu;
         }
