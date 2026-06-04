@@ -1,0 +1,16 @@
+#!/bin/bash
+
+cd ..
+
+mvn clean install
+
+[ -e 'build' ] && rm -rf build
+
+jpackage --type app-image \
+  --name valkyrie \
+  --input launcher/target \
+  --main-jar launcher-v1.0.0-arch.1.jar \
+  --main-class "valkyrie.Launcher" \
+  --module-path "/Users/ekko/Documents/javafx-sdk-21.0.11/lib" \
+  --add-modules javafx.controls,javafx.web,javafx.fxml,javafx.graphics,java.sql,java.naming,jdk.crypto.ec \
+  --dest build

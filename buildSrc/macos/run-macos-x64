@@ -1,0 +1,4 @@
+#!/bin/bash
+
+cd ../build/valkyrie.app/Contents/MacOS
+./valkyrie
