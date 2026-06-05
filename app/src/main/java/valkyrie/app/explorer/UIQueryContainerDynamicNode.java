@@ -13,9 +13,18 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
 {
         private final MenuItem openOrCloseMenuItem = new MenuItem("展开列表");
 
+        static class UIInternalQueryNode extends UIDynamicNode
+        {
+                public UIInternalQueryNode(UIExplorerNode parent, DBNode dbNode)
+                {
+                        super(parent, dbNode);
+                }
+        }
+
         public UIQueryContainerDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
                 super(parent, dbNode);
+                String path = parent.getPath();
         }
 
         @Override
@@ -36,5 +45,11 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
                         openOrCloseMenuItem.setText("展开列表");
                         openOrCloseMenuItem.setOnAction(e -> Threads.runLater(() -> setExpanded(true)));
                 }
+        }
+
+        private void reloadQueryNode()
+        {
+                var children = getChildren();
+//                var scriptFiles = ScriptFileRepository.loadScriptFiles(connection.getName(), getName(), null);
         }
 }

@@ -21,6 +21,7 @@ import java.util.List;
 public abstract class UIExplorerNode extends TreeItem<String>
 {
         private final @Getter String label;
+        private final @Getter String path;
         private ContextMenu contextMenu;
         private Node oldGraphic;
         private final ProgressIndicator progressIndicator = Assets.newProgressIndicator();
@@ -29,6 +30,12 @@ public abstract class UIExplorerNode extends TreeItem<String>
         {
                 super(label);
                 this.label = label;
+
+                if (getParent() == null) {
+                        path = label;
+                } else {
+                        path = ((UIExplorerNode) getParent()).getPath() + "/" + label;
+                }
 
                 if (icon != null)
                         setGraphic(Assets.use(icon));
