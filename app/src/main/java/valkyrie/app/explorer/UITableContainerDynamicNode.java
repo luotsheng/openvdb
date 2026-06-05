@@ -2,8 +2,18 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import valkyrie.app.event.bus.EventBus;
+import valkyrie.app.event.workbench.CloseNavigationPaneEvent;
+import valkyrie.app.event.workbench.OpenNavigationPaneEvent;
+import valkyrie.app.pane.TableListPane;
 import valkyrie.app.utils.Threads;
+import valkyrie.driver.api.Table;
 import valkyrie.driver.api.node.DBNode;
+import valkyrie.driver.api.node.DBTableContainerNode;
+import valkyrie.utils.collection.Maps;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author Luo Tiansheng
@@ -13,11 +23,30 @@ public class UITableContainerDynamicNode extends UIDynamicNode
 {
         private final MenuItem openOrCloseMenuItem = new MenuItem("展开列表");
 
+        private final Map<String, UITableDynamicNode> tableDynamicNodes = Maps.newHashMap();
+
+        private final TableListPane overviewPane = new TableListPane(this);
+        private final OpenNavigationPaneEvent openNavigationPaneEvent = new OpenNavigationPaneEvent(this, overviewPane);
+        private final CloseNavigationPaneEvent closeNavigationPaneEvent = new CloseNavigationPaneEvent(this);
+
         public UITableContainerDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
                 super(parent, dbNode);
                 initializeChildrenFlag = true;
                 loadDynamicChildren(dbNode.getChildren());
+        }
+
+        @Override
+        protected List<UIDynamicNode> loadDynamicChildren(List<DBNode> dbNodes)
+        {
+                List<UIDynamicNode> dynamicNodes = super.loadDynamicChildren(dbNodes);
+
+                for (UIDynamicNode dynamicNode : dynamicNodes) {
+                        UITableDynamicNode tableNode = (UITableDynamicNode) dynamicNode;
+                        tableDynamicNodes.put(tableNode.getTable().getName(), tableNode);
+                }
+
+                return dynamicNodes;
         }
 
         @Override
@@ -38,5 +67,21 @@ public class UITableContainerDynamicNode extends UIDynamicNode
                         openOrCloseMenuItem.setText("展开列表");
                         openOrCloseMenuItem.setOnAction(e -> Threads.runLater(() -> setExpanded(true)));
                 }
+        }
+
+        @Override
+        public void onSelectedEvent(UIExplorerNode node)
+        {
+                EventBus.publish(openNavigationPaneEvent);
+        }
+
+        public UITableDynamicNode getTableDynamicNode(String tableName)
+        {
+                return tableDynamicNodes.get(tableName);
+        }
+
+        public List<Table> getTables()
+        {
+                return ((DBTableContainerNode) dbNode).getTables();
         }
 }

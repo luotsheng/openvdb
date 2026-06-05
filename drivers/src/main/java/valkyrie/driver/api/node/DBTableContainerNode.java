@@ -11,9 +11,10 @@ import java.util.List;
  * @author Luo Tiansheng
  * @since 2026/6/5
  */
+@SuppressWarnings("LombokGetterMayBeUsed")
 public class DBTableContainerNode extends DBNode
 {
-        private final List<Table> tables;
+        private final @Getter List<Table> tables;
 
         private final @Getter Session session;
 

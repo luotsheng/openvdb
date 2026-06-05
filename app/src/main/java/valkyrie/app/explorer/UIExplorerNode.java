@@ -22,7 +22,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
 {
         private final @Getter String label;
         private final @Getter UIExplorerNode explorerParent;
-        private ContextMenu contextMenu;
+        private @Getter ContextMenu contextMenu;
         private Node oldGraphic;
         private final ProgressIndicator progressIndicator = Assets.newProgressIndicator();
 
@@ -55,7 +55,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
                 return explorerParent.getPath() + "/" + label;
         }
 
-        protected void loadDynamicChildren(List<DBNode> dbNodes)
+        protected List<UIDynamicNode> loadDynamicChildren(List<DBNode> dbNodes)
         {
                 List<UIDynamicNode> dynamicNodes = new ArrayList<>();
 
@@ -63,6 +63,8 @@ public abstract class UIExplorerNode extends TreeItem<String>
                         dynamicNodes.add(UIDynamicNode.create(this, dbNode));
 
                 getChildren().addAll(dynamicNodes);
+
+                return dynamicNodes;
         }
 
         protected void useProgressIndicator(Runnable runnable)
