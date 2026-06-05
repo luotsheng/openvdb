@@ -2,6 +2,7 @@ package valkyrie.driver.dm;
 
 import valkyrie.driver.api.*;
 import valkyrie.driver.api.exception.DriverException;
+import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.utils.Captor;
@@ -43,17 +44,22 @@ public class DMDriver extends Driver
         }
 
         @Override
-        protected Dialect createDialect()
+        public List<DBNode> getNodeHierarchy()
         {
-                return new DMDialect();
+                List<DBNode> schemaNodes = Lists.newArrayList();
+                DMMetadataProvider metadataProvider = new DMMetadataProvider(this);
+                
+                List<String> schemas = getSchemas();
+                for (String schema : schemas)
+                        schemaNodes.add(new DMSchemaNode(schema, metadataProvider));
+
+                return schemaNodes;
         }
 
         @Override
-        public List<Catalog> getCatalogs()
+        protected Dialect createDialect()
         {
-                /* 达梦没有 CATALOG 概念，只有 SCHEMA 模式的概念，所以将 CATALOG
-                   映射为 SCHEMA 方便接口统一 */
-                return Lists.map(getSchemas(), Catalog::of);
+                return new DMDialect();
         }
 
         @Override

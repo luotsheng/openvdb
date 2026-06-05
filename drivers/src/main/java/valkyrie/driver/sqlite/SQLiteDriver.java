@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.driver.api.*;
 import valkyrie.driver.api.exception.DriverException;
+import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.utils.collection.Lists;
@@ -39,6 +40,12 @@ public class SQLiteDriver extends Driver
         public DbType getType()
         {
                 return DbType.sqlite;
+        }
+
+        @Override
+        public List<DBNode> getNodeHierarchy()
+        {
+                return List.of();
         }
 
         @Override

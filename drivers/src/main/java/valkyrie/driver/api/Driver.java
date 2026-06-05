@@ -2,6 +2,7 @@ package valkyrie.driver.api;
 
 import lombok.Getter;
 import valkyrie.driver.api.exception.DriverException;
+import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.api.sql.SQLExecutor;
 import valkyrie.driver.api.sql.SQLParsedStatement;
@@ -127,6 +128,8 @@ public abstract class Driver implements SQLExecutor
          * @see DbType
          */
         public abstract DbType getType();
+
+        public abstract List<DBNode> getNodeHierarchy();
 
         /**
          * 创建并返回当前环境适用的数据库方言实例。

@@ -4,6 +4,7 @@ import redis.clients.jedis.Jedis;
 import redis.clients.jedis.commands.ProtocolCommand;
 import valkyrie.driver.api.*;
 import valkyrie.driver.api.exception.DriverException;
+import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.utils.collection.Lists;
@@ -119,6 +120,12 @@ public class RedisDriver extends Driver
         public DbType getType()
         {
                 return DbType.redis;
+        }
+
+        @Override
+        public List<DBNode> getNodeHierarchy()
+        {
+                return List.of();
         }
 
         @Override

@@ -19,7 +19,7 @@ import valkyrie.core.repository.ConnectionRepository;
 import valkyrie.core.utils.JSONUtils;
 import valkyrie.driver.api.DbType;
 import valkyrie.driver.api.VkDataSource;
-import valkyrie.driver.api.VkDataSourceFactory;
+import valkyrie.driver.api.DriverFactory;
 import valkyrie.utils.exception.Causes;
 
 /**
@@ -131,7 +131,7 @@ public class CreateOrEditConnectionDialog extends Stage
         public void testConnection()
         {
                 var config = newProperty.toConnectionConfig();
-                try (VkDataSource ds = VkDataSourceFactory.create(config)) {
+                try (VkDataSource ds = DriverFactory.createDataSource(config)) {
                         status.setText("Connected successfully...");
                         status.setStyle("-fx-text-fill: #28a745;");
                 } catch (Exception e) {

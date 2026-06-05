@@ -145,39 +145,17 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 ContextMenu rootContextMenu = new ContextMenu();
 
                 Menu newConnectionMenu = ConnectionMenuBuilder.buildMenu();
-                MenuItem openAllItem = new MenuItem("打开所有连接");
-                openAllItem.setOnAction(event -> batchOpenConnection());
-                MenuItem closeAllItem = new MenuItem("关闭所有连接");
-                closeAllItem.setOnAction(event -> batchCloseConnection());
                 MenuItem refreshAllItem = new MenuItem("刷新连接");
 
                 rootContextMenu.getItems().addAll(
                         newConnectionMenu,
                         new SeparatorMenuItem(),
-                        openAllItem,
-                        closeAllItem,
                         refreshAllItem);
 
                 /* 设置事件 */
                 refreshAllItem.setOnAction(event -> refreshConnectionNode());
 
                 return rootContextMenu;
-        }
-
-        private void batchOpenConnection()
-        {
-                for (UIConnectionNode node : connections.values()) {
-                        if (!node.isOpen())
-                                ThreadPool.taskSubmit(() -> Platform.runLater(node::openConnection));
-                }
-        }
-
-        private void batchCloseConnection()
-        {
-                for (UIConnectionNode node : connections.values()) {
-                        if (node.isOpen())
-                                ThreadPool.taskSubmit(node::closeConnection);
-                }
         }
 
         private void setupContextMenu()
@@ -202,8 +180,8 @@ public class ObjectExplorerPane extends VBox implements EventListener
                                         return;
                                 }
 
-                                if (item instanceof UIExplorerNode vdbNode) {
-                                        vdbNode.showContextMenu(cell, x, y);
+                                if (item instanceof UIExplorerNode explorerNode) {
+                                        explorerNode.onContextMenuRequested(cell, x, y);
                                         return;
                                 }
                         }
@@ -217,11 +195,8 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 treeView.getSelectionModel().selectedIndexProperty()
                         .addListener((observable, oldVal, newVal) -> {
                                 TreeItem<String> treeItem = treeView.getTreeItem(newVal.intValue());
-
-                                if (treeItem instanceof UIExplorerNode vdbNode) {
-                                        vdbNode.onSelectedEvent(vdbNode);
-                                }
-
+                                if (treeItem instanceof UIExplorerNode node)
+                                        node.onSelectedEvent(node);
                         });
         }
 
@@ -240,7 +215,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
                                         if (!(item instanceof UIExplorerNode vdbNode))
                                                 return;
 
-                                        vdbNode.onMouseDoubleClickEvent(event);
+                                        vdbNode.onMouseDoubleClickEvent();
                                 }
 
                                 event.consume();
@@ -278,7 +253,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 if (!removeList.isEmpty()) {
                         for (UIConnectionNode connection : removeList) {
                                 children.remove(connection);
-                                connections.remove(connection.getName());
+                                connections.remove(connection.getLabel());
                         }
                 }
 
@@ -292,13 +267,11 @@ public class ObjectExplorerPane extends VBox implements EventListener
                         UIExplorerStatus.getInstance().addConnection(connection);
                         connections.put(profile.getName(), connection);
                         children.add(connection);
-
-                        connection.setDeleteRequestListener(children::remove);
                 }
 
                 Collator collator = Collator.getInstance(Locale.CHINA);
                 children.sort(Comparator.comparing(
-                        node -> ((UIConnectionNode) node).getName(), collator));
+                        node -> ((UIConnectionNode) node).getLabel(), collator));
         }
 
 }

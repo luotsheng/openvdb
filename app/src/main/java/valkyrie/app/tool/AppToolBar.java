@@ -8,11 +8,8 @@ import javafx.scene.control.ToolBar;
 import javafx.scene.input.MouseButton;
 import valkyrie.app.Publisher;
 import valkyrie.app.event.bus.EventBus;
-import valkyrie.app.event.workbench.OpenScriptEditorPaneEvent;
 import valkyrie.app.event.workbench.OpenTabEvent;
-import valkyrie.app.explorer.UIConnectionNode;
 import valkyrie.app.menu.ConnectionMenuBuilder;
-import valkyrie.app.model.UIExplorerStatus;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
 import valkyrie.blueprint.Blueprint;
@@ -38,7 +35,6 @@ public class AppToolBar extends ToolBar
 
                 Button newQueryButton = new VkIconButton("查询", "sql");
                 newQueryButton.setText("新建查询");
-                newQueryButton.setOnAction(event -> Publisher.openScriptEditor());
 
                 Button debugButton = new VkIconButton("Debug", "code");
                 debugButton.setText("Debug Pane");

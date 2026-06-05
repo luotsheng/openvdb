@@ -26,7 +26,6 @@ public class AppMenuBar extends MenuBar
                 Menu fileMenu = new Menu("文件");
 
                 MenuItem newScriptEditorItem = new MenuItem("新建查询");
-                newScriptEditorItem.setOnAction(event -> Publisher.openScriptEditor());
 
                 MenuItem importItem = new MenuItem("导入");
                 MenuItem exportItem = new MenuItem("导出");

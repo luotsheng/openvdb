@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.driver.api.*;
 import valkyrie.driver.api.exception.DriverException;
+import valkyrie.driver.api.node.DBCatalogNode;
+import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.api.sql.SQLCommandType;
 import valkyrie.driver.suggestion.Suggestion;
@@ -47,6 +49,19 @@ public class MySQLDriver extends Driver
         public DbType getType()
         {
                 return DbType.mysql;
+        }
+
+        @Override
+        public List<DBNode> getNodeHierarchy()
+        {
+                List<DBNode> catalogNodes = Lists.newArrayList();
+                MySQLMetadataProvider metadataProvider = new MySQLMetadataProvider(this);
+
+                List<Catalog> catalogs = getCatalogs();
+                for (Catalog catalog : catalogs)
+                        catalogNodes.add(new MySQLCatalogNode(catalog, metadataProvider));
+
+                return catalogNodes;
         }
 
         @Override
