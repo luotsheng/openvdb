@@ -125,7 +125,14 @@ public class RedisDriver extends Driver
         @Override
         public List<DBNode> getNodeHierarchy()
         {
-                return List.of();
+                List<DBNode> ret = Lists.newArrayList();
+                RedisMetadataProvider metadataProvider = new RedisMetadataProvider(this);
+
+                List<Catalog> catalogs = getCatalogs();
+                for (Catalog catalog : catalogs)
+                        ret.add(new RedisCatalogNode(catalog, metadataProvider));
+
+                return ret;
         }
 
         @Override
