@@ -3,7 +3,6 @@ package valkyrie.app.explorer;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import valkyrie.app.utils.Threads;
-import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.driver.api.node.DBNode;
 
 /**

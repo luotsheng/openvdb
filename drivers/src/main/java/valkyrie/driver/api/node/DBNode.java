@@ -1,6 +1,7 @@
 package valkyrie.driver.api.node;
 
 import lombok.Getter;
+import valkyrie.driver.api.Session;
 
 import java.util.ArrayList;
 import java.util.List;

@@ -36,6 +36,17 @@ public abstract class UIExplorerNode extends TreeItem<String>
                         setGraphic(Assets.use(icon));
         }
 
+        public UIExplorerNode getRoot()
+        {
+                UIExplorerNode root = explorerParent;
+
+                while (root.getExplorerParent() != null) {
+                        root = root.getExplorerParent();
+                }
+
+                return root;
+        }
+
         public String getPath()
         {
                 if (explorerParent == null)

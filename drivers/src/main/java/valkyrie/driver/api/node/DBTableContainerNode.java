@@ -1,5 +1,7 @@
 package valkyrie.driver.api.node;
 
+import lombok.Getter;
+import valkyrie.driver.api.Session;
 import valkyrie.driver.api.Table;
 import valkyrie.utils.collection.Lists;
 
@@ -13,10 +15,18 @@ public class DBTableContainerNode extends DBNode
 {
         private final List<Table> tables;
 
+        private final @Getter Session session;
+
         public DBTableContainerNode(DBNode parent, List<Table> tables)
         {
                 super(parent, "数据表", DBNodeKind.TABLE, null);
                 this.tables = tables;
+
+                session = switch (parent) {
+                        case DBCatalogNode catalogNode -> catalogNode.getSession();
+                        case DBSchemaNode schemaNode -> schemaNode.getSession();
+                        default -> null;
+                };
         }
 
         @Override

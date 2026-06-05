@@ -1,5 +1,6 @@
 package valkyrie.app.explorer;
 
+import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.node.*;
 
 /**
@@ -64,5 +65,10 @@ public class UIDynamicNode extends UIExplorerNode
 
                 getChildren().clear();
                 initializeChildrenFlag = false;
+        }
+
+        public Driver getDriver()
+        {
+                return ((UIConnectionNode) getRoot()).getDriver();
         }
 }

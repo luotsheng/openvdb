@@ -2,7 +2,7 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.SeparatorMenuItem;
+import lombok.Getter;
 import lombok.Setter;
 import valkyrie.app.dialog.connection.CreateOrEditConnectionDialog;
 import valkyrie.app.model.ConnectionPropertyModel;
@@ -14,18 +14,18 @@ import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.DriverFactory;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.utils.io.IOUtils;
-
-import javax.naming.Context;
 import java.util.List;
 
 /**
+ * Root 节点
+ *
  * @author Luo Tiansheng
  * @since 2026/6/5
  */
 public class UIConnectionNode extends UIExplorerNode
 {
         private final ConnectionPropertyModel propertyModel;
-        private Driver driver;
+        private @Getter Driver driver;
         private boolean connectFlag = false;
 
         private final MenuItem connectOrDisconnectMenuItem = new MenuItem("打开连接");

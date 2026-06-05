@@ -7,6 +7,7 @@ import valkyrie.driver.api.Session;
  * @author Luo Tiansheng
  * @since 2026/6/5
  */
+@SuppressWarnings("LombokGetterMayBeUsed")
 public abstract class DBSchemaNode extends DBNode
 {
         private final @Getter Session session;

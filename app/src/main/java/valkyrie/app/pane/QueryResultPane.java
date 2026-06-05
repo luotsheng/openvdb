@@ -30,10 +30,7 @@ public class QueryResultPane extends BorderPane
         private final Table table;
         private final ResultViewPane resultViewPane;
 
-        public QueryResultPane(Tab owner,
-                               Session session,
-                               Driver driver,
-                               Table table)
+        public QueryResultPane(Tab owner, Session session, Driver driver, Table table)
         {
                 this.owner = owner;
                 this.session = session;
