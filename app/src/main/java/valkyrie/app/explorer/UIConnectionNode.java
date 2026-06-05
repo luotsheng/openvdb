@@ -2,6 +2,7 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TreeView;
 import lombok.Getter;
 import lombok.Setter;
 import valkyrie.app.dialog.connection.CreateOrEditConnectionDialog;
@@ -17,13 +18,14 @@ import valkyrie.utils.io.IOUtils;
 import java.util.List;
 
 /**
- * Root 节点
+ * Explorer Node 体系下的 Root 节点
  *
  * @author Luo Tiansheng
  * @since 2026/6/5
  */
 public class UIConnectionNode extends UIExplorerNode
 {
+        private final @Getter TreeView<String> treeView;
         private final ConnectionPropertyModel propertyModel;
         private @Getter Driver driver;
         private boolean connectFlag = false;
@@ -37,9 +39,10 @@ public class UIConnectionNode extends UIExplorerNode
                 void onDeleteRequest(UIConnectionNode node);
         }
 
-        public UIConnectionNode(ConnectionPropertyModel propertyModel)
+        public UIConnectionNode(TreeView<String> treeView, ConnectionPropertyModel propertyModel)
         {
                 super(null, propertyModel.getName(), propertyModel.getDbType().getIcon());
+                this.treeView = treeView;
                 this.propertyModel = propertyModel;
         }
 

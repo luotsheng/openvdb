@@ -263,7 +263,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
 
                         ConnectionPropertyModel propertyModel = new ConnectionPropertyModel(profile);
 
-                        UIConnectionNode connection = new UIConnectionNode(propertyModel);
+                        UIConnectionNode connection = new UIConnectionNode(treeView, propertyModel);
                         UIExplorerStatus.getInstance().addConnection(connection);
                         connections.put(profile.getName(), connection);
                         children.add(connection);

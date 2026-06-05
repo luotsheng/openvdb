@@ -36,7 +36,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
                         setGraphic(Assets.use(icon));
         }
 
-        public UIExplorerNode getRoot()
+        public UIConnectionNode getRoot()
         {
                 UIExplorerNode root = explorerParent;
 
@@ -44,7 +44,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
                         root = root.getExplorerParent();
                 }
 
-                return root;
+                return (UIConnectionNode) root;
         }
 
         public String getPath()

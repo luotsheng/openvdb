@@ -2,7 +2,9 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import lombok.Getter;
+import valkyrie.app.Application;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.OpenTableDataPaneEvent;
 import valkyrie.app.event.workbench.OpenTableDesignerPaneEvent;
@@ -17,14 +19,15 @@ import valkyrie.driver.api.node.DBTableNode;
  * @author Luo Tiansheng
  * @since 2026/6/5
  */
-@SuppressWarnings("LombokGetterMayBeUsed")
 public class UITableDynamicNode extends UIDynamicNode
 {
+        private final UITableContainerDynamicNode tableContainerDynamicNode;
         private final @Getter Session session;
 
         public UITableDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
                 super(parent, dbNode);
+                this.tableContainerDynamicNode = (UITableContainerDynamicNode) parent;
                 this.session = ((DBTableContainerNode) dbNode.getParent()).getSession();
         }
 
@@ -32,11 +35,33 @@ public class UITableDynamicNode extends UIDynamicNode
         public ContextMenu configureContextMenu()
         {
                 VkContextMenu contextMenu = new VkContextMenu();
+
                 MenuItem openMenuItem = new MenuItem("打开表");
                 openMenuItem.setOnAction(e -> openDataPane());
+
                 MenuItem designMenuItem = new MenuItem("设计表");
                 designMenuItem.setOnAction(e -> openDesignTablePane());
-                contextMenu.getItems().addAll(openMenuItem, designMenuItem);
+
+                MenuItem copyTableNameItem = new MenuItem("复制表名");
+                copyTableNameItem.setOnAction(event -> Application.copyToClipboard(getTable().getName()));
+
+                MenuItem copyCreateTableDLLItem = new MenuItem("复制建表语句");
+                copyCreateTableDLLItem.setOnAction(event -> Application.copyToClipboard(
+                        getDriver().showCreateTable(session, getTable().getName())));
+
+                MenuItem refreshTableItem = new MenuItem("刷新列表");
+                refreshTableItem.setOnAction(e -> tableContainerDynamicNode.refresh());
+
+                contextMenu.getItems().addAll(
+                        openMenuItem,
+                        designMenuItem,
+                        new SeparatorMenuItem(),
+                        copyTableNameItem,
+                        copyCreateTableDLLItem,
+                        new SeparatorMenuItem(),
+                        refreshTableItem
+                );
+
                 return contextMenu;
         }
 

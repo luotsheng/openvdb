@@ -69,6 +69,6 @@ public class UIDynamicNode extends UIExplorerNode
 
         public Driver getDriver()
         {
-                return ((UIConnectionNode) getRoot()).getDriver();
+                return getRoot().getDriver();
         }
 }
