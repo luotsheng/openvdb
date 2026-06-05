@@ -55,11 +55,10 @@ public class UIConnectionNode extends UIExplorerNode
 
                 contextMenu.getItems().addAll(
                         connectOrDisconnectMenuItem,
-                        new SeparatorMenuItem(),
                         editMenuItem,
-                        new SeparatorMenuItem(),
                         deleteMenuItem
                 );
+
                 return contextMenu;
         }
 

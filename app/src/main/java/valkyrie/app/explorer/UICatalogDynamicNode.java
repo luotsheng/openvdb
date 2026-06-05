@@ -2,6 +2,7 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.driver.api.node.DBNode;
 
@@ -11,6 +12,8 @@ import valkyrie.driver.api.node.DBNode;
  */
 public class UICatalogDynamicNode extends UIDynamicNode
 {
+        private final MenuItem openOrCloseMenuItem = new MenuItem("打开数据库");
+
         public UICatalogDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
                 super(parent, dbNode);
@@ -19,12 +22,20 @@ public class UICatalogDynamicNode extends UIDynamicNode
         @Override
         public ContextMenu configureContextMenu()
         {
-                VkContextMenu contextMenu = new VkContextMenu();
-                MenuItem openDatabaseItem = new MenuItem("打开数据库");
-                openDatabaseItem.setOnAction(event -> expand());
-                MenuItem closeDatabaseItem = new MenuItem("关闭数据库");
-                closeDatabaseItem.setOnAction(event -> unexpand());
-                contextMenu.getItems().addAll(openDatabaseItem, closeDatabaseItem);
+                ContextMenu contextMenu = new ContextMenu();
+                contextMenu.getItems().addAll(openOrCloseMenuItem);
                 return contextMenu;
+        }
+
+        @Override
+        public void onContextMenuRequested(ContextMenu contextMenu)
+        {
+                if (initializeChildrenFlag) {
+                        openOrCloseMenuItem.setText("关闭数据库");
+                        openOrCloseMenuItem.setOnAction(e -> unexpand());
+                } else {
+                        openOrCloseMenuItem.setText("打开数据库");
+                        openOrCloseMenuItem.setOnAction(e -> Threads.runLater(this::expand));
+                }
         }
 }

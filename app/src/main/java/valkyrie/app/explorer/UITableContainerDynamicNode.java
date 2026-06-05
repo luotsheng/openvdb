@@ -2,6 +2,7 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.driver.api.node.DBNode;
 
@@ -11,6 +12,8 @@ import valkyrie.driver.api.node.DBNode;
  */
 public class UITableContainerDynamicNode extends UIDynamicNode
 {
+        private final MenuItem openOrCloseMenuItem = new MenuItem("展开列表");
+
         public UITableContainerDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
                 super(parent, dbNode);
@@ -21,12 +24,20 @@ public class UITableContainerDynamicNode extends UIDynamicNode
         @Override
         public ContextMenu configureContextMenu()
         {
-                VkContextMenu contextMenu = new VkContextMenu();
-                MenuItem openDatabaseItem = new MenuItem("展开列表");
-                openDatabaseItem.setOnAction(event -> expand(false));
-                MenuItem closeDatabaseItem = new MenuItem("收起列表");
-                closeDatabaseItem.setOnAction(event -> unexpand());
-                contextMenu.getItems().addAll(openDatabaseItem, closeDatabaseItem);
+                ContextMenu contextMenu = new ContextMenu();
+                contextMenu.getItems().addAll(openOrCloseMenuItem);
                 return contextMenu;
+        }
+
+        @Override
+        public void onContextMenuRequested(ContextMenu contextMenu)
+        {
+                if (isExpanded()) {
+                        openOrCloseMenuItem.setText("收起列表");
+                        openOrCloseMenuItem.setOnAction(e -> Threads.runLater(() -> setExpanded(false)));
+                } else {
+                        openOrCloseMenuItem.setText("展开列表");
+                        openOrCloseMenuItem.setOnAction(e -> Threads.runLater(() -> setExpanded(true)));
+                }
         }
 }
