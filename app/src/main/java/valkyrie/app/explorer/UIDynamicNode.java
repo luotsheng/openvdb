@@ -1,9 +1,6 @@
 package valkyrie.app.explorer;
 
-import valkyrie.driver.api.node.DBNode;
-import valkyrie.driver.api.node.DBTableContainerNode;
-
-import java.util.List;
+import valkyrie.driver.api.node.*;
 
 /**
  * @author Luo Tiansheng
@@ -18,36 +15,55 @@ public class UIDynamicNode extends UIExplorerNode
         private final UIExplorerNode parent;
         private final DBNode dbNode;
 
-        private boolean initializeFlag = false;
+        protected boolean initializeChildrenFlag = false;
 
-        public UIDynamicNode(UIExplorerNode parent, DBNode dbNode)
+        protected UIDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
                 super(dbNode.getLabel(), dbNode.getKind().getIcon());
                 this.parent = parent;
                 this.dbNode = dbNode;
+        }
 
-                if (dbNode instanceof DBTableContainerNode) {
-                        initializeFlag = true;
-                        expandItem();
-                }
+        public static UIDynamicNode create(UIExplorerNode parent, DBNode dbNode)
+        {
+                return switch (dbNode) {
+                        case DBCatalogNode ignored -> new UICatalogDynamicNode(parent, dbNode);
+                        case DBSchemaNode ignored -> new UISchemaDynamicNode(parent, dbNode);
+                        case DBTableContainerNode ignored -> new UITableContainerDynamicNode(parent, dbNode);
+                        case DBTableNode ignored -> new UITableDynamicNode(parent, dbNode);
+                        default -> new UIDynamicNode(parent, dbNode);
+                };
         }
 
         @Override
         public void onMouseDoubleClickEvent()
         {
-                if (initializeFlag)
+                if (initializeChildrenFlag)
                         return;
-
-                useProgressIndicator(() -> {
-                        expandItem();
-                        setExpanded(true);
-                        initializeFlag = true;
-                });
+                useProgressIndicator(this::expand);
         }
 
-        private void expandItem()
+        protected void expand()
+        {
+                expand(true);
+        }
+
+        protected void expand(boolean isExpanded)
         {
                 if (dbNode.hasChildren())
                         loadDynamicChildren(dbNode.getChildren());
+                setExpanded(isExpanded);
+                initializeChildrenFlag = true;
+        }
+
+
+
+        protected void unexpand()
+        {
+                if (!initializeChildrenFlag)
+                        return;
+
+                getChildren().clear();
+                initializeChildrenFlag = false;
         }
 }

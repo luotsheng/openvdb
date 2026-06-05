@@ -41,7 +41,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
                 List<UIDynamicNode> dynamicNodes = new ArrayList<>();
 
                 for (DBNode dbNode : dbNodes)
-                        dynamicNodes.add(new UIDynamicNode(this, dbNode));
+                        dynamicNodes.add(UIDynamicNode.create(this, dbNode));
 
                 getChildren().addAll(dynamicNodes);
         }
