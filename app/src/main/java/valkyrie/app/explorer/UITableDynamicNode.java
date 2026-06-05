@@ -5,6 +5,7 @@ import javafx.scene.control.MenuItem;
 import lombok.Getter;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.OpenTableDataPaneEvent;
+import valkyrie.app.event.workbench.OpenTableDesignerPaneEvent;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.driver.api.Session;
 import valkyrie.driver.api.Table;
@@ -34,6 +35,7 @@ public class UITableDynamicNode extends UIDynamicNode
                 MenuItem openMenuItem = new MenuItem("打开表");
                 openMenuItem.setOnAction(e -> openDataPane());
                 MenuItem designMenuItem = new MenuItem("设计表");
+                designMenuItem.setOnAction(e -> openDesignTablePane());
                 contextMenu.getItems().addAll(openMenuItem, designMenuItem);
                 return contextMenu;
         }
@@ -52,5 +54,10 @@ public class UITableDynamicNode extends UIDynamicNode
         public void openDataPane()
         {
                 EventBus.publish(new OpenTableDataPaneEvent(this));
+        }
+
+        public void openDesignTablePane()
+        {
+                EventBus.publish(new OpenTableDesignerPaneEvent(this));
         }
 }
