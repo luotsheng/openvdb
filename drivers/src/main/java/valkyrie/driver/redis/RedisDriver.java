@@ -38,7 +38,7 @@ public class RedisDriver extends Driver
          * @param dataSource 数据源，用于获取数据库连接（不能为 {@code null}）
          * @throws NullPointerException 如果 {@code dataSource} 为 {@code null}
          */
-        public RedisDriver(DataSource dataSource) {
+        public RedisDriver(VkDataSource dataSource) {
                 super(dataSource);
                 this.jedis = ((RedisDataSource) dataSource).getJedis();
         }

@@ -32,7 +32,7 @@ import static valkyrie.utils.string.StaticLibrary.*;
 @SuppressWarnings("SqlSourceToSinkFlow")
 public class DMDriver extends Driver
 {
-        public DMDriver(DataSource dataSource)
+        public DMDriver(VkDataSource dataSource)
         {
                 super(dataSource);
         }

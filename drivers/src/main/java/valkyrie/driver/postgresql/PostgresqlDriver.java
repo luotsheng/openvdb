@@ -29,7 +29,7 @@ public class PostgresqlDriver extends Driver
 {
         private static final Logger LOG = LoggerFactory.getLogger(PostgresqlDriver.class);
 
-        public PostgresqlDriver(DataSource dataSource)
+        public PostgresqlDriver(VkDataSource dataSource)
         {
                 super(dataSource);
         }

@@ -1,6 +1,7 @@
 package valkyrie.app.explorer;
 
 import valkyrie.driver.api.node.DBNode;
+import valkyrie.driver.api.node.DBTableContainerNode;
 
 import java.util.List;
 
@@ -17,26 +18,36 @@ public class UIDynamicNode extends UIExplorerNode
         private final UIExplorerNode parent;
         private final DBNode dbNode;
 
+        private boolean initializeFlag = false;
+
         public UIDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
                 super(dbNode.getLabel(), dbNode.getKind().getIcon());
                 this.parent = parent;
                 this.dbNode = dbNode;
-                parent.getChildren().add(this);
+
+                if (dbNode instanceof DBTableContainerNode) {
+                        initializeFlag = true;
+                        expandItem();
+                }
         }
 
         @Override
         public void onMouseDoubleClickEvent()
         {
-                if (dbNode.hasChildren()) {
-                        getChildren().clear();
-                        buildTreeItem(dbNode.getChildren());
-                }
+                if (initializeFlag)
+                        return;
+
+                useProgressIndicator(() -> {
+                        expandItem();
+                        setExpanded(true);
+                        initializeFlag = true;
+                });
         }
 
-        public void buildTreeItem(List<DBNode> dbNodes)
+        private void expandItem()
         {
-                for (DBNode dbNode : dbNodes)
-                        new UIDynamicNode(this, dbNode);
+                if (dbNode.hasChildren())
+                        loadDynamicChildren(dbNode.getChildren());
         }
 }

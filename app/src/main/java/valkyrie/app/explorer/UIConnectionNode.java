@@ -1,11 +1,15 @@
 package valkyrie.app.explorer;
 
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import valkyrie.app.model.ConnectionPropertyModel;
 import valkyrie.driver.api.ConnectionConfig;
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.DriverFactory;
 import valkyrie.driver.api.node.DBNode;
+import valkyrie.utils.io.IOUtils;
 
+import javax.naming.Context;
 import java.util.List;
 
 /**
@@ -15,11 +19,25 @@ import java.util.List;
 public class UIConnectionNode extends UIExplorerNode
 {
         private final ConnectionPropertyModel propertyModel;
+        private Driver driver;
+        private boolean connectFlag = false;
 
         public UIConnectionNode(ConnectionPropertyModel propertyModel)
         {
                 super(propertyModel.getName(), propertyModel.getDbType().getIcon());
                 this.propertyModel = propertyModel;
+        }
+
+        @Override
+        public ContextMenu configureContextMenu()
+        {
+                ContextMenu contextMenu = new ContextMenu();
+                MenuItem connectItem = new MenuItem("打开连接");
+                connectItem.setOnAction(e -> connect());
+                MenuItem disconnectItem = new MenuItem("关闭连接");
+                disconnectItem.setOnAction(e -> disconnect());
+                contextMenu.getItems().addAll(connectItem, disconnectItem);
+                return contextMenu;
         }
 
         @Override
@@ -30,20 +48,29 @@ public class UIConnectionNode extends UIExplorerNode
 
         public void connect()
         {
-                ConnectionConfig connectionConfig = propertyModel.toConnectionConfig();
-                Driver driver = DriverFactory.create(connectionConfig);
-                List<DBNode> nodeHierarchy = driver.getNodeHierarchy();
-                buildTreeItem(nodeHierarchy);
+                if (connectFlag)
+                        return;
+
+                useProgressIndicator(() -> {
+                        ConnectionConfig connectionConfig = propertyModel.toConnectionConfig();
+                        driver = DriverFactory.create(connectionConfig);
+                        List<DBNode> nodeHierarchy = driver.getNodeHierarchy();
+                        loadDynamicChildren(nodeHierarchy);
+                        setExpanded(true);
+                        connectFlag = true;
+                });
         }
 
         public void disconnect()
         {
+                if (!connectFlag)
+                        return;
 
-        }
+                setExpanded(false);
+                getChildren().clear();
 
-        public void buildTreeItem(List<DBNode> dbNodes)
-        {
-                for (DBNode dbNode : dbNodes)
-                        new UIDynamicNode(this, dbNode);
+                IOUtils.closeQuietly(driver.getDataSource());
+
+                connectFlag = false;
         }
 }

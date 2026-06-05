@@ -60,7 +60,7 @@ public abstract class Driver implements SQLExecutor
          * <p>
          * 该引用为 {@code protected}，允许子类直接访问以支持更灵活的连接管理。
          */
-        protected final DataSource dataSource;
+        protected final @Getter VkDataSource dataSource;
 
         /**
          * 执行任务列表
@@ -75,14 +75,12 @@ public abstract class Driver implements SQLExecutor
         /**
          * 数据库产品元数据
          */
-        @Getter
-        protected ProductMetaData productMetaData;
+        protected @Getter ProductMetaData productMetaData;
 
         /**
          * 数据库方言转换器
          */
-        @Getter
-        protected final Dialect dialect;
+        protected final @Getter Dialect dialect;
 
         /**
          * 构造一个新的驱动实例。
@@ -90,7 +88,7 @@ public abstract class Driver implements SQLExecutor
          * @param dataSource 数据源，用于获取数据库连接（不能为 {@code null}）
          * @throws NullPointerException 如果 {@code dataSource} 为 {@code null}
          */
-        public Driver(DataSource dataSource)
+        public Driver(VkDataSource dataSource)
         {
                 this.dataSource = Objects.requireNonNull(dataSource, "DataSource must not be null");
 

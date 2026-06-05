@@ -31,7 +31,7 @@ public class SQLiteDriver extends Driver
 {
         private static final Logger LOG = LoggerFactory.getLogger(SQLiteDriver.class);
 
-        public SQLiteDriver(DataSource dataSource)
+        public SQLiteDriver(VkDataSource dataSource)
         {
                 super(dataSource);
         }

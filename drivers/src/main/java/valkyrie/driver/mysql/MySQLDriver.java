@@ -40,7 +40,7 @@ public class MySQLDriver extends Driver
 {
         private static final Logger LOG = LoggerFactory.getLogger(MySQLDriver.class);
 
-        public MySQLDriver(DataSource dataSource)
+        public MySQLDriver(VkDataSource dataSource)
         {
                 super(dataSource);
         }

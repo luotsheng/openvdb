@@ -43,7 +43,7 @@ public enum DbType
                 return valueOf(lowercase(type));
         }
 
-        public Driver createDriver(DataSource dataSource)
+        public Driver createDriver(VkDataSource dataSource)
         {
                 return switch (this) {
                         case mysql -> new MySQLDriver(dataSource);
