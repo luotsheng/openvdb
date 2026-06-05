@@ -22,7 +22,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
 {
         private final @Getter String label;
         private final @Getter UIExplorerNode explorerParent;
-        private @Getter ContextMenu contextMenu;
+        private ContextMenu contextMenu;
         private Node oldGraphic;
         private final ProgressIndicator progressIndicator = Assets.newProgressIndicator();
 
@@ -53,6 +53,13 @@ public abstract class UIExplorerNode extends TreeItem<String>
                         return label;
 
                 return explorerParent.getPath() + "/" + label;
+        }
+
+        public ContextMenu getContextMenu()
+        {
+                if (contextMenu == null)
+                        contextMenu = configureContextMenu();
+                return contextMenu;
         }
 
         protected List<UIDynamicNode> loadDynamicChildren(List<DBNode> dbNodes)
@@ -93,14 +100,11 @@ public abstract class UIExplorerNode extends TreeItem<String>
 
         public void showContextMenu(Node anchor, double x, double y)
         {
-                if (contextMenu == null)
-                        contextMenu = configureContextMenu();
+                ContextMenu contextMenu = getContextMenu();
 
                 if (contextMenu != null) {
                         onContextMenuRequested(contextMenu);
-
-                        if (contextMenu != null)
-                                contextMenu.show(anchor, x, y);
+                        contextMenu.show(anchor, x, y);
                 }
         }
 
