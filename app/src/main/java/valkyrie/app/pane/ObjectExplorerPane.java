@@ -181,7 +181,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
                                 }
 
                                 if (item instanceof UIExplorerNode explorerNode) {
-                                        explorerNode.onContextMenuRequested(cell, x, y);
+                                        explorerNode.showContextMenu(cell, x, y);
                                         return;
                                 }
                         }
@@ -267,6 +267,8 @@ public class ObjectExplorerPane extends VBox implements EventListener
                         UIExplorerStatus.getInstance().addConnection(connection);
                         connections.put(profile.getName(), connection);
                         children.add(connection);
+
+                        connection.setDeleteRequestListener(children::remove);
                 }
 
                 Collator collator = Collator.getInstance(Locale.CHINA);

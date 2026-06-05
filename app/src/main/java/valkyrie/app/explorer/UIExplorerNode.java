@@ -21,7 +21,7 @@ import java.util.List;
 public abstract class UIExplorerNode extends TreeItem<String>
 {
         private final @Getter String label;
-        private final ContextMenu contextMenu;
+        private ContextMenu contextMenu;
         private Node oldGraphic;
         private final ProgressIndicator progressIndicator = Assets.newProgressIndicator();
 
@@ -32,8 +32,6 @@ public abstract class UIExplorerNode extends TreeItem<String>
 
                 if (icon != null)
                         setGraphic(Assets.use(icon));
-
-                contextMenu = configureContextMenu();
         }
 
         protected void loadDynamicChildren(List<DBNode> dbNodes)
@@ -70,13 +68,25 @@ public abstract class UIExplorerNode extends TreeItem<String>
                 return null;
         }
 
+        public void showContextMenu(Node anchor, double x, double y)
+        {
+                if (contextMenu == null)
+                        contextMenu = configureContextMenu();
+
+                if (contextMenu != null) {
+                        onContextMenuRequested(contextMenu);
+
+                        if (contextMenu != null)
+                                contextMenu.show(anchor, x, y);
+                }
+        }
+
         /////////////////////////////////////////////////////////////////
         ///                           Event                           ///
         /////////////////////////////////////////////////////////////////
-        public void onContextMenuRequested(Node anchor, double x, double y)
+        public void onContextMenuRequested(ContextMenu contextMenu)
         {
-                if (contextMenu != null)
-                        contextMenu.show(anchor, x, y);
+                /* DO NOTHING... */
         }
 
         public void onMouseDoubleClickEvent()
