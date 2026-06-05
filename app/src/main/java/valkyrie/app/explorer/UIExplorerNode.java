@@ -21,24 +21,27 @@ import java.util.List;
 public abstract class UIExplorerNode extends TreeItem<String>
 {
         private final @Getter String label;
-        private final @Getter String path;
+        private final @Getter UIExplorerNode explorerParent;
         private ContextMenu contextMenu;
         private Node oldGraphic;
         private final ProgressIndicator progressIndicator = Assets.newProgressIndicator();
 
-        public UIExplorerNode(String label, String icon)
+        public UIExplorerNode(UIExplorerNode parent, String label, String icon)
         {
                 super(label);
+                this.explorerParent = parent;
                 this.label = label;
-
-                if (getParent() == null) {
-                        path = label;
-                } else {
-                        path = ((UIExplorerNode) getParent()).getPath() + "/" + label;
-                }
 
                 if (icon != null)
                         setGraphic(Assets.use(icon));
+        }
+
+        public String getPath()
+        {
+                if (explorerParent == null)
+                        return label;
+
+                return explorerParent.getPath() + "/" + label;
         }
 
         protected void loadDynamicChildren(List<DBNode> dbNodes)

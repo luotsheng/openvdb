@@ -13,13 +13,12 @@ import valkyrie.driver.api.node.*;
 public class UIDynamicNode extends UIExplorerNode
 {
         private final UIExplorerNode parent;
-        private final DBNode dbNode;
-
+        protected final DBNode dbNode;
         protected boolean initializeChildrenFlag = false;
 
         protected UIDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
-                super(dbNode.getLabel(), dbNode.getKind().getIcon());
+                super(parent, dbNode.getLabel(), dbNode.getKind().getIcon());
                 this.parent = parent;
                 this.dbNode = dbNode;
         }
@@ -57,8 +56,6 @@ public class UIDynamicNode extends UIExplorerNode
                 setExpanded(isExpanded);
                 initializeChildrenFlag = true;
         }
-
-
 
         protected void unexpand()
         {

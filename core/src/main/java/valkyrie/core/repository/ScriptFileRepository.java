@@ -22,13 +22,9 @@ import static valkyrie.utils.string.StaticLibrary.strnempty;
  */
 public class ScriptFileRepository
 {
-        public static ScriptFile save(String conn,
-                                String catalog,
-                                String schema,
-                                String name,
-                                String content)
+        public static ScriptFile save(String path, String name, String content)
         {
-                return save(new File(getPath(conn, catalog, schema, name) + ".sql"), content);
+                return save(new File(getPath(path, name) + ".sql"), content);
         }
 
         @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -58,13 +54,11 @@ public class ScriptFileRepository
                 return new ScriptFile(newFile);
         }
 
-        public static List<ScriptFile> loadScriptFiles(String conn,
-                                                       String catalog,
-                                                       String schema)
+        public static List<ScriptFile> loadScriptFiles(String basePath)
         {
                 List<ScriptFile> models = new ArrayList<>();
 
-                File sqlDir = new File(getPath(conn, catalog, schema, null));
+                File sqlDir = new File(getPath(basePath, null));
 
                 File[] files = sqlDir.listFiles();
                 if (files == null)
@@ -80,15 +74,9 @@ public class ScriptFileRepository
         }
 
         @SuppressWarnings("SameParameterValue")
-        private static String getPath(String conn,
-                                      String catalog,
-                                      String schema,
-                                      String name)
+        private static String getPath(String basePath, String name)
         {
-                var baseDir = Users.connectionDir + "/" + conn + "/" + catalog;
-
-                if (strnempty(schema))
-                        baseDir += "/" + schema;
+                var baseDir = Users.connectionDir + "/" + basePath;
 
                 if (strnempty(name))
                         baseDir += "/" + name;

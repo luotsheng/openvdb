@@ -39,7 +39,7 @@ public class UIConnectionNode extends UIExplorerNode
 
         public UIConnectionNode(ConnectionPropertyModel propertyModel)
         {
-                super(propertyModel.getName(), propertyModel.getDbType().getIcon());
+                super(null, propertyModel.getName(), propertyModel.getDbType().getIcon());
                 this.propertyModel = propertyModel;
         }
 
