@@ -1,9 +1,9 @@
 .context-menu {
     -fx-background-color: rgba(255,255,255,0.99);
-    -fx-background-radius: 12;
+    -fx-background-radius: 16;
 
     -fx-border-color: rgba(255,255,255,0.3);
-    -fx-border-radius: 12;
+    -fx-border-radius: 16;
 
     -fx-effect: dropshadow(
             gaussian,
@@ -17,5 +17,5 @@
 
 .menu-item {
     -fx-background-insets: 2;
-    -fx-background-radius: 12;
+    -fx-background-radius: 8;
 }
