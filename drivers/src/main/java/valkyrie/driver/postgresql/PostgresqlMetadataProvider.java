@@ -37,9 +37,8 @@ public class PostgresqlMetadataProvider implements DBMetadataProvider
         @Override
         public List<DBNode> getChildrenOfSchema(DBSchemaNode schemaNode)
         {
-                List<Table> tables = driver.getTables(schemaNode.getSession());
                 return Lists.of(
-                        new DBTableContainerNode(schemaNode, tables),
+                        new DBTableContainerNode(schemaNode, () -> driver.getTables(schemaNode.getSession())),
                         new DBQueryNode(schemaNode)
                 );
         }

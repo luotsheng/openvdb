@@ -23,9 +23,8 @@ public class MySQLMetadataProvider implements DBMetadataProvider
         @Override
         public List<DBNode> getChildrenOfCatalog(DBCatalogNode catalogNode)
         {
-                List<Table> tables = driver.getTables(Session.ofCatalog(catalogNode.getLabel()));
                 return Lists.of(
-                        new DBTableContainerNode(catalogNode, tables),
+                        new DBTableContainerNode(catalogNode, () -> driver.getTables(Session.ofCatalog(catalogNode.getLabel()))),
                         new DBQueryNode(catalogNode)
                 );
         }

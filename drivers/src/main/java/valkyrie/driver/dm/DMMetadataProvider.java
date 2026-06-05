@@ -1,12 +1,9 @@
 package valkyrie.driver.dm;
 
 import valkyrie.driver.api.Driver;
-import valkyrie.driver.api.Session;
-import valkyrie.driver.api.Table;
 import valkyrie.driver.api.node.*;
 import valkyrie.utils.collection.Lists;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -31,7 +28,8 @@ public class DMMetadataProvider implements DBMetadataProvider
         @Override
         public List<DBNode> getChildrenOfSchema(DBSchemaNode schemaNode)
         {
-                List<Table> tables = driver.getTables(schemaNode.getSession());
-                return Lists.of(new DBTableContainerNode(schemaNode, tables), new DBQueryNode(schemaNode));
+                return Lists.of(
+                        new DBTableContainerNode(schemaNode, () -> driver.getTables(schemaNode.getSession())),
+                        new DBQueryNode(schemaNode));
         }
 }
