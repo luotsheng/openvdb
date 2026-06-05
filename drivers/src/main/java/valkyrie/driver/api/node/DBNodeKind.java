@@ -11,7 +11,7 @@ public enum DBNodeKind
         CATALOG("database1"),
         SCHEMA("schema"),
         TABLE("table"),
-        QUERY("query"),
+        QUERY("sql"),
         ;
 
         private final @Getter String icon;

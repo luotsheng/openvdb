@@ -9,15 +9,13 @@ import valkyrie.driver.api.node.DBNode;
  * @author Luo Tiansheng
  * @since 2026/6/5
  */
-public class UITableContainerDynamicNode extends UIDynamicNode
+public class UIQueryContainerDynamicNode extends UIDynamicNode
 {
         private final MenuItem openOrCloseMenuItem = new MenuItem("展开列表");
 
-        public UITableContainerDynamicNode(UIExplorerNode parent, DBNode dbNode)
+        public UIQueryContainerDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
                 super(parent, dbNode);
-                initializeChildrenFlag = true;
-                loadDynamicChildren(dbNode.getChildren());
         }
 
         @Override
