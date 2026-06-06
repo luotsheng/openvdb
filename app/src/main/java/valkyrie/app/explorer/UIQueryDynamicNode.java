@@ -39,8 +39,8 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 {
                         return Lists.of();
                 }
-        }
 
+        }
         public UIQueryDynamicNode(UIExplorerNode parent, ScriptFile file)
         {
                 super(parent, new QueryNodeWrapper(file));
@@ -62,5 +62,10 @@ public class UIQueryDynamicNode extends UIDynamicNode
         {
                 /* 第一个父节点是 TableContainer 容器节点 */
                 return getExplorerParent().getExplorerParent();
+        }
+
+        public ScriptFile getScriptFile()
+        {
+                return ((QueryNodeWrapper) dbNode).getFile();
         }
 }

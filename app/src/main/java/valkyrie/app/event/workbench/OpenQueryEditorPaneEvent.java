@@ -6,6 +6,7 @@ import valkyrie.app.assets.Assets;
 import valkyrie.app.explorer.UIExplorerNode;
 import valkyrie.app.explorer.UIQueryDynamicNode;
 import valkyrie.app.workbench.QueryEditor;
+import valkyrie.core.model.ScriptFile;
 
 import static valkyrie.utils.string.StaticLibrary.fmt;
 
@@ -19,12 +20,14 @@ public class OpenQueryEditorPaneEvent extends OpenTabEvent
 {
         private static int count = 0;
 
+        private final ScriptFile scriptFile;
         private final UIQueryDynamicNode queryDynamicNode;
 
         public OpenQueryEditorPaneEvent(UIQueryDynamicNode owner)
         {
                 super(owner);
                 this.queryDynamicNode = owner;
+                scriptFile = owner != null ? owner.getScriptFile() : null;
         }
 
         @Override
@@ -43,6 +46,6 @@ public class OpenQueryEditorPaneEvent extends OpenTabEvent
         public Node createPane(Tab tab)
         {
                 tab.setGraphic(Assets.use("sql"));
-                return new QueryEditor(tab);
+                return new QueryEditor(tab, scriptFile);
         }
 }

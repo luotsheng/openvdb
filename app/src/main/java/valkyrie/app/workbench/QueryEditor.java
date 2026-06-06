@@ -9,12 +9,15 @@ import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.BorderPane;
+import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
+import valkyrie.app.dialog.SaveScriptDialog;
 import valkyrie.app.event.CatalogDynamicNodeInitializedEvent;
 import valkyrie.app.event.ConnectedSuccessEvent;
+import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
@@ -26,6 +29,8 @@ import valkyrie.app.widgets.VkComboBox;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
+import valkyrie.core.model.ScriptFile;
+import valkyrie.core.repository.ScriptFileRepository;
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.SQLExecuteCallback;
@@ -35,6 +40,9 @@ import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.monacofx.MonacoEditor;
 import valkyrie.utils.exception.Causes;
+import valkyrie.utils.io.IOUtils;
+
+import java.util.function.Consumer;
 
 import static valkyrie.utils.string.StaticLibrary.strempty;
 
@@ -61,9 +69,9 @@ public class QueryEditor extends SplitPane implements EventListener
         private final QueryResultDataPane queryResultDataPane;
 
         // ComboBox
-        private final VkComboBox<UIConnectionNode> connectionComboBox = new VkComboBox<>();
-        private final VkComboBox<UICatalogDynamicNode> catalogComboBox = new VkComboBox<>();
-        private final VkComboBox<UISchemaDynamicNode> schemaComboBox = new VkComboBox<>();
+        private final @Getter VkComboBox<UIConnectionNode> connectionComboBox = new VkComboBox<>();
+        private final @Getter VkComboBox<UICatalogDynamicNode> catalogComboBox = new VkComboBox<>();
+        private final @Getter VkComboBox<UISchemaDynamicNode> schemaComboBox = new VkComboBox<>();
 
         private UIConnectionNode selectedConnectionNode = null;
         private UICatalogDynamicNode selectedCatalogDynamicNode = null;
@@ -83,9 +91,19 @@ public class QueryEditor extends SplitPane implements EventListener
         // Other
         private Node oldGraphic;
 
+        // File
+        private ScriptFile scriptFile;
+
         public QueryEditor(Tab tab)
         {
+                this(tab, null);
+        }
+
+        public QueryEditor(Tab tab, ScriptFile file)
+        {
                 this.tab = tab;
+                this.scriptFile = file;
+
                 tab.setContent(this);
 
                 toolBar = createToolBar();
@@ -142,6 +160,11 @@ public class QueryEditor extends SplitPane implements EventListener
         private MonacoEditor createMonacoEditor()
         {
                 MonacoEditor editor = new MonacoEditor();
+
+                if (scriptFile != null) {
+                        String fileContent = IOUtils.strread(scriptFile);
+                        editor.setValue(fileContent);
+                }
 
                 editor.setWebViewOnKeyPressedEvent(event -> {
                         if (event.isShortcutDown() && event.getCode() == KeyCode.C)
@@ -291,6 +314,17 @@ public class QueryEditor extends SplitPane implements EventListener
                 });
         }
 
+        private <T> void registerSelectionListener(
+                ComboBox<T> comboBox,
+                Consumer<T> consumer)
+        {
+                comboBox.getSelectionModel().selectedItemProperty()
+                        .addListener((obs, oldVal, newVal) -> {
+                                if (newVal != null)
+                                        consumer.accept(newVal);
+                        });
+        }
+
         private void setupComboBox()
         {
                 configureComboBox(connectionComboBox);
@@ -298,23 +332,9 @@ public class QueryEditor extends SplitPane implements EventListener
                 configureComboBox(schemaComboBox);
 
                 // connection
-                connectionComboBox.getSelectionModel().selectedItemProperty()
-                        .addListener((obs, oldVal, newVal) -> {
-                                if (newVal != null)
-                                        onSelectedConnectionNode(newVal);
-                });
-
-                catalogComboBox.getSelectionModel().selectedItemProperty()
-                        .addListener((obs, oldVal, newVal) -> {
-                                if (newVal != null)
-                                        onSelectedCatalogDynamicNode(newVal);
-                });
-
-                schemaComboBox.getSelectionModel().selectedItemProperty()
-                        .addListener((obs, oldVal, newVal) -> {
-                                if (newVal != null)
-                                        onSelectedSchemaDynamicNode(newVal);
-                        });
+                registerSelectionListener(connectionComboBox, this::onSelectedConnectionNode);
+                registerSelectionListener(catalogComboBox, this::onSelectedCatalogDynamicNode);
+                registerSelectionListener(schemaComboBox, this::onSelectedSchemaDynamicNode);
 
                 // 初始化 ComboBox 数据
                 initializeFromCurrentSelectedNode();
@@ -456,6 +476,27 @@ public class QueryEditor extends SplitPane implements EventListener
                         schemaComboBox.getItems().add(schemaDynamicNode);
                 }
 
+        }
+
+        public VkComboBox<UIConnectionNode> copyConnectionComboBox()
+        {
+                VkComboBox<UIConnectionNode> comboBox = connectionComboBox.copyComboBox();
+                configureComboBox(comboBox);
+                return comboBox;
+        }
+
+        public VkComboBox<UICatalogDynamicNode> copyCatalogComboBox()
+        {
+                VkComboBox<UICatalogDynamicNode> comboBox = catalogComboBox.copyComboBox();
+                configureComboBox(comboBox);
+                return comboBox;
+        }
+
+        public VkComboBox<UISchemaDynamicNode> copySchemaComboBox()
+        {
+                VkComboBox<UISchemaDynamicNode> comboBox = schemaComboBox.copyComboBox();
+                configureComboBox(comboBox);
+                return comboBox;
         }
 
         //////////////////////////////////////////////////////////////////////
@@ -605,15 +646,34 @@ public class QueryEditor extends SplitPane implements EventListener
 
         public void setupShortcutEvent()
         {
-                /* Ctrl + R */
                 setOnKeyPressed(event -> {
-                        if ((event.isShortcutDown())
-                                && event.getCode() == KeyCode.R) {
-                                runTask();
+                        if (event.isShortcutDown()) {
+                                switch (event.getCode()) {
+                                        case R -> runTask();
+                                        case S -> saveToFile();
+                                        default -> {}
+                                }
                                 event.consume();
                         }
+
+
                 });
         }
 
+        //////////////////////////////////////////////////////////////////////
+        ///                           SAVE FILE                            ///
+        //////////////////////////////////////////////////////////////////////
+
+        private void saveToFile()
+        {
+                String content = editor.getValue();
+
+                if (scriptFile == null) {
+                        String path = SaveScriptDialog.showDialog(this);
+                        EventBus.publish(new RefreshQueryNodeEvent());
+                } else {
+                        ScriptFileRepository.save(scriptFile, content);
+                }
+        }
 }
 
