@@ -115,13 +115,14 @@ public class QueryEditor extends SplitPane implements EventListener
                 runToolButton.setText("运行");
                 runToolButton.setOnAction(e -> runTask());
 
-                stopToolButton = new VkIconButton("停止当时运行", "stop");
+                stopToolButton = new VkIconButton("停止运行", "stop");
                 stopToolButton.setText("停止");
                 stopToolButton.setDisable(true);
                 stopToolButton.setOnAction(e -> stopTask());
 
-                beautifyToolButton = new VkIconButton("美化 SQL", "beautify");
-                beautifyToolButton.setText("美化 SQL");
+                beautifyToolButton = new VkIconButton("美化SQL", "beautify");
+                beautifyToolButton.setText("美化SQL");
+                beautifyToolButton.setOnAction(e -> beautifySQL());
 
                 schemaComboBox.setHidden(true);
 
@@ -154,74 +155,12 @@ public class QueryEditor extends SplitPane implements EventListener
                 return editor;
         }
 
-        private void setupComboBox()
-        {
-                configureComboBox(connectionComboBox);
-                configureComboBox(catalogComboBox);
-                configureComboBox(schemaComboBox);
-
-                // connection
-                connectionComboBox.setOnAction(event -> {
-                        UIConnectionNode item = connectionComboBox.getSelectionModel().getSelectedItem();
-                        if (item != null)
-                                onSelectedConnectionNode(item);
-                });
-
-                catalogComboBox.setOnAction(event -> {
-                        UICatalogDynamicNode item = catalogComboBox.getSelectionModel().getSelectedItem();
-                        if (item != null)
-                                onSelectedCatalogDynamicNode(item);
-                });
-
-                schemaComboBox.setOnAction(event -> {
-                        UISchemaDynamicNode item = schemaComboBox.getSelectionModel().getSelectedItem();
-                        session.setSchema(item.getLabel());
-                });
-
-                // 同步数据
-                for (UIConnectionNode connectionNode : GlobalDynamicNodeContext.getConnectionNodes())
-                        connectionComboBox.getItems().add(connectionNode);
-        }
-
         private void setupBorderPane()
         {
                 topBorderPane.setTop(toolBar);
                 topBorderPane.setCenter(editor);
                 setOrientation(Orientation.VERTICAL);
                 getItems().add(topBorderPane);
-        }
-
-        private static <Node extends UIExplorerNode> void configureComboBox(VkComboBox<Node> comboBox)
-        {
-                comboBox.setButtonCell(new ListCell<>()
-                {
-                        @Override
-                        protected void updateItem(Node item, boolean empty)
-                        {
-                                super.updateItem(item, empty);
-
-                                if (empty || item == null)
-                                        return;
-
-                                setText(item.getLabel());
-                                setGraphic(item.createGraphic());
-                        }
-                });
-
-                comboBox.setCellFactory(list -> new ListCell<>()
-                {
-                        @Override
-                        protected void updateItem(Node item, boolean empty)
-                        {
-                                super.updateItem(item, empty);
-
-                                if (empty || item == null)
-                                        return;
-
-                                setText(item.getLabel());
-                                setGraphic(item.createGraphic());
-                        }
-                });
         }
 
         @Override
@@ -255,6 +194,7 @@ public class QueryEditor extends SplitPane implements EventListener
 
                 MenuItem beautifySelectedSQLItem = new MenuItem("美化已选择");
                 beautifySelectedSQLItem.setGraphic(Assets.use("beautify"));
+                beautifySelectedSQLItem.setOnAction(e -> beautifySQL());
 
                 MenuItem copyItem = new MenuItem("复制");
                 copyItem.setOnAction(event -> Application.copyToClipboard(editor.getSelectedValue()));
@@ -317,6 +257,118 @@ public class QueryEditor extends SplitPane implements EventListener
         //////////////////////////////////////////////////////////////////////
         ///                       UPDATE COMBO BOX                         ///
         //////////////////////////////////////////////////////////////////////
+
+        private static <Node extends UIExplorerNode> void configureComboBox(VkComboBox<Node> comboBox)
+        {
+                comboBox.setButtonCell(new ListCell<>()
+                {
+                        @Override
+                        protected void updateItem(Node item, boolean empty)
+                        {
+                                super.updateItem(item, empty);
+
+                                if (empty || item == null)
+                                        return;
+
+                                setText(item.getLabel());
+                                setGraphic(item.createGraphic());
+                        }
+                });
+
+                comboBox.setCellFactory(list -> new ListCell<>()
+                {
+                        @Override
+                        protected void updateItem(Node item, boolean empty)
+                        {
+                                super.updateItem(item, empty);
+
+                                if (empty || item == null)
+                                        return;
+
+                                setText(item.getLabel());
+                                setGraphic(item.createGraphic());
+                        }
+                });
+        }
+
+        @SuppressWarnings("CodeBlock2Expr")
+        private void setupComboBox()
+        {
+                configureComboBox(connectionComboBox);
+                configureComboBox(catalogComboBox);
+                configureComboBox(schemaComboBox);
+
+                // connection
+                connectionComboBox.getSelectionModel().selectedItemProperty()
+                        .addListener((obs, oldVal, newVal) -> {
+                                if (newVal != null)
+                                        onSelectedConnectionNode(newVal);
+                });
+
+                catalogComboBox.getSelectionModel().selectedItemProperty()
+                        .addListener((obs, oldVal, newVal) -> {
+                                if (newVal != null)
+                                        onSelectedCatalogDynamicNode(newVal);
+                });
+
+                schemaComboBox.getSelectionModel().selectedItemProperty()
+                        .addListener((obs, oldVal, newVal) -> {
+                                if (newVal != null)
+                                        onSelectedSchemaDynamicNode(newVal);
+                        });
+
+                // 同步数据
+                initializeComboBoxItem();
+        }
+
+        /**
+         * 这是我写过最傻逼的函数
+         */
+        private void initializeComboBoxItem()
+        {
+                for (UIConnectionNode connectionNode : GlobalDynamicNodeContext.getConnectionNodes())
+                        connectionComboBox.getItems().add(connectionNode);
+
+                UIExplorerNode initializeNode =
+                        GlobalDynamicNodeContext.getSelectedExplorerNode();
+
+                if (initializeNode != null) {
+                        switch (initializeNode) {
+                                case UIConnectionNode connectionNode -> {
+                                        connectionComboBox.getSelectionModel().select(connectionNode);
+                                        updateConnectionNodeComboBox(connectionNode);
+                                }
+
+                                case UICatalogDynamicNode catalogDynamicNode -> {
+                                        connectionComboBox.getSelectionModel().select((UIConnectionNode) catalogDynamicNode.getParent());
+                                        updateConnectionNodeComboBox((UIConnectionNode) catalogDynamicNode.getParent());
+                                        catalogComboBox.getSelectionModel().select(catalogDynamicNode);
+                                        updateSchemaDynamicNodeComboBox(catalogDynamicNode);
+                                }
+
+                                case UISchemaDynamicNode schemaDynamicNode -> {
+                                        if (schemaDynamicNode.getParent() instanceof UIConnectionNode connectionNode) {
+                                                connectionComboBox.getSelectionModel().select(connectionNode);
+                                                updateConnectionNodeComboBox(connectionNode);
+                                        }
+
+                                        if (schemaDynamicNode.getParent() instanceof UICatalogDynamicNode catalogDynamicNode) {
+                                                connectionComboBox.getSelectionModel().select((UIConnectionNode) catalogDynamicNode.getParent());
+                                                updateConnectionNodeComboBox((UIConnectionNode) catalogDynamicNode.getParent());
+                                                catalogComboBox.getSelectionModel().select(catalogDynamicNode);
+                                                updateSchemaDynamicNodeComboBox(catalogDynamicNode);
+                                        }
+
+                                        if (!schemaDynamicNode.isInitialized())
+                                                schemaDynamicNode.initialize();
+
+                                        schemaComboBox.getSelectionModel().select(schemaDynamicNode);
+                                }
+
+                                default -> throw new UnsupportedOperationException("不支持节点类型：" + initializeNode);
+                        }
+                }
+        }
 
         @SuppressWarnings("SwitchStatementWithTooFewBranches")
         private void updateConnectionNodeComboBox(UIConnectionNode connectionNode)

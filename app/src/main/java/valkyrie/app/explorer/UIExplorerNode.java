@@ -25,7 +25,6 @@ public abstract class UIExplorerNode extends TreeItem<String>
         private final String icon;
         private ContextMenu contextMenu;
         private Node oldGraphic;
-        private final ProgressIndicator progressIndicator = Assets.newProgressIndicator();
 
         public UIExplorerNode(UIExplorerNode parent, String label, String icon)
         {
@@ -84,7 +83,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
         protected void useProgressIndicator(Runnable runnable)
         {
                 oldGraphic = getGraphic();
-                setGraphic(progressIndicator);
+                setGraphic(Assets.newProgressIndicator());
 
                 new Thread(() -> {
                         try {

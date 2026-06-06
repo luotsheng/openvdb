@@ -14,7 +14,8 @@ import java.util.List;
 public class GlobalDynamicNodeContext
 {
         private static @Getter UIExplorerNode selectedExplorerNode;
-        private static @Getter List<UIConnectionNode> connectionNodes = new ArrayList<>();
+
+        private static final @Getter List<UIConnectionNode> connectionNodes = new ArrayList<>();
 
         public static synchronized void onSelectedEvent(UIExplorerNode explorerNode)
         {
