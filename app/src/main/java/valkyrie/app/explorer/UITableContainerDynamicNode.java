@@ -5,6 +5,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.CloseNavigationPaneEvent;
+import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;
 import valkyrie.app.event.workbench.OpenNavigationPaneEvent;
 import valkyrie.app.pane.TableListPane;
 import valkyrie.app.utils.Threads;
@@ -76,6 +77,13 @@ public class UITableContainerDynamicNode extends UIDynamicNode
         public void onSelectedEvent(UIExplorerNode node)
         {
                 EventBus.publish(openNavigationPaneEvent);
+        }
+
+        @Override
+        public void onParentCloseEvent()
+        {
+                super.onParentCloseEvent();
+                EventBus.publish(closeNavigationPaneEvent);
         }
 
         public UITableDynamicNode getTableDynamicNode(String tableName)

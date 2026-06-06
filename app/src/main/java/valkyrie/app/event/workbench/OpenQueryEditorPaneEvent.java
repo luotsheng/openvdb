@@ -4,7 +4,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.explorer.UIExplorerNode;
-import valkyrie.app.workbench.editor.QueryEditor;
+import valkyrie.app.workbench.QueryEditor;
 
 /**
  * 打开脚本编辑器

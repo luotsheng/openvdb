@@ -2,6 +2,7 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import lombok.Getter;
 import lombok.Setter;
@@ -133,6 +134,9 @@ public class UIConnectionNode extends UIExplorerNode
         {
                 if (!connectFlag)
                         return;
+
+                for (TreeItem<String> child : getChildren())
+                        ((UIDynamicNode) child).onParentCloseEvent();
 
                 setExpanded(false);
                 getChildren().clear();

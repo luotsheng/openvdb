@@ -2,7 +2,9 @@ package valkyrie.app.event.workbench;
 
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
+import javafx.scene.control.TreeItem;
 import valkyrie.app.assets.Assets;
+import valkyrie.app.explorer.UIExplorerNode;
 import valkyrie.app.explorer.UITableDynamicNode;
 import valkyrie.app.pane.QueryResultPane;
 
@@ -23,7 +25,7 @@ public class OpenTableDataPaneEvent extends OpenTabEvent
         @Override
         public String tabId()
         {
-                return tableDynamicNode.getLabel();
+                return "D#" + tableDynamicNode.getDirectParent().getLabel() + "@" + tableDynamicNode.getLabel();
         }
 
         @Override

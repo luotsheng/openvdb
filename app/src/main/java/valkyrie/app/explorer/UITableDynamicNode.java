@@ -6,6 +6,7 @@ import javafx.scene.control.SeparatorMenuItem;
 import lombok.Getter;
 import valkyrie.app.Application;
 import valkyrie.app.event.bus.EventBus;
+import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;
 import valkyrie.app.event.workbench.OpenTableDataPaneEvent;
 import valkyrie.app.event.workbench.OpenTableDesignerPaneEvent;
 import valkyrie.app.widgets.VkContextMenu;
@@ -69,6 +70,18 @@ public class UITableDynamicNode extends UIDynamicNode
         public void onMouseDoubleClickEvent()
         {
                 openDataPane();
+        }
+
+        @Override
+        public void onParentCloseEvent()
+        {
+                EventBus.publish(new CloseWorkbenchTabEvent(this));
+        }
+
+        public UIExplorerNode getDirectParent()
+        {
+                /* 第一个父节点是 TableContainer 容器节点 */
+                return getExplorerParent().getExplorerParent();
         }
 
         public Table getTable()

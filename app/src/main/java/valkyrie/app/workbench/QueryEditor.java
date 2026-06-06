@@ -1,4 +1,4 @@
-package valkyrie.app.workbench.editor;
+package valkyrie.app.workbench;
 
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import javafx.application.Platform;
@@ -291,7 +291,6 @@ public class QueryEditor extends SplitPane implements EventListener
                 });
         }
 
-        @SuppressWarnings("CodeBlock2Expr")
         private void setupComboBox()
         {
                 configureComboBox(connectionComboBox);
@@ -317,57 +316,70 @@ public class QueryEditor extends SplitPane implements EventListener
                                         onSelectedSchemaDynamicNode(newVal);
                         });
 
-                // 同步数据
-                initializeComboBoxItem();
+                // 初始化 ComboBox 数据
+                initializeFromCurrentSelectedNode();
         }
 
-        /**
-         * 这是我写过最傻逼的函数
-         */
-        private void initializeComboBoxItem()
+        private void initializeFromCurrentSelectedNode()
         {
-                for (UIConnectionNode connectionNode : GlobalDynamicNodeContext.getConnectionNodes())
+                for (UIConnectionNode connectionNode :
+                        GlobalDynamicNodeContext.getConnectionNodes())
                         connectionComboBox.getItems().add(connectionNode);
 
-                UIExplorerNode initializeNode =
+                UIExplorerNode node =
                         GlobalDynamicNodeContext.getSelectedExplorerNode();
 
-                if (initializeNode != null) {
-                        switch (initializeNode) {
-                                case UIConnectionNode connectionNode -> {
-                                        connectionComboBox.getSelectionModel().select(connectionNode);
-                                        updateConnectionNodeComboBox(connectionNode);
-                                }
+                if (node == null)
+                        return;
 
-                                case UICatalogDynamicNode catalogDynamicNode -> {
-                                        connectionComboBox.getSelectionModel().select((UIConnectionNode) catalogDynamicNode.getParent());
-                                        updateConnectionNodeComboBox((UIConnectionNode) catalogDynamicNode.getParent());
-                                        catalogComboBox.getSelectionModel().select(catalogDynamicNode);
-                                        updateSchemaDynamicNodeComboBox(catalogDynamicNode);
-                                }
+                switch (node) {
+                        case UIConnectionNode connectionNode ->
+                                restoreConnection(connectionNode);
 
-                                case UISchemaDynamicNode schemaDynamicNode -> {
-                                        if (schemaDynamicNode.getParent() instanceof UIConnectionNode connectionNode) {
-                                                connectionComboBox.getSelectionModel().select(connectionNode);
-                                                updateConnectionNodeComboBox(connectionNode);
-                                        }
+                        case UICatalogDynamicNode catalogDynamicNode ->
+                                restoreCatalog(catalogDynamicNode);
 
-                                        if (schemaDynamicNode.getParent() instanceof UICatalogDynamicNode catalogDynamicNode) {
-                                                connectionComboBox.getSelectionModel().select((UIConnectionNode) catalogDynamicNode.getParent());
-                                                updateConnectionNodeComboBox((UIConnectionNode) catalogDynamicNode.getParent());
-                                                catalogComboBox.getSelectionModel().select(catalogDynamicNode);
-                                                updateSchemaDynamicNodeComboBox(catalogDynamicNode);
-                                        }
+                        case UISchemaDynamicNode schemaDynamicNode ->
+                                restoreSchema(schemaDynamicNode);
 
-                                        if (!schemaDynamicNode.isInitialized())
-                                                schemaDynamicNode.initialize();
-
-                                        schemaComboBox.getSelectionModel().select(schemaDynamicNode);
-                                }
-
-                                default -> throw new UnsupportedOperationException("不支持节点类型：" + initializeNode);
-                        }
+                        default ->
+                                throw new UnsupportedOperationException("不支持节点类型：" + node);
                 }
+        }
+
+        private void restoreConnection(UIConnectionNode connectionNode)
+        {
+                connectionComboBox.getSelectionModel().select(connectionNode);
+                updateConnectionNodeComboBox(connectionNode);
+        }
+
+        private void restoreCatalog(UICatalogDynamicNode catalogDynamicNode)
+        {
+                UIConnectionNode connectionNode =
+                        (UIConnectionNode) catalogDynamicNode.getParent();
+
+                restoreConnection(connectionNode);
+
+                catalogComboBox.getSelectionModel()
+                        .select(catalogDynamicNode);
+
+                updateSchemaDynamicNodeComboBox(catalogDynamicNode);
+        }
+
+        private void restoreSchema(UISchemaDynamicNode schemaDynamicNode)
+        {
+                if (schemaDynamicNode.getParent() instanceof UIConnectionNode connectionNode)
+                        restoreConnection(connectionNode);
+
+                if (schemaDynamicNode.getParent() instanceof UICatalogDynamicNode catalogDynamicNode) {
+                        restoreCatalog(catalogDynamicNode);
+                }
+
+                if (!schemaDynamicNode.isInitialized())
+                        schemaDynamicNode.initialize();
+
+                schemaComboBox.getSelectionModel()
+                        .select(schemaDynamicNode);
         }
 
         @SuppressWarnings("SwitchStatementWithTooFewBranches")

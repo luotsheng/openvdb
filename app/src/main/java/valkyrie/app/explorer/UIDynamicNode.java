@@ -1,5 +1,6 @@
 package valkyrie.app.explorer;
 
+import javafx.scene.control.TreeItem;
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.node.*;
 
@@ -74,6 +75,7 @@ public class UIDynamicNode extends UIExplorerNode
                 onMouseDoubleClickEvent();
         }
 
+        @SuppressWarnings("BooleanMethodIsAlwaysInverted")
         public boolean isInitialized()
         {
                 return initializeChildrenFlag;
@@ -87,6 +89,12 @@ public class UIDynamicNode extends UIExplorerNode
         ///////////////////////////////////////////////////////////////////////
         ///                                 EVENT                           ///
         ///////////////////////////////////////////////////////////////////////
+
+        public void onParentCloseEvent()
+        {
+                for (TreeItem<String> child : getChildren())
+                        ((UIDynamicNode) child).onParentCloseEvent();
+        }
 
         public void onInitializedEvent()
         {
