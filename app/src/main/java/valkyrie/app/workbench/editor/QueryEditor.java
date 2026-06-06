@@ -1,4 +1,4 @@
-package valkyrie.app.workbench;
+package valkyrie.app.workbench.editor;
 
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
@@ -8,6 +8,8 @@ import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventListener;
+import valkyrie.app.explorer.*;
+import valkyrie.app.widgets.VkComboBox;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
 import valkyrie.monacofx.MonacoEditor;
@@ -18,13 +20,18 @@ import valkyrie.monacofx.MonacoEditor;
  * @author Luo Tiansheng
  * @since 2026/3/29
  */
-@SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
+@SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 public class QueryEditor extends SplitPane implements EventListener
 {
         private final Tab tab;
         private final ToolBar toolBar;
         private final MonacoEditor editor;
         private final BorderPane topBorderPane = new BorderPane();
+
+        // combobox
+        private final VkComboBox<UIConnectionNode> connectionComboBox = new VkComboBox<>();
+        private final VkComboBox<UICatalogDynamicNode> catalogComboBox = new VkComboBox<>();
+        private final VkComboBox<UISchemaDynamicNode> schemaComboBox = new VkComboBox<>();
 
         // Tool
         private Button runToolButton;
@@ -39,6 +46,7 @@ public class QueryEditor extends SplitPane implements EventListener
                 toolBar = createToolBar();
                 editor = createMonacoEditor();
 
+                setupComboBox();
                 setupBorderPane();
         }
 
@@ -56,7 +64,13 @@ public class QueryEditor extends SplitPane implements EventListener
                 beautifyToolButton = new VkIconButton("美化 SQL", "beautify");
                 beautifyToolButton.setText("美化 SQL");
 
+                schemaComboBox.setVisible(false);
+                schemaComboBox.setManaged(false);
+
                 toolBar.getItems().addAll(
+                        connectionComboBox,
+                        catalogComboBox,
+                        schemaComboBox,
                         new VkSeparator(),
                         runToolButton,
                         stopToolButton,
@@ -112,11 +126,63 @@ public class QueryEditor extends SplitPane implements EventListener
                 return editor;
         }
 
+        private void setupComboBox()
+        {
+                configureComboBox(connectionComboBox);
+                configureComboBox(catalogComboBox);
+                configureComboBox(schemaComboBox);
+
+                // connection
+                connectionComboBox.setOnAction(event -> {
+                        UIConnectionNode item = connectionComboBox.getSelectionModel().getSelectedItem();
+                        if (item != null) {
+                                if (!item.isConnect())
+                                        item.connect();
+                        }
+                });
+
+                for (UIConnectionNode connectionNode : GlobalDynamicNodeContext.getConnectionNodes())
+                        connectionComboBox.getItems().add(connectionNode);
+        }
+
         private void setupBorderPane()
         {
                 topBorderPane.setTop(toolBar);
                 topBorderPane.setCenter(editor);
                 getItems().add(topBorderPane);
+        }
+
+        private static <T extends UIExplorerNode> void configureComboBox(VkComboBox<T> comboBox)
+        {
+                comboBox.setButtonCell(new ListCell<>()
+                {
+                        @Override
+                        protected void updateItem(T item, boolean empty)
+                        {
+                                super.updateItem(item, empty);
+
+                                if (empty || item == null)
+                                        return;
+
+                                setText(item.getLabel());
+                                setGraphic(item.createGraphic());
+                        }
+                });
+
+                comboBox.setCellFactory(list -> new ListCell<>()
+                {
+                        @Override
+                        protected void updateItem(T item, boolean empty)
+                        {
+                                super.updateItem(item, empty);
+
+                                if (empty || item == null)
+                                        return;
+
+                                setText(item.getLabel());
+                                setGraphic(item.createGraphic());
+                        }
+                });
         }
 
         @Override

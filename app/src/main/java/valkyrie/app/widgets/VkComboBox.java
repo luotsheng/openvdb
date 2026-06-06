@@ -1,7 +1,11 @@
 package valkyrie.app.widgets;
 
+import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.scene.control.ComboBox;
+import valkyrie.utils.collection.Lists;
+
+import java.util.Collection;
 
 /**
  * @author Luo Tiansheng
@@ -11,6 +15,7 @@ public class VkComboBox<T> extends ComboBox<T>
 {
         public VkComboBox()
         {
+                setPrefWidth(200);
         }
 
         public VkComboBox(ObservableList<T> items)

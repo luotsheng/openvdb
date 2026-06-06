@@ -4,7 +4,7 @@ import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.explorer.UIExplorerNode;
-import valkyrie.app.workbench.QueryEditor;
+import valkyrie.app.workbench.editor.QueryEditor;
 
 /**
  * 打开脚本编辑器
@@ -14,6 +14,8 @@ import valkyrie.app.workbench.QueryEditor;
  */
 public class OpenQueryEditorPaneEvent extends OpenTabEvent
 {
+        private static int count = 0;
+
         private final UIExplorerNode owner;
 
         public OpenQueryEditorPaneEvent(UIExplorerNode owner)
@@ -25,6 +27,8 @@ public class OpenQueryEditorPaneEvent extends OpenTabEvent
         @Override
         public String tabId()
         {
+                if (owner == null)
+                        return "新建查询_" + (count++) + ".sql";
                 return owner.getLabel();
         }
 

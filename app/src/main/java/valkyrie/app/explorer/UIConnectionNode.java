@@ -44,6 +44,7 @@ public class UIConnectionNode extends UIExplorerNode
                 super(null, propertyModel.getName(), propertyModel.getDbType().getIcon());
                 this.treeView = treeView;
                 this.propertyModel = propertyModel;
+                GlobalDynamicNodeContext.getConnectionNodes().add(this);
         }
 
         @Override
@@ -81,6 +82,11 @@ public class UIConnectionNode extends UIExplorerNode
         public void onMouseDoubleClickEvent()
         {
                 connect();
+        }
+
+        public boolean isConnect()
+        {
+                return connectFlag;
         }
 
         private void edit()

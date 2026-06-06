@@ -22,6 +22,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
 {
         private final @Getter String label;
         private final @Getter UIExplorerNode explorerParent;
+        private final String icon;
         private ContextMenu contextMenu;
         private Node oldGraphic;
         private final ProgressIndicator progressIndicator = Assets.newProgressIndicator();
@@ -31,9 +32,15 @@ public abstract class UIExplorerNode extends TreeItem<String>
                 super(label);
                 this.explorerParent = parent;
                 this.label = label;
+                this.icon = icon;
 
                 if (icon != null)
                         setGraphic(Assets.use(icon));
+        }
+
+        public Node createGraphic()
+        {
+                return Assets.use(icon);
         }
 
         public UIConnectionNode getRoot()
