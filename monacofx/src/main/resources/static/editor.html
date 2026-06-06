@@ -185,10 +185,17 @@
                 range = selection;
             }
 
+            if (range.isEmpty())
+                return;
+
+            editor.pushUndoStop();
+
             editor.executeEdits('', [{
                 range: range,
                 text: ''
             }]);
+
+            editor.pushUndoStop();
 
             window.writeClipboard(text);
         });
