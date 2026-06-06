@@ -1,11 +1,8 @@
 package valkyrie.app.explorer;
 
-import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
-import javafx.scene.control.TreeView;
-import javafx.scene.layout.Pane;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.CloseNavigationPaneEvent;
 import valkyrie.app.event.workbench.OpenNavigationPaneEvent;

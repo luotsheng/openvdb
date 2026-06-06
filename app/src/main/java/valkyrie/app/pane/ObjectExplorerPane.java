@@ -16,6 +16,7 @@ import valkyrie.app.event.RefreshConnectionEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
+import valkyrie.app.explorer.GlobalDynamicNodeContext;
 import valkyrie.app.explorer.UIConnectionNode;
 import valkyrie.app.explorer.UIExplorerNode;
 import valkyrie.app.menu.ConnectionMenuBuilder;
@@ -195,8 +196,10 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 treeView.getSelectionModel().selectedIndexProperty()
                         .addListener((observable, oldVal, newVal) -> {
                                 TreeItem<String> treeItem = treeView.getTreeItem(newVal.intValue());
-                                if (treeItem instanceof UIExplorerNode node)
+                                if (treeItem instanceof UIExplorerNode node) {
                                         node.onSelectedEvent(node);
+                                        GlobalDynamicNodeContext.onSelectedEvent(node);
+                                }
                         });
         }
 

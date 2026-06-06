@@ -35,6 +35,7 @@ public class AppToolBar extends ToolBar
 
                 Button newQueryButton = new VkIconButton("查询", "sql");
                 newQueryButton.setText("新建查询");
+                newQueryButton.setOnAction(e -> newQueryEditor());
 
                 Button debugButton = new VkIconButton("Debug", "code");
                 debugButton.setText("Debug Pane");
@@ -46,6 +47,11 @@ public class AppToolBar extends ToolBar
                         new VkSeparator(),
                         debugButton
                 );
+        }
+
+        private void newQueryEditor()
+        {
+                Publisher.openQueryEditor();
         }
 
         private void debugPane()
