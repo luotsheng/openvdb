@@ -342,6 +342,9 @@ public class QueryEditor extends SplitPane implements EventListener
                         case UISchemaDynamicNode schemaDynamicNode ->
                                 restoreSchema(schemaDynamicNode);
 
+                        case UIQueryDynamicNode queryDynamicNode
+                                -> restoreQuery(queryDynamicNode);
+
                         default ->
                                 throw new UnsupportedOperationException("不支持节点类型：" + node);
                 }
@@ -380,6 +383,17 @@ public class QueryEditor extends SplitPane implements EventListener
 
                 schemaComboBox.getSelectionModel()
                         .select(schemaDynamicNode);
+        }
+
+        private void restoreQuery(UIQueryDynamicNode queryDynamicNode)
+        {
+                UIExplorerNode parent = queryDynamicNode.getDirectParent();
+
+                if (parent instanceof UISchemaDynamicNode schemaDynamicNode)
+                        restoreSchema(schemaDynamicNode);
+
+                if (parent instanceof UICatalogDynamicNode catalogDynamicNode)
+                        restoreCatalog(catalogDynamicNode);
         }
 
         @SuppressWarnings("SwitchStatementWithTooFewBranches")

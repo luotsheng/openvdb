@@ -30,7 +30,10 @@ public class OpenTableDesignerPaneEvent extends OpenTabEvent
         @Override
         public String tabId()
         {
-                return fmt("%s", tableDynamicNode.getTable().getName());
+                return fmt("D#%s@%s(%s)",
+                        tableDynamicNode.getDirectParent().getLabel(),
+                        tableDynamicNode.getLabel(),
+                        tableDynamicNode.getRoot().getLabel());
         }
 
         @Override

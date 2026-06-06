@@ -12,7 +12,6 @@ public class Publisher
 {
         public static void openQueryEditor()
         {
-                EventBus.publish(new OpenQueryEditorPaneEvent(
-                        GlobalDynamicNodeContext.getSelectedExplorerNode()));
+                EventBus.publish(new OpenQueryEditorPaneEvent(null));
         }
 }

@@ -8,6 +8,8 @@ import valkyrie.app.explorer.UIExplorerNode;
 import valkyrie.app.explorer.UITableDynamicNode;
 import valkyrie.app.pane.QueryResultPane;
 
+import static valkyrie.utils.string.StaticLibrary.fmt;
+
 /**
  * @author Luo Tiansheng
  * @since 2026/6/5
@@ -25,7 +27,10 @@ public class OpenTableDataPaneEvent extends OpenTabEvent
         @Override
         public String tabId()
         {
-                return "D#" + tableDynamicNode.getDirectParent().getLabel() + "@" + tableDynamicNode.getLabel();
+                return fmt("V#%s@%s(%s)",
+                        tableDynamicNode.getDirectParent().getLabel(),
+                        tableDynamicNode.getLabel(),
+                        tableDynamicNode.getRoot().getLabel());
         }
 
         @Override
