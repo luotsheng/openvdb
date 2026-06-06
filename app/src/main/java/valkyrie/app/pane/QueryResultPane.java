@@ -28,7 +28,7 @@ public class QueryResultPane extends BorderPane
         private final Driver driver;
         private final Session session;
         private final Table table;
-        private final ResultViewPane resultViewPane;
+        private final QueryResultDataPane resultViewPane;
 
         public QueryResultPane(Tab owner, Session session, Driver driver, Table table)
         {
@@ -36,9 +36,9 @@ public class QueryResultPane extends BorderPane
                 this.session = session;
                 this.driver = driver;
                 this.table = table;
-                this.resultViewPane = new ResultViewPane(table.getName(), owner, true);
+                this.resultViewPane = new QueryResultDataPane(table.getName(), owner, true);
 
-                resultViewPane.setReloadProgressListener(new ResultViewPane.ReloadProgressListener()
+                resultViewPane.setReloadProgressListener(new QueryResultDataPane.ReloadProgressListener()
                 {
                         @Override
                         public void start()

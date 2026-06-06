@@ -2,6 +2,8 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import valkyrie.app.event.CatalogDynamicNodeInitializedEvent;
+import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.utils.Threads;
 import valkyrie.driver.api.node.DBNode;
 
@@ -36,5 +38,11 @@ public class UICatalogDynamicNode extends UIDynamicNode
                         openOrCloseMenuItem.setText("打开数据库");
                         openOrCloseMenuItem.setOnAction(e -> Threads.runLater(this::expand));
                 }
+        }
+
+        @Override
+        public void onInitializedEvent()
+        {
+                EventBus.publish(new CatalogDynamicNodeInitializedEvent(this));
         }
 }

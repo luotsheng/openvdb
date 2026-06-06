@@ -41,7 +41,7 @@ import static valkyrie.utils.string.StaticLibrary.*;
  * @since 2026/3/30
  */
 @SuppressWarnings({"FieldCanBeLocal", "FieldMayBeFinal"})
-public class ResultViewPane extends BorderPane
+public class QueryResultDataPane extends BorderPane
 {
         private String tableName;
 
@@ -78,12 +78,12 @@ public class ResultViewPane extends BorderPane
         @Setter
         private ReloadProgressListener reloadProgressListener;
 
-        public ResultViewPane(Tab attachedToTab, boolean isPreview)
+        public QueryResultDataPane(Tab attachedToTab, boolean isPreview)
         {
                 this(null, attachedToTab, isPreview);
         }
 
-        public ResultViewPane(String tableName, Tab attachedToTab, boolean isPreview)
+        public QueryResultDataPane(String tableName, Tab attachedToTab, boolean isPreview)
         {
                 this.tableName = tableName;
                 this.attachedToTab = attachedToTab;

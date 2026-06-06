@@ -5,12 +5,13 @@ import org.slf4j.LoggerFactory;
 import valkyrie.driver.api.*;
 import valkyrie.driver.api.exception.DriverException;
 import valkyrie.driver.api.node.DBNode;
+import valkyrie.driver.api.node.DBNodeKind;
+import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.utils.collection.Lists;
 import valkyrie.utils.collection.Sets;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -26,7 +27,11 @@ import static valkyrie.utils.string.StaticLibrary.streq;
  * @author Luo Tiansheng
  * @since 2026/4/11
  */
-@SuppressWarnings({"SqlNoDataSourceInspection", "DuplicatedCode"})
+@SuppressWarnings({
+        "SqlNoDataSourceInspection",
+        "DuplicatedCode",
+        "SqlDialectInspection"
+})
 public class SQLiteDriver extends Driver
 {
         private static final Logger LOG = LoggerFactory.getLogger(SQLiteDriver.class);
@@ -46,6 +51,12 @@ public class SQLiteDriver extends Driver
         public List<DBNode> getNodeHierarchy()
         {
                 return List.of();
+        }
+
+        @Override
+        public DBNodePath getNodeHierarchyPath()
+        {
+                return new DBNodePath(DBNodeKind.CATALOG, null);
         }
 
         @Override

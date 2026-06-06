@@ -3,6 +3,8 @@ package valkyrie.driver.dm;
 import valkyrie.driver.api.*;
 import valkyrie.driver.api.exception.DriverException;
 import valkyrie.driver.api.node.DBNode;
+import valkyrie.driver.api.node.DBNodeKind;
+import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.utils.Captor;
@@ -54,6 +56,12 @@ public class DMDriver extends Driver
                         schemaNodes.add(new DMSchemaNode(schema, metadataProvider));
 
                 return schemaNodes;
+        }
+
+        @Override
+        public DBNodePath getNodeHierarchyPath()
+        {
+                return new DBNodePath(DBNodeKind.SCHEMA, null);
         }
 
         @Override

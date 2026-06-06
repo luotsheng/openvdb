@@ -6,6 +6,8 @@ import javafx.scene.control.TreeView;
 import lombok.Getter;
 import lombok.Setter;
 import valkyrie.app.dialog.connection.CreateOrEditConnectionDialog;
+import valkyrie.app.event.ConnectedSuccessEvent;
+import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.model.ConnectionPropertyModel;
 import valkyrie.app.model.UIExplorerStatus;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
@@ -122,6 +124,8 @@ public class UIConnectionNode extends UIExplorerNode
                         loadDynamicChildren(nodeHierarchy);
                         setExpanded(true);
                         connectFlag = true;
+                        // 发布事件
+                        EventBus.publish(new ConnectedSuccessEvent(this));
                 });
         }
 

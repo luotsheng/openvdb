@@ -1,18 +1,42 @@
 package valkyrie.app.workbench.editor;
 
+import com.github.vertical_blank.sqlformatter.SqlFormatter;
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
+import javafx.geometry.Orientation;
+import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.BorderPane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
+import valkyrie.app.event.CatalogDynamicNodeInitializedEvent;
+import valkyrie.app.event.ConnectedSuccessEvent;
 import valkyrie.app.event.bus.Event;
+import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.explorer.*;
+import valkyrie.app.pane.ExecuteLoggerPane;
+import valkyrie.app.pane.QueryResultDataPane;
+import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkComboBox;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
+import valkyrie.app.widgets.dialog.VkDialogHelper;
+import valkyrie.driver.api.Driver;
+import valkyrie.driver.api.QueryResult;
+import valkyrie.driver.api.SQLExecuteCallback;
+import valkyrie.driver.api.Session;
+import valkyrie.driver.api.node.DBNodeKind;
+import valkyrie.driver.api.node.DBNodePath;
+import valkyrie.driver.api.sql.SQL;
 import valkyrie.monacofx.MonacoEditor;
+import valkyrie.utils.exception.Causes;
+
+import static valkyrie.utils.string.StaticLibrary.strempty;
 
 /**
  * SQL 脚本编辑器
@@ -23,20 +47,41 @@ import valkyrie.monacofx.MonacoEditor;
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
 public class QueryEditor extends SplitPane implements EventListener
 {
+        private static final Logger LOG = LoggerFactory.getLogger(QueryEditor.class);
+
+        static final int QUERY_RESULT_SET_FIRST = 0;
+        static final int QUERY_EXECUTE_LOGGER_FIRST = 1;
+        
         private final Tab tab;
         private final ToolBar toolBar;
         private final MonacoEditor editor;
         private final BorderPane topBorderPane = new BorderPane();
+        private final Tab sqlExecuteLoggerTab;
+        private final ExecuteLoggerPane sqlExecuteLoggerPane;
+        private final QueryResultDataPane queryResultDataPane;
 
-        // combobox
+        // ComboBox
         private final VkComboBox<UIConnectionNode> connectionComboBox = new VkComboBox<>();
         private final VkComboBox<UICatalogDynamicNode> catalogComboBox = new VkComboBox<>();
         private final VkComboBox<UISchemaDynamicNode> schemaComboBox = new VkComboBox<>();
+
+        private UIConnectionNode selectedConnectionNode = null;
+        private UICatalogDynamicNode selectedCatalogDynamicNode = null;
+        private UISchemaDynamicNode selectedSchemaDynamicNode = null;
 
         // Tool
         private Button runToolButton;
         private Button stopToolButton;
         private Button beautifyToolButton;
+
+        // Driver
+        private Driver driver;
+        private Session session = new Session();
+        private DBNodePath dbNodePath;
+        private long taskId = System.currentTimeMillis();
+
+        // Other
+        private Node oldGraphic;
 
         public QueryEditor(Tab tab)
         {
@@ -46,8 +91,20 @@ public class QueryEditor extends SplitPane implements EventListener
                 toolBar = createToolBar();
                 editor = createMonacoEditor();
 
+                // sql logger
+                queryResultDataPane = new QueryResultDataPane(tab, false);
+                sqlExecuteLoggerPane = new ExecuteLoggerPane();
+                sqlExecuteLoggerTab = new Tab("执行日志");
+                sqlExecuteLoggerTab.setClosable(false);
+                sqlExecuteLoggerTab.setContent(sqlExecuteLoggerPane);
+
                 setupComboBox();
                 setupBorderPane();
+                setupShortcutEvent();
+
+                // subscribe
+                EventBus.subscribe(ConnectedSuccessEvent.class, this);
+                EventBus.subscribe(CatalogDynamicNodeInitializedEvent.class, this);
         }
 
         private ToolBar createToolBar()
@@ -56,16 +113,17 @@ public class QueryEditor extends SplitPane implements EventListener
 
                 runToolButton = new VkIconButton("运行已选择", "run");
                 runToolButton.setText("运行");
+                runToolButton.setOnAction(e -> runTask());
 
                 stopToolButton = new VkIconButton("停止当时运行", "stop");
                 stopToolButton.setText("停止");
                 stopToolButton.setDisable(true);
+                stopToolButton.setOnAction(e -> stopTask());
 
                 beautifyToolButton = new VkIconButton("美化 SQL", "beautify");
                 beautifyToolButton.setText("美化 SQL");
 
-                schemaComboBox.setVisible(false);
-                schemaComboBox.setManaged(false);
+                schemaComboBox.setHidden(true);
 
                 toolBar.getItems().addAll(
                         connectionComboBox,
@@ -90,10 +148,107 @@ public class QueryEditor extends SplitPane implements EventListener
                 });
 
                 // Context Menu
+                ContextMenu contextMenu = createContextMenu(editor);
+                editor.bindContextMenu(contextMenu);
+
+                return editor;
+        }
+
+        private void setupComboBox()
+        {
+                configureComboBox(connectionComboBox);
+                configureComboBox(catalogComboBox);
+                configureComboBox(schemaComboBox);
+
+                // connection
+                connectionComboBox.setOnAction(event -> {
+                        UIConnectionNode item = connectionComboBox.getSelectionModel().getSelectedItem();
+                        if (item != null)
+                                onSelectedConnectionNode(item);
+                });
+
+                catalogComboBox.setOnAction(event -> {
+                        UICatalogDynamicNode item = catalogComboBox.getSelectionModel().getSelectedItem();
+                        if (item != null)
+                                onSelectedCatalogDynamicNode(item);
+                });
+
+                schemaComboBox.setOnAction(event -> {
+                        UISchemaDynamicNode item = schemaComboBox.getSelectionModel().getSelectedItem();
+                        session.setSchema(item.getLabel());
+                });
+
+                // 同步数据
+                for (UIConnectionNode connectionNode : GlobalDynamicNodeContext.getConnectionNodes())
+                        connectionComboBox.getItems().add(connectionNode);
+        }
+
+        private void setupBorderPane()
+        {
+                topBorderPane.setTop(toolBar);
+                topBorderPane.setCenter(editor);
+                setOrientation(Orientation.VERTICAL);
+                getItems().add(topBorderPane);
+        }
+
+        private static <Node extends UIExplorerNode> void configureComboBox(VkComboBox<Node> comboBox)
+        {
+                comboBox.setButtonCell(new ListCell<>()
+                {
+                        @Override
+                        protected void updateItem(Node item, boolean empty)
+                        {
+                                super.updateItem(item, empty);
+
+                                if (empty || item == null)
+                                        return;
+
+                                setText(item.getLabel());
+                                setGraphic(item.createGraphic());
+                        }
+                });
+
+                comboBox.setCellFactory(list -> new ListCell<>()
+                {
+                        @Override
+                        protected void updateItem(Node item, boolean empty)
+                        {
+                                super.updateItem(item, empty);
+
+                                if (empty || item == null)
+                                        return;
+
+                                setText(item.getLabel());
+                                setGraphic(item.createGraphic());
+                        }
+                });
+        }
+
+        @Override
+        public void onEvent(Event event)
+        {
+                if (event instanceof ConnectedSuccessEvent connectedSuccessEvent) {
+                        if (connectedSuccessEvent.getConnectionNode() == selectedConnectionNode)
+                                updateConnectionNodeComboBox(selectedConnectionNode);
+                }
+
+                if (event instanceof CatalogDynamicNodeInitializedEvent catalogDynamicNodeInitializedEvent) {
+                        if (catalogDynamicNodeInitializedEvent.getDynamicNode() == selectedCatalogDynamicNode)
+                                updateSchemaDynamicNodeComboBox(selectedCatalogDynamicNode);
+                }
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        ///                           CONTEXT MENU                         ///
+        //////////////////////////////////////////////////////////////////////
+
+        public ContextMenu createContextMenu(MonacoEditor editor)
+        {
                 ContextMenu contextMenu = new ContextMenu();
 
                 MenuItem runSelectedSQLItem = new MenuItem("运行已选择");
                 runSelectedSQLItem.setGraphic(Assets.use("run"));
+                runSelectedSQLItem.setOnAction(e -> runTask());
                 runSelectedSQLItem.setAccelerator(
                         new KeyCodeCombination(KeyCode.R, KeyCodeCombination.SHORTCUT_DOWN)
                 );
@@ -113,6 +268,14 @@ public class QueryEditor extends SplitPane implements EventListener
                         new KeyCodeCombination(KeyCode.V, KeyCodeCombination.SHORTCUT_DOWN)
                 );
 
+                editor.setShowContextMenuRequestEvent(ignored -> {
+                        /* 有选中并且没有任务运行时才启用菜单 */
+                        String selectedValue = editor.getSelectedValue();
+                        boolean isTaskRunning = runToolButton.isDisable();
+                        boolean disable = strempty(selectedValue) || isTaskRunning;
+                        runSelectedSQLItem.setDisable(isTaskRunning);
+                });
+
                 contextMenu.getItems().addAll(
                         runSelectedSQLItem,
                         beautifySelectedSQLItem,
@@ -121,74 +284,258 @@ public class QueryEditor extends SplitPane implements EventListener
                         pasteItem
                 );
 
-                editor.bindContextMenu(contextMenu);
-
-                return editor;
+                return contextMenu;
         }
 
-        private void setupComboBox()
-        {
-                configureComboBox(connectionComboBox);
-                configureComboBox(catalogComboBox);
-                configureComboBox(schemaComboBox);
+        //////////////////////////////////////////////////////////////////////
+        ///                        ON SELECTED EVENT                       ///
+        //////////////////////////////////////////////////////////////////////
 
-                // connection
-                connectionComboBox.setOnAction(event -> {
-                        UIConnectionNode item = connectionComboBox.getSelectionModel().getSelectedItem();
-                        if (item != null) {
-                                if (!item.isConnect())
-                                        item.connect();
+        private void onSelectedConnectionNode(UIConnectionNode connectionNode)
+        {
+                this.selectedConnectionNode = connectionNode;
+
+                if (!connectionNode.isConnect())
+                        connectionNode.connect();
+        }
+
+        private void onSelectedCatalogDynamicNode(UICatalogDynamicNode catalogDynamicNode)
+        {
+                this.selectedCatalogDynamicNode = catalogDynamicNode;
+                session.setCatalog(catalogDynamicNode.getLabel());
+
+                if (!catalogDynamicNode.isInitialized())
+                        catalogDynamicNode.initialize();
+        }
+
+        private void onSelectedSchemaDynamicNode(UISchemaDynamicNode schemaDynamicNode)
+        {
+                this.selectedSchemaDynamicNode = schemaDynamicNode;
+                session.setSchema(schemaDynamicNode.getLabel());
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        ///                       UPDATE COMBO BOX                         ///
+        //////////////////////////////////////////////////////////////////////
+
+        @SuppressWarnings("SwitchStatementWithTooFewBranches")
+        private void updateConnectionNodeComboBox(UIConnectionNode connectionNode)
+        {
+                driver = connectionNode.getDriver();
+                dbNodePath = driver.getNodeHierarchyPath();
+
+                catalogComboBox.setHidden(true);
+                schemaComboBox.setHidden(true);
+
+                // parent
+                switch (dbNodePath.kind()) {
+                        case CATALOG -> {
+                                catalogComboBox.setHidden(false);
+                                setCatalogComboBoxItem(connectionNode);
+                        }
+                        case SCHEMA -> {
+                                schemaComboBox.setHidden(false);
+                                setSchemaComboBoxItem(connectionNode);
+                        }
+                        default ->
+                                throw new UnsupportedOperationException("查询编辑器 Parent 不支持类型：" + dbNodePath.kind());
+                }
+
+                // child
+                DBNodePath child = dbNodePath.child();
+                if (child != null) {
+                        switch (child.kind()) {
+                                case SCHEMA -> schemaComboBox.setHidden(false);
+                                default ->
+                                        throw new UnsupportedOperationException("查询 Child 编辑器不支持类型：" + dbNodePath.kind());
+                        }
+                }
+        }
+
+        private void updateSchemaDynamicNodeComboBox(UICatalogDynamicNode catalogDynamicNode)
+        {
+                DBNodePath child = dbNodePath.child();
+                if (child != null && child.kind() == DBNodeKind.SCHEMA)
+                        setSchemaComboBoxItem(catalogDynamicNode);
+        }
+
+        private void setCatalogComboBoxItem(UIExplorerNode parentNode)
+        {
+                ObservableList<TreeItem<String>> children = parentNode.getChildren();
+
+                for (TreeItem<String> child : children) {
+                        UICatalogDynamicNode catalogDynamicNode = (UICatalogDynamicNode) child;
+                        catalogComboBox.getItems().add(catalogDynamicNode);
+                }
+        }
+
+        private void setSchemaComboBoxItem(UIExplorerNode parentNode)
+        {
+                ObservableList<TreeItem<String>> children = parentNode.getChildren();
+
+                for (TreeItem<String> child : children) {
+                        UISchemaDynamicNode schemaDynamicNode = (UISchemaDynamicNode) child;
+                        schemaComboBox.getItems().add(schemaDynamicNode);
+                }
+
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        ///                           RUN TASK                             ///
+        //////////////////////////////////////////////////////////////////////
+
+        private void showExecuteLoggerPane()
+        {
+                showPane(QUERY_EXECUTE_LOGGER_FIRST);
+        }
+
+        private void showPane(int flag)
+        {
+                if (!queryResultDataPane.getTabs().contains(sqlExecuteLoggerTab))
+                        queryResultDataPane.getTabs().add(sqlExecuteLoggerTab);
+
+                switch (flag) {
+                        case QUERY_RESULT_SET_FIRST -> queryResultDataPane.selectResultSetFirst();
+                        case QUERY_EXECUTE_LOGGER_FIRST -> queryResultDataPane.select(sqlExecuteLoggerTab);
+                }
+
+                if (!getItems().contains(queryResultDataPane))
+                        getItems().add(queryResultDataPane);
+        }
+
+        private void useProgressIndicator(Runnable runnable)
+        {
+                ProgressIndicator progressIndicator = Assets.newProgressIndicator();
+                oldGraphic = tab.getGraphic();
+                tab.setGraphic(progressIndicator);
+
+                Threads.start(() -> {
+                        try {
+                                runnable.run();
+                        } catch (Exception e) {
+                                Platform.runLater(() -> VkDialogHelper.alert(e));
+                        } finally {
+                                Platform.runLater(() -> tab.setGraphic(oldGraphic));
                         }
                 });
-
-                for (UIConnectionNode connectionNode : GlobalDynamicNodeContext.getConnectionNodes())
-                        connectionComboBox.getItems().add(connectionNode);
         }
 
-        private void setupBorderPane()
+        private void updateButtonForExecuting(boolean value)
         {
-                topBorderPane.setTop(toolBar);
-                topBorderPane.setCenter(editor);
-                getItems().add(topBorderPane);
+                runToolButton.setDisable(value);
+                stopToolButton.setDisable(!value);
         }
 
-        private static <T extends UIExplorerNode> void configureComboBox(VkComboBox<T> comboBox)
+        private void stopTask()
         {
-                comboBox.setButtonCell(new ListCell<>()
-                {
-                        @Override
-                        protected void updateItem(T item, boolean empty)
-                        {
-                                super.updateItem(item, empty);
+                if (driver != null)
+                        driver.cancel(taskId);
+        }
 
-                                if (empty || item == null)
-                                        return;
+        private void beautifySQL()
+        {
+                String selected = editor.getSelectedValue();
 
-                                setText(item.getLabel());
-                                setGraphic(item.createGraphic());
+                String formatted = SqlFormatter.format(selected);
+                editor.replaceSelection(formatted);
+        }
+
+        public void runTask()
+        {
+                if (runToolButton.isDisabled())
+                        return;
+
+                updateButtonForExecuting(true);
+                String selectedText = editor.getSelectedValue();
+
+                useProgressIndicator(() -> {
+                        try {
+                                taskId = System.currentTimeMillis();
+                                SQL sql = new SQL(selectedText);
+
+                                QueryResult queryResult = driver.execute(taskId, session, sql, new SQLExecuteCallback() {
+                                        @Override
+                                        public void execute(String sql)
+                                        {
+                                                Platform.runLater(() -> {
+                                                        sqlExecuteLoggerPane.appendExecute(sql);
+                                                        showExecuteLoggerPane();
+                                                });
+                                        }
+
+                                        @Override
+                                        public void executeQuery(String sql, boolean skip)
+                                        {
+                                                Platform.runLater(() -> {
+                                                        sqlExecuteLoggerPane.appendExecuteQuery(sql);
+                                                        showExecuteLoggerPane();
+                                                });
+                                        }
+
+                                        @Override
+                                        public void executeUpdate(String sql)
+                                        {
+                                                Platform.runLater(() -> {
+                                                        sqlExecuteLoggerPane.appendExecuteUpdate(sql);
+                                                        showExecuteLoggerPane();
+                                                });
+                                        }
+
+                                        @Override
+                                        public void row(int value)
+                                        {
+                                                Platform.runLater(() -> {
+                                                        sqlExecuteLoggerPane.appendRow(value);
+                                                        showExecuteLoggerPane();
+                                                });
+                                        }
+
+                                        @Override
+                                        public void cost(long time)
+                                        {
+                                                Platform.runLater(() -> {
+                                                        sqlExecuteLoggerPane.appendCost(time);
+                                                        showExecuteLoggerPane();
+                                                });
+                                        }
+                                });
+
+                                if (queryResult != null) {
+                                        Platform.runLater(() -> {
+                                                queryResultDataPane.reload(sql.getSingleTableName(), queryResult);
+                                                showPane(QUERY_RESULT_SET_FIRST);
+                                        });
+                                } else {
+                                        Platform.runLater(() -> showPane(QUERY_EXECUTE_LOGGER_FIRST));
+                                }
+                        } catch (Throwable e) {
+                                Platform.runLater(() -> {
+                                        LOG.error("run task error", e);
+                                        sqlExecuteLoggerPane.appendError(Causes.message(e));
+                                        showPane(QUERY_EXECUTE_LOGGER_FIRST);
+                                });
+                                throw e;
+                        } finally {
+                                updateButtonForExecuting(false);
                         }
                 });
+        }
 
-                comboBox.setCellFactory(list -> new ListCell<>()
-                {
-                        @Override
-                        protected void updateItem(T item, boolean empty)
-                        {
-                                super.updateItem(item, empty);
+        //////////////////////////////////////////////////////////////////////
+        ///                           SHORTCUT                             ///
+        //////////////////////////////////////////////////////////////////////
 
-                                if (empty || item == null)
-                                        return;
-
-                                setText(item.getLabel());
-                                setGraphic(item.createGraphic());
+        public void setupShortcutEvent()
+        {
+                /* Ctrl + R */
+                setOnKeyPressed(event -> {
+                        if ((event.isShortcutDown())
+                                && event.getCode() == KeyCode.R) {
+                                runTask();
+                                event.consume();
                         }
                 });
         }
 
-        @Override
-        public void onEvent(Event event)
-        {
-
-        }
 }
 

@@ -5,6 +5,8 @@ import redis.clients.jedis.commands.ProtocolCommand;
 import valkyrie.driver.api.*;
 import valkyrie.driver.api.exception.DriverException;
 import valkyrie.driver.api.node.DBNode;
+import valkyrie.driver.api.node.DBNodeKind;
+import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.utils.collection.Lists;
@@ -133,6 +135,12 @@ public class RedisDriver extends Driver
                         ret.add(new RedisCatalogNode(catalog, metadataProvider));
 
                 return ret;
+        }
+
+        @Override
+        public DBNodePath getNodeHierarchyPath()
+        {
+                return new DBNodePath(DBNodeKind.CATALOG, null);
         }
 
         @Override

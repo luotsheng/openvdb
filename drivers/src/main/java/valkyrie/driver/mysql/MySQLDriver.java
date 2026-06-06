@@ -10,6 +10,8 @@ import valkyrie.driver.api.*;
 import valkyrie.driver.api.exception.DriverException;
 import valkyrie.driver.api.node.DBCatalogNode;
 import valkyrie.driver.api.node.DBNode;
+import valkyrie.driver.api.node.DBNodeKind;
+import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.api.sql.SQLCommandType;
 import valkyrie.driver.suggestion.Suggestion;
@@ -62,6 +64,12 @@ public class MySQLDriver extends Driver
                         catalogNodes.add(new MySQLCatalogNode(catalog, metadataProvider));
 
                 return catalogNodes;
+        }
+
+        @Override
+        public DBNodePath getNodeHierarchyPath()
+        {
+                return new DBNodePath(DBNodeKind.CATALOG, null);
         }
 
         @Override

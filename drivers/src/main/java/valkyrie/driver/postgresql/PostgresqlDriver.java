@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 import valkyrie.driver.api.*;
 import valkyrie.driver.api.exception.DriverException;
 import valkyrie.driver.api.node.DBNode;
+import valkyrie.driver.api.node.DBNodeKind;
+import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.utils.collection.Lists;
 
@@ -51,6 +53,13 @@ public class PostgresqlDriver extends Driver
                         catalogNodes.add(new PostgresqlCatalogNode(catalog, metadataProvider));
 
                 return catalogNodes;
+        }
+
+        @Override
+        public DBNodePath getNodeHierarchyPath()
+        {
+                return new DBNodePath(DBNodeKind.CATALOG,
+                        new DBNodePath(DBNodeKind.SCHEMA, null));
         }
 
         @Override

@@ -56,6 +56,7 @@ public class UIDynamicNode extends UIExplorerNode
                         loadDynamicChildren(dbNode.getChildren());
                 setExpanded(isExpanded);
                 initializeChildrenFlag = true;
+                onInitializedEvent();
         }
 
         protected void unexpand()
@@ -67,8 +68,28 @@ public class UIDynamicNode extends UIExplorerNode
                 initializeChildrenFlag = false;
         }
 
+        public void initialize()
+        {
+                // 模拟点击
+                onMouseDoubleClickEvent();
+        }
+
+        public boolean isInitialized()
+        {
+                return initializeChildrenFlag;
+        }
+
         public Driver getDriver()
         {
                 return getRoot().getDriver();
+        }
+
+        ///////////////////////////////////////////////////////////////////////
+        ///                                 EVENT                           ///
+        ///////////////////////////////////////////////////////////////////////
+
+        public void onInitializedEvent()
+        {
+
         }
 }
