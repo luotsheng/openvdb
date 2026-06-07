@@ -13,12 +13,18 @@ import java.util.List;
  */
 public class GlobalDynamicNodeContext
 {
-        private static @Getter UIExplorerNode selectedExplorerNode;
+        private static @Getter UIExplorerNode selectedPathNode;
 
         private static final @Getter List<UIConnectionNode> connectionNodes = new ArrayList<>();
 
         public static synchronized void onSelectedEvent(UIExplorerNode explorerNode)
         {
-                selectedExplorerNode = explorerNode;
+                selectedPathNode = switch (explorerNode) {
+                        case UIConnectionNode connectionNode -> connectionNode;
+                        case UICatalogDynamicNode catalogDynamicNode -> catalogDynamicNode;
+                        case UISchemaDynamicNode schemaDynamicNode -> schemaDynamicNode;
+                        case UIQueryDynamicNode queryDynamicNode -> queryDynamicNode;
+                        default -> null;
+                };
         }
 }

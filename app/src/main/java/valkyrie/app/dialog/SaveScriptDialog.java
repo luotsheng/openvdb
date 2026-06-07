@@ -14,6 +14,7 @@ import valkyrie.app.explorer.UICatalogDynamicNode;
 import valkyrie.app.explorer.UIConnectionNode;
 import valkyrie.app.explorer.UISchemaDynamicNode;
 import valkyrie.app.widgets.VkComboBox;
+import valkyrie.app.workbench.PathSelector;
 import valkyrie.app.workbench.QueryEditor;
 
 /**
@@ -25,13 +26,14 @@ public class SaveScriptDialog extends BorderPane
 {
         private final Stage stage;
         private final TextField textField;
+        private final PathSelector pathSelector = new PathSelector();
         private final VkComboBox<UIConnectionNode> connectionComboBox;
         private final VkComboBox<UICatalogDynamicNode> catalogComboBox;
         private final VkComboBox<UISchemaDynamicNode> schemaComboBox;
 
         private boolean isOk = false;
 
-        public SaveScriptDialog(Stage stage, QueryEditor queryEditor)
+        public SaveScriptDialog(Stage stage)
         {
                 this.stage = stage;
 
@@ -40,13 +42,13 @@ public class SaveScriptDialog extends BorderPane
                 textField.setPromptText("输入查询名称...");
                 Label savePath = new Label("保存位置：");
 
-                connectionComboBox = queryEditor.getConnectionComboBox();
-                catalogComboBox = queryEditor.getCatalogComboBox();
-                schemaComboBox = queryEditor.getSchemaComboBox();
+                connectionComboBox = pathSelector.getConnectionComboBox();
+                catalogComboBox = pathSelector.getCatalogComboBox();
+                schemaComboBox = pathSelector.getSchemaComboBox();
 
-                connectionComboBox.setMaxWidth(Double.MAX_VALUE);
-                catalogComboBox.setMaxWidth(Double.MAX_VALUE);
-                schemaComboBox.setMaxWidth(Double.MAX_VALUE);
+                connectionComboBox.setPrefWidth(Double.MAX_VALUE);
+                catalogComboBox.setPrefWidth(Double.MAX_VALUE);
+                schemaComboBox.setPrefWidth(Double.MAX_VALUE);
 
                 VBox topBox = new VBox(title, textField, savePath, connectionComboBox, catalogComboBox, schemaComboBox);
                 topBox.setSpacing(10);
@@ -91,18 +93,18 @@ public class SaveScriptDialog extends BorderPane
                         pathBuilder.append("/").append(schemaDynamicNode.getLabel());
                 }
 
-                return pathBuilder.toString();
+                return pathBuilder.toString() + "/" + textField.getText();
         }
 
         /**
          * @return 返回用户输入的脚本名称， {@code null} 表示用户取消保存
          */
-        public static String showDialog(QueryEditor scriptEditor)
+        public static String showDialog()
         {
                 Stage stage = Application.createByPrimaryStage();
                 stage.initModality(Modality.APPLICATION_MODAL);
 
-                SaveScriptDialog dialog = new SaveScriptDialog(stage, scriptEditor);
+                SaveScriptDialog dialog = new SaveScriptDialog(stage);
 
                 Platform.runLater(() -> {});
                 Scene scene = new Scene(dialog, 600, 300);

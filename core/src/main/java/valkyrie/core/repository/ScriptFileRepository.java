@@ -3,6 +3,7 @@ package valkyrie.core.repository;
 import valkyrie.core.Users;
 import valkyrie.core.exception.CoreException;
 import valkyrie.core.model.ScriptFile;
+import valkyrie.utils.io.UFile;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -22,9 +23,9 @@ import static valkyrie.utils.string.StaticLibrary.strnempty;
  */
 public class ScriptFileRepository
 {
-        public static ScriptFile save(String path, String name, String content)
+        public static ScriptFile save(String path, String content)
         {
-                return save(new File(getPath(path, name) + ".sql"), content);
+                return save(getFile(path), content);
         }
 
         @SuppressWarnings("ResultOfMethodCallIgnored")
@@ -58,7 +59,7 @@ public class ScriptFileRepository
         {
                 List<ScriptFile> models = new ArrayList<>();
 
-                File sqlDir = new File(getPath(basePath, null));
+                File sqlDir = getFile(basePath);
 
                 File[] files = sqlDir.listFiles();
                 if (files == null)
@@ -74,13 +75,8 @@ public class ScriptFileRepository
         }
 
         @SuppressWarnings("SameParameterValue")
-        private static String getPath(String basePath, String name)
+        private static UFile getFile(String basePath)
         {
-                var baseDir = Users.connectionDir + "/" + basePath;
-
-                if (strnempty(name))
-                        baseDir += "/" + name;
-
-                return baseDir;
+                return new UFile(Users.connectionDir + "/" + basePath);
         }
 }

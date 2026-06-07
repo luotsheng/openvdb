@@ -2,30 +2,22 @@ package valkyrie.app.workbench;
 
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.layout.BorderPane;
-import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.dialog.SaveScriptDialog;
-import valkyrie.app.event.CatalogDynamicNodeInitializedEvent;
-import valkyrie.app.event.ConnectedSuccessEvent;
 import valkyrie.app.event.RefreshQueryNodeEvent;
-import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
-import valkyrie.app.event.bus.EventListener;
-import valkyrie.app.explorer.*;
 import valkyrie.app.pane.ExecuteLoggerPane;
 import valkyrie.app.pane.QueryResultDataPane;
 import valkyrie.app.utils.Threads;
-import valkyrie.app.widgets.VkComboBox;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
@@ -35,14 +27,10 @@ import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.SQLExecuteCallback;
 import valkyrie.driver.api.Session;
-import valkyrie.driver.api.node.DBNodeKind;
-import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.monacofx.MonacoEditor;
 import valkyrie.utils.exception.Causes;
 import valkyrie.utils.io.IOUtils;
-
-import java.util.function.Consumer;
 
 import static valkyrie.utils.string.StaticLibrary.strempty;
 
@@ -53,7 +41,7 @@ import static valkyrie.utils.string.StaticLibrary.strempty;
  * @since 2026/3/29
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
-public class QueryEditor extends SplitPane implements EventListener
+public class QueryEditor extends SplitPane
 {
         private static final Logger LOG = LoggerFactory.getLogger(QueryEditor.class);
 
@@ -68,14 +56,8 @@ public class QueryEditor extends SplitPane implements EventListener
         private final ExecuteLoggerPane sqlExecuteLoggerPane;
         private final QueryResultDataPane queryResultDataPane;
 
-        // ComboBox
-        private final @Getter VkComboBox<UIConnectionNode> connectionComboBox = new VkComboBox<>();
-        private final @Getter VkComboBox<UICatalogDynamicNode> catalogComboBox = new VkComboBox<>();
-        private final @Getter VkComboBox<UISchemaDynamicNode> schemaComboBox = new VkComboBox<>();
-
-        private UIConnectionNode selectedConnectionNode = null;
-        private UICatalogDynamicNode selectedCatalogDynamicNode = null;
-        private UISchemaDynamicNode selectedSchemaDynamicNode = null;
+        // Selector
+        private final PathSelector pathSelector = new PathSelector();
 
         // Tool
         private Button runToolButton;
@@ -83,9 +65,6 @@ public class QueryEditor extends SplitPane implements EventListener
         private Button beautifyToolButton;
 
         // Driver
-        private Driver driver;
-        private Session session = new Session();
-        private DBNodePath dbNodePath;
         private long taskId = System.currentTimeMillis();
 
         // Other
@@ -116,13 +95,8 @@ public class QueryEditor extends SplitPane implements EventListener
                 sqlExecuteLoggerTab.setClosable(false);
                 sqlExecuteLoggerTab.setContent(sqlExecuteLoggerPane);
 
-                setupComboBox();
                 setupBorderPane();
                 setupShortcutEvent();
-
-                // subscribe
-                EventBus.subscribe(ConnectedSuccessEvent.class, this);
-                EventBus.subscribe(CatalogDynamicNodeInitializedEvent.class, this);
         }
 
         private ToolBar createToolBar()
@@ -142,12 +116,10 @@ public class QueryEditor extends SplitPane implements EventListener
                 beautifyToolButton.setText("美化SQL");
                 beautifyToolButton.setOnAction(e -> beautifySQL());
 
-                schemaComboBox.setHidden(true);
-
                 toolBar.getItems().addAll(
-                        connectionComboBox,
-                        catalogComboBox,
-                        schemaComboBox,
+                        pathSelector.getConnectionComboBox(),
+                        pathSelector.getCatalogComboBox(),
+                        pathSelector.getSchemaComboBox(),
                         new VkSeparator(),
                         runToolButton,
                         stopToolButton,
@@ -184,20 +156,6 @@ public class QueryEditor extends SplitPane implements EventListener
                 topBorderPane.setCenter(editor);
                 setOrientation(Orientation.VERTICAL);
                 getItems().add(topBorderPane);
-        }
-
-        @Override
-        public void onEvent(Event event)
-        {
-                if (event instanceof ConnectedSuccessEvent connectedSuccessEvent) {
-                        if (connectedSuccessEvent.getConnectionNode() == selectedConnectionNode)
-                                updateConnectionNodeComboBox(selectedConnectionNode);
-                }
-
-                if (event instanceof CatalogDynamicNodeInitializedEvent catalogDynamicNodeInitializedEvent) {
-                        if (catalogDynamicNodeInitializedEvent.getDynamicNode() == selectedCatalogDynamicNode)
-                                updateSchemaDynamicNodeComboBox(selectedCatalogDynamicNode);
-                }
         }
 
         //////////////////////////////////////////////////////////////////////
@@ -251,255 +209,6 @@ public class QueryEditor extends SplitPane implements EventListener
         }
 
         //////////////////////////////////////////////////////////////////////
-        ///                        ON SELECTED EVENT                       ///
-        //////////////////////////////////////////////////////////////////////
-
-        private void onSelectedConnectionNode(UIConnectionNode connectionNode)
-        {
-                this.selectedConnectionNode = connectionNode;
-
-                if (!connectionNode.isConnect())
-                        connectionNode.connect();
-        }
-
-        private void onSelectedCatalogDynamicNode(UICatalogDynamicNode catalogDynamicNode)
-        {
-                this.selectedCatalogDynamicNode = catalogDynamicNode;
-                session.setCatalog(catalogDynamicNode.getLabel());
-
-                if (!catalogDynamicNode.isInitialized())
-                        catalogDynamicNode.initialize();
-        }
-
-        private void onSelectedSchemaDynamicNode(UISchemaDynamicNode schemaDynamicNode)
-        {
-                this.selectedSchemaDynamicNode = schemaDynamicNode;
-                session.setSchema(schemaDynamicNode.getLabel());
-        }
-
-        //////////////////////////////////////////////////////////////////////
-        ///                       UPDATE COMBO BOX                         ///
-        //////////////////////////////////////////////////////////////////////
-
-        private static <Node extends UIExplorerNode> void configureComboBox(VkComboBox<Node> comboBox)
-        {
-                comboBox.setButtonCell(new ListCell<>()
-                {
-                        @Override
-                        protected void updateItem(Node item, boolean empty)
-                        {
-                                super.updateItem(item, empty);
-
-                                if (empty || item == null)
-                                        return;
-
-                                setText(item.getLabel());
-                                setGraphic(item.createGraphic());
-                        }
-                });
-
-                comboBox.setCellFactory(list -> new ListCell<>()
-                {
-                        @Override
-                        protected void updateItem(Node item, boolean empty)
-                        {
-                                super.updateItem(item, empty);
-
-                                if (empty || item == null)
-                                        return;
-
-                                setText(item.getLabel());
-                                setGraphic(item.createGraphic());
-                        }
-                });
-        }
-
-        private <T> void registerSelectionListener(
-                ComboBox<T> comboBox,
-                Consumer<T> consumer)
-        {
-                comboBox.getSelectionModel().selectedItemProperty()
-                        .addListener((obs, oldVal, newVal) -> {
-                                if (newVal != null)
-                                        consumer.accept(newVal);
-                        });
-        }
-
-        private void setupComboBox()
-        {
-                configureComboBox(connectionComboBox);
-                configureComboBox(catalogComboBox);
-                configureComboBox(schemaComboBox);
-
-                // connection
-                registerSelectionListener(connectionComboBox, this::onSelectedConnectionNode);
-                registerSelectionListener(catalogComboBox, this::onSelectedCatalogDynamicNode);
-                registerSelectionListener(schemaComboBox, this::onSelectedSchemaDynamicNode);
-
-                // 初始化 ComboBox 数据
-                initializeFromCurrentSelectedNode();
-        }
-
-        private void initializeFromCurrentSelectedNode()
-        {
-                for (UIConnectionNode connectionNode :
-                        GlobalDynamicNodeContext.getConnectionNodes())
-                        connectionComboBox.getItems().add(connectionNode);
-
-                UIExplorerNode node =
-                        GlobalDynamicNodeContext.getSelectedExplorerNode();
-
-                if (node == null)
-                        return;
-
-                switch (node) {
-                        case UIConnectionNode connectionNode ->
-                                restoreConnection(connectionNode);
-
-                        case UICatalogDynamicNode catalogDynamicNode ->
-                                restoreCatalog(catalogDynamicNode);
-
-                        case UISchemaDynamicNode schemaDynamicNode ->
-                                restoreSchema(schemaDynamicNode);
-
-                        case UIQueryDynamicNode queryDynamicNode
-                                -> restoreQuery(queryDynamicNode);
-
-                        default ->
-                                throw new UnsupportedOperationException("不支持节点类型：" + node);
-                }
-        }
-
-        private void restoreConnection(UIConnectionNode connectionNode)
-        {
-                connectionComboBox.getSelectionModel().select(connectionNode);
-                updateConnectionNodeComboBox(connectionNode);
-        }
-
-        private void restoreCatalog(UICatalogDynamicNode catalogDynamicNode)
-        {
-                UIConnectionNode connectionNode =
-                        (UIConnectionNode) catalogDynamicNode.getParent();
-
-                restoreConnection(connectionNode);
-
-                catalogComboBox.getSelectionModel()
-                        .select(catalogDynamicNode);
-
-                updateSchemaDynamicNodeComboBox(catalogDynamicNode);
-        }
-
-        private void restoreSchema(UISchemaDynamicNode schemaDynamicNode)
-        {
-                if (schemaDynamicNode.getParent() instanceof UIConnectionNode connectionNode)
-                        restoreConnection(connectionNode);
-
-                if (schemaDynamicNode.getParent() instanceof UICatalogDynamicNode catalogDynamicNode) {
-                        restoreCatalog(catalogDynamicNode);
-                }
-
-                if (!schemaDynamicNode.isInitialized())
-                        schemaDynamicNode.initialize();
-
-                schemaComboBox.getSelectionModel()
-                        .select(schemaDynamicNode);
-        }
-
-        private void restoreQuery(UIQueryDynamicNode queryDynamicNode)
-        {
-                UIExplorerNode parent = queryDynamicNode.getDirectParent();
-
-                if (parent instanceof UISchemaDynamicNode schemaDynamicNode)
-                        restoreSchema(schemaDynamicNode);
-
-                if (parent instanceof UICatalogDynamicNode catalogDynamicNode)
-                        restoreCatalog(catalogDynamicNode);
-        }
-
-        @SuppressWarnings("SwitchStatementWithTooFewBranches")
-        private void updateConnectionNodeComboBox(UIConnectionNode connectionNode)
-        {
-                driver = connectionNode.getDriver();
-                dbNodePath = driver.getNodeHierarchyPath();
-
-                catalogComboBox.setHidden(true);
-                schemaComboBox.setHidden(true);
-
-                // parent
-                switch (dbNodePath.kind()) {
-                        case CATALOG -> {
-                                catalogComboBox.setHidden(false);
-                                setCatalogComboBoxItem(connectionNode);
-                        }
-                        case SCHEMA -> {
-                                schemaComboBox.setHidden(false);
-                                setSchemaComboBoxItem(connectionNode);
-                        }
-                        default ->
-                                throw new UnsupportedOperationException("查询编辑器 Parent 不支持类型：" + dbNodePath.kind());
-                }
-
-                // child
-                DBNodePath child = dbNodePath.child();
-                if (child != null) {
-                        switch (child.kind()) {
-                                case SCHEMA -> schemaComboBox.setHidden(false);
-                                default ->
-                                        throw new UnsupportedOperationException("查询 Child 编辑器不支持类型：" + dbNodePath.kind());
-                        }
-                }
-        }
-
-        private void updateSchemaDynamicNodeComboBox(UICatalogDynamicNode catalogDynamicNode)
-        {
-                DBNodePath child = dbNodePath.child();
-                if (child != null && child.kind() == DBNodeKind.SCHEMA)
-                        setSchemaComboBoxItem(catalogDynamicNode);
-        }
-
-        private void setCatalogComboBoxItem(UIExplorerNode parentNode)
-        {
-                ObservableList<TreeItem<String>> children = parentNode.getChildren();
-
-                for (TreeItem<String> child : children) {
-                        UICatalogDynamicNode catalogDynamicNode = (UICatalogDynamicNode) child;
-                        catalogComboBox.getItems().add(catalogDynamicNode);
-                }
-        }
-
-        private void setSchemaComboBoxItem(UIExplorerNode parentNode)
-        {
-                ObservableList<TreeItem<String>> children = parentNode.getChildren();
-
-                for (TreeItem<String> child : children) {
-                        UISchemaDynamicNode schemaDynamicNode = (UISchemaDynamicNode) child;
-                        schemaComboBox.getItems().add(schemaDynamicNode);
-                }
-
-        }
-
-        public VkComboBox<UIConnectionNode> copyConnectionComboBox()
-        {
-                VkComboBox<UIConnectionNode> comboBox = connectionComboBox.copyComboBox();
-                configureComboBox(comboBox);
-                return comboBox;
-        }
-
-        public VkComboBox<UICatalogDynamicNode> copyCatalogComboBox()
-        {
-                VkComboBox<UICatalogDynamicNode> comboBox = catalogComboBox.copyComboBox();
-                configureComboBox(comboBox);
-                return comboBox;
-        }
-
-        public VkComboBox<UISchemaDynamicNode> copySchemaComboBox()
-        {
-                VkComboBox<UISchemaDynamicNode> comboBox = schemaComboBox.copyComboBox();
-                configureComboBox(comboBox);
-                return comboBox;
-        }
-
-        //////////////////////////////////////////////////////////////////////
         ///                           RUN TASK                             ///
         //////////////////////////////////////////////////////////////////////
 
@@ -547,8 +256,8 @@ public class QueryEditor extends SplitPane implements EventListener
 
         private void stopTask()
         {
-                if (driver != null)
-                        driver.cancel(taskId);
+                if (pathSelector.getDriver() != null)
+                        pathSelector.getDriver().cancel(taskId);
         }
 
         private void beautifySQL()
@@ -566,6 +275,9 @@ public class QueryEditor extends SplitPane implements EventListener
 
                 updateButtonForExecuting(true);
                 String selectedText = editor.getSelectedValue();
+
+                Driver driver = pathSelector.getDriver();
+                Session session = pathSelector.getSession();
 
                 useProgressIndicator(() -> {
                         try {
@@ -669,7 +381,8 @@ public class QueryEditor extends SplitPane implements EventListener
                 String content = editor.getValue();
 
                 if (scriptFile == null) {
-                        String path = SaveScriptDialog.showDialog(this);
+                        String path = SaveScriptDialog.showDialog();
+                        scriptFile = ScriptFileRepository.save(path, content);
                         EventBus.publish(new RefreshQueryNodeEvent());
                 } else {
                         ScriptFileRepository.save(scriptFile, content);

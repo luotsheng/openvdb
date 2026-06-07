@@ -26,6 +26,7 @@ import valkyrie.utils.exception.IOReadException;
 import valkyrie.utils.string.StaticLibrary;
 import valkyrie.utils.system.OS;
 
+import java.io.File;
 import java.io.RandomAccessFile;
 import java.net.URI;
 import java.nio.file.Path;
@@ -298,7 +299,10 @@ public class UFile extends java.io.File {
      */
     @Override
     public UFile[] listFiles() {
-        List<UFile> list = Lists.map(super.listFiles(), UFile::wrap);
+        File[] files = super.listFiles();
+        if (files == null)
+            return new UFile[0];
+        List<UFile> list = Lists.map(files, UFile::wrap);
         UFile[] fs = new UFile[list.size()];
         list.toArray(fs);
         return fs;
