@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
-import valkyrie.app.dialog.script.QueryFileSaveDialog;
+import valkyrie.app.dialog.queryFile.QueryFileSaveDialog;
 import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.pane.ExecuteLoggerPane;
@@ -21,8 +21,8 @@ import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
-import valkyrie.core.model.ScriptFile;
-import valkyrie.core.repository.ScriptFileRepository;
+import valkyrie.core.model.QueryFile;
+import valkyrie.core.repository.QueryFileRepository;
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.SQLExecuteCallback;
@@ -71,14 +71,14 @@ public class QueryEditor extends SplitPane
         private Node oldGraphic;
 
         // File
-        private ScriptFile scriptFile;
+        private QueryFile scriptFile;
 
         public QueryEditor(Tab tab)
         {
                 this(tab, null);
         }
 
-        public QueryEditor(Tab tab, ScriptFile file)
+        public QueryEditor(Tab tab, QueryFile file)
         {
                 this.tab = tab;
                 this.scriptFile = file;
@@ -240,8 +240,6 @@ public class QueryEditor extends SplitPane
                 Threads.start(() -> {
                         try {
                                 runnable.run();
-                        } catch (Exception e) {
-                                Platform.runLater(() -> VkDialogHelper.alert(e));
                         } finally {
                                 Platform.runLater(() -> tab.setGraphic(oldGraphic));
                         }
@@ -381,11 +379,12 @@ public class QueryEditor extends SplitPane
                 String content = editor.getValue();
 
                 if (scriptFile == null) {
-                        String path = QueryFileSaveDialog.showDialog();
-                        scriptFile = ScriptFileRepository.save(path, content);
-                        EventBus.publish(new RefreshQueryNodeEvent());
+                        if ((scriptFile = QueryFileSaveDialog.showDialog()) != null) {
+                                QueryFileRepository.save(scriptFile, content);
+                                EventBus.publish(new RefreshQueryNodeEvent());
+                        }
                 } else {
-                        ScriptFileRepository.save(scriptFile, content);
+                        QueryFileRepository.save(scriptFile, content);
                 }
         }
 }

@@ -2,8 +2,7 @@ package valkyrie.core.repository;
 
 import valkyrie.core.Users;
 import valkyrie.core.exception.CoreException;
-import valkyrie.core.model.ScriptFile;
-import valkyrie.utils.io.UFile;
+import valkyrie.core.model.QueryFile;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -13,23 +12,21 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
-import static valkyrie.utils.string.StaticLibrary.strnempty;
-
 /**
  * 脚本数据
  *
  * @author Luo Tiansheng
  * @since 2026/3/25
  */
-public class ScriptFileRepository
+public class QueryFileRepository
 {
-        public static ScriptFile save(String path, String content)
+        public static QueryFile save(String path, String content)
         {
                 return save(getFile(path), content);
         }
 
         @SuppressWarnings("ResultOfMethodCallIgnored")
-        public static ScriptFile save(File scriptFile, String content)
+        public static QueryFile save(File scriptFile, String content)
         {
                 try {
                         if (!scriptFile.exists()) {
@@ -44,20 +41,20 @@ public class ScriptFileRepository
                         throw new CoreException(e);
                 }
 
-                return new ScriptFile(scriptFile);
+                return new QueryFile(scriptFile);
         }
 
         @SuppressWarnings("ResultOfMethodCallIgnored")
-        public static ScriptFile rename(ScriptFile src, String name)
+        public static QueryFile rename(QueryFile src, String name)
         {
                 var newFile = new File(src.getParentFile(), name);
                 src.renameTo(newFile);
-                return new ScriptFile(newFile);
+                return new QueryFile(newFile);
         }
 
-        public static List<ScriptFile> loadScriptFiles(String basePath)
+        public static List<QueryFile> loadScriptFiles(String basePath)
         {
-                List<ScriptFile> models = new ArrayList<>();
+                List<QueryFile> models = new ArrayList<>();
 
                 File sqlDir = getFile(basePath);
 
@@ -66,17 +63,28 @@ public class ScriptFileRepository
                         return models;
 
                 for (File file : files)
-                        models.add(new ScriptFile(file));
+                        models.add(new QueryFile(file));
 
                 Collator collator = Collator.getInstance(Locale.CHINA);
-                models.sort(Comparator.comparing(ScriptFile::getName, collator));
+                models.sort(Comparator.comparing(QueryFile::getName, collator));
 
                 return models;
         }
 
         @SuppressWarnings("SameParameterValue")
-        private static UFile getFile(String basePath)
+        public static QueryFile getFile(String basePath)
         {
-                return new UFile(Users.connectionDir + "/" + basePath);
+                return new QueryFile(Users.connectionDir + "/" + basePath);
+        }
+
+        public static boolean exists(String path)
+        {
+                return getFile(path).exists();
+        }
+
+        public static void removeIfExists(String path)
+        {
+                if (exists(path))
+                        getFile(path).forceDelete();
         }
 }

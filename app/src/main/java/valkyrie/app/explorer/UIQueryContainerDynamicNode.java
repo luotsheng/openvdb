@@ -7,8 +7,8 @@ import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.utils.Threads;
-import valkyrie.core.model.ScriptFile;
-import valkyrie.core.repository.ScriptFileRepository;
+import valkyrie.core.model.QueryFile;
+import valkyrie.core.repository.QueryFileRepository;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.utils.collection.Lists;
 
@@ -59,12 +59,12 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
 
         private void reloadQueryNode()
         {
-                var scriptFiles = ScriptFileRepository.loadScriptFiles(new File(getPath()).getParent());
+                var scriptFiles = QueryFileRepository.loadScriptFiles(new File(getPath()).getParent());
                 List<UIQueryDynamicNode> nodes = Lists.newArrayList();
 
                 getChildren().clear();
 
-                for (ScriptFile scriptFile : scriptFiles)
+                for (QueryFile scriptFile : scriptFiles)
                         nodes.add(new UIQueryDynamicNode(this, scriptFile));
 
                 getChildren().addAll(nodes);

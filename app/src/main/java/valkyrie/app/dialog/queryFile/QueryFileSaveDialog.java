@@ -1,4 +1,4 @@
-package valkyrie.app.dialog.script;
+package valkyrie.app.dialog.queryFile;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -6,22 +6,29 @@ import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.*;
-import javafx.stage.Modality;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import valkyrie.app.Application;
+import valkyrie.app.event.RefreshQueryNodeEvent;
+import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.explorer.UICatalogDynamicNode;
 import valkyrie.app.explorer.UIConnectionNode;
 import valkyrie.app.explorer.UISchemaDynamicNode;
 import valkyrie.app.widgets.VkComboBox;
+import valkyrie.app.widgets.dialog.VkDialog;
+import valkyrie.app.widgets.dialog.VkDialogStages;
 import valkyrie.app.workbench.PathSelector;
+import valkyrie.core.model.QueryFile;
+import valkyrie.core.repository.QueryFileRepository;
 
 /**
  * @author Luo Tiansheng
  * @since 2026/3/27
  */
 @SuppressWarnings("FieldCanBeLocal")
-public class QueryFileSaveDialog extends BorderPane
+public class QueryFileSaveDialog extends VkDialog
 {
         private final Stage stage;
         private final TextField textField;
@@ -30,7 +37,7 @@ public class QueryFileSaveDialog extends BorderPane
         private final VkComboBox<UICatalogDynamicNode> catalogComboBox;
         private final VkComboBox<UISchemaDynamicNode> schemaComboBox;
 
-        private boolean isOk = false;
+        private QueryFile queryFile;
 
         public QueryFileSaveDialog(Stage stage)
         {
@@ -55,7 +62,7 @@ public class QueryFileSaveDialog extends BorderPane
 
                 Button ok = new Button("保存");
                 ok.setOnAction(e -> {
-                        isOk = true;
+                        save();
                         cancel();
                 });
 
@@ -68,6 +75,25 @@ public class QueryFileSaveDialog extends BorderPane
 
                 setTop(topBox);
                 setBottom(bottomBox);
+        }
+
+        private void save()
+        {
+                QueryFile queryFile = QueryFileRepository.getFile(buildPath());
+
+                if (queryFile.exists()) {
+                        if (QueryFileConfirmOverwriteDialog.showDialog(stage, queryFile))
+                                saveAndRefreshQueryNode(queryFile);
+                } else {
+                        saveAndRefreshQueryNode(queryFile);
+                }
+        }
+
+        private void saveAndRefreshQueryNode(QueryFile queryFile)
+        {
+                this.queryFile = queryFile;
+                cancel();
+                EventBus.publish(new RefreshQueryNodeEvent());
         }
 
         private void cancel()
@@ -98,10 +124,9 @@ public class QueryFileSaveDialog extends BorderPane
         /**
          * @return 返回用户输入的脚本名称， {@code null} 表示用户取消保存
          */
-        public static String showDialog()
+        public static QueryFile showDialog()
         {
-                Stage stage = Application.createByPrimaryStage();
-                stage.initModality(Modality.APPLICATION_MODAL);
+                Stage stage = VkDialogStages.create();
 
                 QueryFileSaveDialog dialog = new QueryFileSaveDialog(stage);
 
@@ -110,10 +135,7 @@ public class QueryFileSaveDialog extends BorderPane
                 stage.setScene(scene);
                 stage.showAndWait();
 
-                if (dialog.isOk)
-                        return dialog.buildPath();
-
-                return null;
+                return dialog.queryFile;
         }
 
 }

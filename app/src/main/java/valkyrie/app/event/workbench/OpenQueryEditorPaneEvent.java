@@ -3,10 +3,9 @@ package valkyrie.app.event.workbench;
 import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import valkyrie.app.assets.Assets;
-import valkyrie.app.explorer.UIExplorerNode;
 import valkyrie.app.explorer.UIQueryDynamicNode;
 import valkyrie.app.workbench.QueryEditor;
-import valkyrie.core.model.ScriptFile;
+import valkyrie.core.model.QueryFile;
 
 import static valkyrie.utils.string.StaticLibrary.fmt;
 
@@ -20,7 +19,7 @@ public class OpenQueryEditorPaneEvent extends OpenTabEvent
 {
         private static int count = 0;
 
-        private final ScriptFile scriptFile;
+        private final QueryFile scriptFile;
         private final UIQueryDynamicNode queryDynamicNode;
 
         public OpenQueryEditorPaneEvent(UIQueryDynamicNode owner)

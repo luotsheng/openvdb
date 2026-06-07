@@ -1,4 +1,4 @@
-package valkyrie.app.dialog.script;
+package valkyrie.app.dialog.queryFile;
 
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -7,25 +7,26 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.*;
 import javafx.stage.Stage;
-import valkyrie.app.Application;
 import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.bus.EventBus;
-import valkyrie.core.model.ScriptFile;
-import valkyrie.core.repository.ScriptFileRepository;
+import valkyrie.app.widgets.dialog.VkDialog;
+import valkyrie.app.widgets.dialog.VkDialogStages;
+import valkyrie.core.model.QueryFile;
+import valkyrie.core.repository.QueryFileRepository;
 
 /**
  * @author Luo Tiansheng
  * @since 2026/3/27
  */
 @SuppressWarnings("FieldCanBeLocal")
-public class QueryFileRenameDialog extends BorderPane
+public class QueryFileRenameDialog extends VkDialog
 {
         private final Stage stage;
         private final TextField textField;
 
-        private ScriptFile scriptFile;
+        private QueryFile scriptFile;
 
-        public QueryFileRenameDialog(Stage stage, ScriptFile scriptFile)
+        public QueryFileRenameDialog(Stage stage, QueryFile scriptFile)
         {
                 this.stage = stage;
                 this.scriptFile = scriptFile;
@@ -52,15 +53,17 @@ public class QueryFileRenameDialog extends BorderPane
 
         private void save()
         {
-                ScriptFile newScriptFile = scriptFile;
+                QueryFile newScriptFile = new QueryFile(scriptFile.getParentFile(), textField.getText());
 
-                newScriptFile = ScriptFileRepository.rename(
-                        scriptFile, textField.getText()
-                );
+                if (QueryFileConfirmOverwriteDialog.showDialog(stage, newScriptFile)) {
+                        QueryFileRepository.rename(
+                                scriptFile, textField.getText()
+                        );
 
-                scriptFile = newScriptFile;
+                        scriptFile = newScriptFile;
 
-                EventBus.publish(new RefreshQueryNodeEvent());
+                        EventBus.publish(new RefreshQueryNodeEvent());
+                }
 
                 cancel();
         }
@@ -70,9 +73,9 @@ public class QueryFileRenameDialog extends BorderPane
                 stage.close();
         }
 
-        public static void showDialog(ScriptFile scriptFile)
+        public static void showDialog(QueryFile scriptFile)
         {
-                Stage stage = Application.createByPrimaryStage();
+                Stage stage = VkDialogStages.create();
 
                 QueryFileRenameDialog dialog = new QueryFileRenameDialog(stage, scriptFile);
 
@@ -80,5 +83,4 @@ public class QueryFileRenameDialog extends BorderPane
                 stage.setScene(scene);
                 stage.showAndWait();
         }
-
 }

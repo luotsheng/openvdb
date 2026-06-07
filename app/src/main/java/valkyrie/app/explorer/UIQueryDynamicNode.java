@@ -3,12 +3,12 @@ package valkyrie.app.explorer;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import lombok.Getter;
-import valkyrie.app.dialog.script.QueryFileRenameDialog;
+import valkyrie.app.dialog.queryFile.QueryFileRenameDialog;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;
 import valkyrie.app.event.workbench.OpenQueryEditorPaneEvent;
 import valkyrie.app.widgets.VkContextMenu;
-import valkyrie.core.model.ScriptFile;
+import valkyrie.core.model.QueryFile;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.node.DBNodeKind;
 import valkyrie.utils.collection.Lists;
@@ -24,9 +24,9 @@ public class UIQueryDynamicNode extends UIDynamicNode
         @Getter
         static class QueryNodeWrapper extends DBNode
         {
-                private final ScriptFile file;
+                private final QueryFile file;
 
-                public QueryNodeWrapper(ScriptFile file)
+                public QueryNodeWrapper(QueryFile file)
                 {
                         super(file.getName(), DBNodeKind.QUERY, null);
                         this.file = file;
@@ -45,7 +45,7 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 }
 
         }
-        public UIQueryDynamicNode(UIExplorerNode parent, ScriptFile file)
+        public UIQueryDynamicNode(UIExplorerNode parent, QueryFile file)
         {
                 super(parent, new QueryNodeWrapper(file));
         }
@@ -87,7 +87,7 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 return getExplorerParent().getExplorerParent();
         }
 
-        public ScriptFile getScriptFile()
+        public QueryFile getScriptFile()
         {
                 return ((QueryNodeWrapper) dbNode).getFile();
         }

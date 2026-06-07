@@ -11,29 +11,29 @@ import java.net.URI;
  * @author Luo Tiansheng
  * @since 2026/3/31
  */
-public class ScriptFile extends UFile
+public class QueryFile extends UFile
 {
-        public ScriptFile(File file)
+        public QueryFile(File file)
         {
                 this(file.getAbsolutePath());
         }
 
-        public ScriptFile(String pathname)
+        public QueryFile(String pathname)
         {
                 super(pathname);
         }
 
-        public ScriptFile(String parent, String child)
+        public QueryFile(String parent, String child)
         {
                 super(parent, child);
         }
 
-        public ScriptFile(File parent, String child)
+        public QueryFile(File parent, String child)
         {
                 super(parent, child);
         }
 
-        public ScriptFile(URI uri)
+        public QueryFile(URI uri)
         {
                 super(uri);
         }
