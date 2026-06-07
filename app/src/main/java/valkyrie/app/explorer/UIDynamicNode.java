@@ -120,6 +120,9 @@ public class UIDynamicNode extends UIExplorerNode
                 return getRoot().getDriver();
         }
 
+        /**
+         * 返回最上层路径节点，如（Schema，Catalog）
+         */
         public UIExplorerNode getPathNode()
         {
                 return this;

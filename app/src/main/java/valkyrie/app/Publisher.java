@@ -2,7 +2,6 @@ package valkyrie.app;
 
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.OpenQueryEditorPaneEvent;
-import valkyrie.app.explorer.GlobalDynamicNodeContext;
 
 /**
  * @author Luo Tiansheng

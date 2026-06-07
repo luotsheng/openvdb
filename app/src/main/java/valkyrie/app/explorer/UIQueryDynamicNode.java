@@ -116,6 +116,6 @@ public class UIQueryDynamicNode extends UIDynamicNode
 
                 setQueryFile(dstQueryFile);
                 QueryFileRepository.rename(srcQueryFile, newFileName);
-                EventBus.publish(new RefreshQueryNodeEvent());
+                EventBus.publish(new RefreshQueryNodeEvent(newFileName));
         }
 }

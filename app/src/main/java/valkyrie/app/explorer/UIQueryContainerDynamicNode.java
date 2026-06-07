@@ -2,6 +2,7 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TreeItem;
 import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
@@ -14,6 +15,8 @@ import valkyrie.utils.collection.Lists;
 
 import java.io.File;
 import java.util.List;
+
+import static valkyrie.utils.string.StaticLibrary.streq;
 
 /**
  * @author Luo Tiansheng
@@ -84,8 +87,22 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
         @Override
         public void onEvent(Event event)
         {
-                if (event instanceof RefreshQueryNodeEvent) {
+                if (event instanceof RefreshQueryNodeEvent refreshQueryNodeEvent) {
                         refreshQueryNode();
+
+                        String selectNodeLabel = refreshQueryNodeEvent.getSelectNodeLabel();
+                        if (selectNodeLabel != null)
+                                checkDefaultSelectNode(selectNodeLabel);
+                }
+        }
+
+        private void checkDefaultSelectNode(String selectNodeLabel)
+        {
+                for (TreeItem<String> child : getChildren()) {
+                        if (streq(((UIExplorerNode) child).getLabel(), selectNodeLabel)) {
+                                getRoot().getTreeView().getSelectionModel().select(child);
+                                break;
+                        }
                 }
         }
 }
