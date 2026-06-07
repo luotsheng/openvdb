@@ -86,7 +86,7 @@ public class SQLiteDriver extends Driver
         }
 
         @Override
-        public List<Suggestion> getSuggestion(Session session)
+        public List<Suggestion> getSuggestions(Session session)
         {
                 return List.of();
         }

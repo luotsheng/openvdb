@@ -291,7 +291,7 @@ public abstract class Driver implements SQLExecutor
          *
          * @return 保留关键字列表（永不返回 {@code null}，若无关键字则返回空列表）
          */
-        public abstract List<Suggestion> getSuggestion(Session session);
+        public abstract List<Suggestion> getSuggestions(Session session);
 
         /**
          * 获取指定会话上下文中所有用户定义的表名称列表。

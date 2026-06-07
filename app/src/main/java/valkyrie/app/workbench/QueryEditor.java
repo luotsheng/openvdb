@@ -36,9 +36,12 @@ import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.SQLExecuteCallback;
 import valkyrie.driver.api.Session;
 import valkyrie.driver.api.sql.SQL;
+import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.monacofx.MonacoEditor;
 import valkyrie.utils.exception.Causes;
 import valkyrie.utils.io.IOUtils;
+
+import java.util.List;
 
 import static valkyrie.utils.string.StaticLibrary.strempty;
 
@@ -58,14 +61,16 @@ public class QueryEditor extends SplitPane implements EventListener
         
         private final Tab tab;
         private final ToolBar toolBar;
-        private final MonacoEditor editor;
+        private final MonacoEditor editor = createMonacoEditor();
         private final BorderPane topBorderPane = new BorderPane();
         private final Tab sqlExecuteLoggerTab;
         private final ExecuteLoggerPane sqlExecuteLoggerPane;
         private final QueryResultDataPane queryResultDataPane;
 
         // Selector
-        private PathSelector pathSelector = new PathSelector();
+        private PathSelector pathSelector = new PathSelector(
+                this::updateEditorSuggestions
+        );
 
         // Tool
         private Button runToolButton;
@@ -73,6 +78,8 @@ public class QueryEditor extends SplitPane implements EventListener
         private Button beautifyToolButton;
 
         // Driver
+        private Driver driver;
+        private Session session;
         private long taskId = System.currentTimeMillis();
 
         // Other
@@ -94,7 +101,6 @@ public class QueryEditor extends SplitPane implements EventListener
                 tab.setContent(this);
 
                 toolBar = createToolBar();
-                editor = createMonacoEditor();
 
                 // sql logger
                 queryResultDataPane = new QueryResultDataPane(tab, false);
@@ -167,6 +173,16 @@ public class QueryEditor extends SplitPane implements EventListener
                 topBorderPane.setCenter(editor);
                 setOrientation(Orientation.VERTICAL);
                 getItems().add(topBorderPane);
+        }
+
+        private void updateEditorSuggestions(Driver driver, Session session)
+        {
+                List<Suggestion> suggestions = driver.getSuggestions(session);
+
+                if (suggestions.isEmpty())
+                        return;
+
+                editor.registerSuggestions(suggestions);
         }
 
         //////////////////////////////////////////////////////////////////////

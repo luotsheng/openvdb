@@ -89,12 +89,17 @@ public class MySQLDriver extends Driver
         }
 
         @Override
-        public List<Suggestion> getSuggestion(Session session)
+        public List<Suggestion> getSuggestions(Session session)
         {
                 Set<Suggestion> ret = Sets.newHashSet();
 
                 ret.addAll(MySQLSuggestions.VALUES);
 
+                /* 表信息 */
+                List<Table> tables = getTables(session);
+                ret.addAll(tables.stream().map(t -> Suggestion.ofClass(t.getName(), t.getComment())).toList());
+
+                /* 字段信息 */
                 QueryResult queryResult = execute(session, """
                         SELECT
                           COLUMN_NAME,
@@ -108,6 +113,7 @@ public class MySQLDriver extends Driver
                         ORDER BY
                           COLUMN_NAME;
                         """);
+
                 ret.addAll(queryResult.getRows().stream().map(t -> Suggestion.ofField(first(t), second(t))).toList());
 
                 return Lists.newArrayList(ret);

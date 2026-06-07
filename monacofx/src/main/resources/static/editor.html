@@ -40,16 +40,7 @@
     window.Suggestions = [];
 
     window.addSuggestions = function (suggestions) {
-        suggestions.forEach(it => {
-            const exists = window.Suggestions.some(v =>
-                v.label === it.label &&
-                v.kind === it.kind
-            );
-
-            if (!exists) {
-                window.Suggestions.push(it);
-            }
-        });
+        window.Suggestions = window.Suggestions.concat(suggestions);
     }
 
     require(['vs/editor/editor.main'], function () {

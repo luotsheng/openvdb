@@ -7,8 +7,10 @@ import valkyrie.driver.api.exception.DriverException;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.node.DBNodeKind;
 import valkyrie.driver.api.node.DBNodePath;
+import valkyrie.driver.dm.DMSuggestions;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.utils.collection.Lists;
+import valkyrie.utils.collection.Sets;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -18,6 +20,8 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
+import static valkyrie.utils.collection.Lists.first;
+import static valkyrie.utils.collection.Lists.second;
 import static valkyrie.utils.string.StaticLibrary.fmt;
 
 /**
@@ -75,9 +79,50 @@ public class PostgresqlDriver extends Driver
         }
 
         @Override
-        public List<Suggestion> getSuggestion(Session session)
+        public List<Suggestion> getSuggestions(Session session)
         {
-                return List.of();
+                if (session.catalog() == null || session.schema() == null)
+                        return Lists.emptyList();
+
+                Set<Suggestion> ret = Sets.newHashSet();
+
+                ret.addAll(DMSuggestions.VALUES);
+
+                /* 表信息 */
+                List<Table> tables = getTables(session);
+                ret.addAll(tables.stream()
+                        .map(t -> Suggestion.ofClass(t.getName(), t.getComment()))
+                        .toList());
+
+                /* 字段信息 */
+                QueryResult queryResult = execute(session, """
+                        SELECT
+                          c.column_name,
+                          MAX(pd.description) AS comment
+                        FROM
+                          information_schema.columns c
+                          LEFT JOIN pg_catalog.pg_class pc
+                            ON pc.relname = c.table_name
+                          LEFT JOIN pg_catalog.pg_namespace pn
+                            ON pn.oid = pc.relnamespace
+                            AND pn.nspname = c.table_schema
+                          LEFT JOIN pg_catalog.pg_attribute pa
+                            ON pa.attrelid = pc.oid
+                            AND pa.attname = c.column_name
+                          LEFT JOIN pg_catalog.pg_description pd
+                            ON pd.objoid = pc.oid
+                            AND pd.objsubid = pa.attnum
+                        WHERE
+                          c.table_schema = '%s'
+                        GROUP BY
+                          c.column_name
+                        """, session.schema());
+
+                ret.addAll(queryResult.getRows().stream()
+                        .map(t -> Suggestion.ofField(first(t), second(t)))
+                        .toList());
+
+                return Lists.newArrayList(ret);
         }
 
         @Override

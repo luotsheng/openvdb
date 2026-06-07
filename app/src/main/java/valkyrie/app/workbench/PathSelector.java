@@ -5,6 +5,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.TreeItem;
 import lombok.Getter;
+import lombok.Setter;
 import valkyrie.app.event.CatalogDynamicNodeInitializedEvent;
 import valkyrie.app.event.ConnectedSuccessEvent;
 import valkyrie.app.event.bus.Event;
@@ -24,7 +25,7 @@ import java.util.function.Consumer;
  * @author Luo Tiansheng
  * @since 2026/6/7
  */
-@SuppressWarnings({"unused", "FieldCanBeLocal", "WriteOnlyObject"})
+@SuppressWarnings({"unused", "FieldCanBeLocal"})
 public class PathSelector implements EventListener
 {
         private @Getter Driver driver;
@@ -40,8 +41,22 @@ public class PathSelector implements EventListener
         private final @Getter VkComboBox<UICatalogDynamicNode> catalogComboBox = new VkComboBox<>();
         private final @Getter VkComboBox<UISchemaDynamicNode> schemaComboBox = new VkComboBox<>();
 
+        public interface PathSelectorUpdateListener {
+                void onUpdate(Driver driver, Session session);
+        }
+
+        private PathSelectorUpdateListener onSelectorUpdateListener;
+
         public PathSelector()
         {
+                this(null);
+        }
+
+        public PathSelector(PathSelectorUpdateListener onSelectorUpdateListener)
+        {
+                if (onSelectorUpdateListener != null)
+                        this.onSelectorUpdateListener = onSelectorUpdateListener;
+
                 setupComboBox();
 
                 // subscribe
@@ -83,6 +98,37 @@ public class PathSelector implements EventListener
         }
 
         //////////////////////////////////////////////////////////////////////
+        ///                            CALLBACK                            ///
+        //////////////////////////////////////////////////////////////////////
+
+        private void updateDriver(Driver driver)
+        {
+                this.driver = driver;
+
+                if (onSelectorUpdateListener != null)
+                        onSelectorUpdateListener.onUpdate(driver, session);
+        }
+
+        private void updateSessionCatalog(String catalog)
+        {
+                updateSession(catalog, session.schema());
+        }
+
+        private void updateSessionSchema(String schema)
+        {
+                updateSession(session.catalog(), schema);
+        }
+
+        private void updateSession(String catalog, String schema)
+        {
+                this.session.setCatalog(catalog);
+                this.session.setSchema(schema);
+
+                if (onSelectorUpdateListener != null)
+                        onSelectorUpdateListener.onUpdate(driver, session);
+        }
+
+        //////////////////////////////////////////////////////////////////////
         ///                        ON SELECTED EVENT                       ///
         //////////////////////////////////////////////////////////////////////
 
@@ -100,7 +146,7 @@ public class PathSelector implements EventListener
         private void onSelectedCatalogDynamicNode(UICatalogDynamicNode catalogDynamicNode)
         {
                 this.selectedCatalogDynamicNode = catalogDynamicNode;
-                session.setCatalog(catalogDynamicNode.getLabel());
+                updateSessionCatalog(catalogDynamicNode.getLabel());
 
                 if (!catalogDynamicNode.isInitialized()) {
                         catalogDynamicNode.initialize();
@@ -112,7 +158,7 @@ public class PathSelector implements EventListener
         private void onSelectedSchemaDynamicNode(UISchemaDynamicNode schemaDynamicNode)
         {
                 this.selectedSchemaDynamicNode = schemaDynamicNode;
-                session.setSchema(schemaDynamicNode.getLabel());
+                updateSessionSchema(schemaDynamicNode.getLabel());
 
                 if (!schemaDynamicNode.isInitialized())
                         schemaDynamicNode.initialize();
@@ -261,7 +307,7 @@ public class PathSelector implements EventListener
         @SuppressWarnings("SwitchStatementWithTooFewBranches")
         private void updateConnectionNodeComboBox(UIConnectionNode connectionNode)
         {
-                driver = connectionNode.getDriver();
+                updateDriver(connectionNode.getDriver());
                 dbNodePath = driver.getNodeHierarchyPath();
 
                 catalogComboBox.setHidden(true);

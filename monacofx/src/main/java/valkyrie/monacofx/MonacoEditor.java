@@ -191,7 +191,7 @@ public class MonacoEditor extends StackPane
         /**
          * 使用 Suggestion 对象注册提示
          */
-        public void registerSuggestion(Collection<?> suggestions)
+        public void registerSuggestions(Collection<?> suggestions)
         {
                 waitAndRun(() -> {
                         engine.executeScript("window.addSuggestions(" + JSONObject.toJSONString(suggestions) + ")");

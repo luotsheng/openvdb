@@ -156,7 +156,7 @@ public class RedisDriver extends Driver
         }
 
         @Override
-        public List<Suggestion> getSuggestion(Session session)
+        public List<Suggestion> getSuggestions(Session session)
         {
                 return Lists.newArrayList(RedisSuggestions.VALUES);
         }

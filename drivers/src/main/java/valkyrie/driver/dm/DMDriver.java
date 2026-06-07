@@ -83,12 +83,17 @@ public class DMDriver extends Driver
         }
 
         @Override
-        public List<Suggestion> getSuggestion(Session session)
+        public List<Suggestion> getSuggestions(Session session)
         {
                 Set<Suggestion> ret = Sets.newHashSet();
 
                 ret.addAll(DMSuggestions.VALUES);
 
+                /* 表信息 */
+                List<Table> tables = getTables(session);
+                ret.addAll(tables.stream().map(t -> Suggestion.ofClass(t.getName(), t.getComment())).toList());
+
+                /* 字段信息 */
                 QueryResult queryResult = execute(session, """
                         SELECT
                           c.COLUMN_NAME,
@@ -103,6 +108,7 @@ public class DMDriver extends Driver
                         GROUP BY
                           c.COLUMN_NAME;
                         """, session.schema());
+
                 ret.addAll(queryResult.getRows().stream().map(t -> Suggestion.ofField(first(t), second(t))).toList());
 
                 return Lists.newArrayList(ret);
