@@ -1,6 +1,5 @@
 package valkyrie.app.workbench;
 
-import javafx.collections.ListChangeListener;
 import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;

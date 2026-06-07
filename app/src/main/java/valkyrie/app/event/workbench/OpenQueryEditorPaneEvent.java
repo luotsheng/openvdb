@@ -4,10 +4,9 @@ import javafx.scene.Node;
 import javafx.scene.control.Tab;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.explorer.UIQueryDynamicNode;
+import valkyrie.app.utils.TabIdFactory;
 import valkyrie.app.workbench.QueryEditor;
 import valkyrie.core.model.QueryFile;
-
-import static valkyrie.utils.string.StaticLibrary.fmt;
 
 /**
  * 打开脚本编辑器
@@ -32,13 +31,7 @@ public class OpenQueryEditorPaneEvent extends OpenTabEvent
         @Override
         public String tabId()
         {
-                if (queryDynamicNode == null)
-                        return "新建查询脚本_" + (count++);
-
-                return fmt("Q#%s@%s(%s)",
-                        queryDynamicNode.getDirectParent().getLabel(),
-                        queryDynamicNode.getLabel(),
-                        queryDynamicNode.getRoot().getLabel());
+               return TabIdFactory.buildQueryTabId(queryDynamicNode);
         }
 
         @Override

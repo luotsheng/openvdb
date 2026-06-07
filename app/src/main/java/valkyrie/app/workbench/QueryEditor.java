@@ -17,6 +17,7 @@ import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.pane.ExecuteLoggerPane;
 import valkyrie.app.pane.QueryResultDataPane;
+import valkyrie.app.utils.TabIdFactory;
 import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
@@ -71,7 +72,7 @@ public class QueryEditor extends SplitPane
         private Node oldGraphic;
 
         // File
-        private QueryFile scriptFile;
+        private QueryFile queryFile;
 
         public QueryEditor(Tab tab)
         {
@@ -81,7 +82,7 @@ public class QueryEditor extends SplitPane
         public QueryEditor(Tab tab, QueryFile file)
         {
                 this.tab = tab;
-                this.scriptFile = file;
+                this.queryFile = file;
 
                 tab.setContent(this);
 
@@ -133,8 +134,8 @@ public class QueryEditor extends SplitPane
         {
                 MonacoEditor editor = new MonacoEditor();
 
-                if (scriptFile != null) {
-                        String fileContent = IOUtils.strread(scriptFile);
+                if (queryFile != null) {
+                        String fileContent = IOUtils.strread(queryFile);
                         editor.setValue(fileContent);
                 }
 
@@ -378,13 +379,13 @@ public class QueryEditor extends SplitPane
         {
                 String content = editor.getValue();
 
-                if (scriptFile == null) {
-                        if ((scriptFile = QueryFileSaveDialog.showDialog()) != null) {
-                                QueryFileRepository.save(scriptFile, content);
+                if (queryFile == null) {
+                        if ((queryFile = QueryFileSaveDialog.showDialog()) != null) {
+                                QueryFileRepository.save(queryFile, content);
                                 EventBus.publish(new RefreshQueryNodeEvent());
                         }
                 } else {
-                        QueryFileRepository.save(scriptFile, content);
+                        QueryFileRepository.save(queryFile, content);
                 }
         }
 }
