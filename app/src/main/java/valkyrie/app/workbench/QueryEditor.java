@@ -38,6 +38,7 @@ import valkyrie.driver.api.Session;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.monacofx.MonacoEditor;
+import valkyrie.utils.collection.Lists;
 import valkyrie.utils.exception.Causes;
 import valkyrie.utils.io.IOUtils;
 
@@ -177,6 +178,9 @@ public class QueryEditor extends SplitPane implements EventListener
 
         private void updateEditorSuggestions(Driver driver, Session session)
         {
+                if (session.catalog() == null || session.schema() == null)
+                        return;
+
                 List<Suggestion> suggestions = driver.getSuggestions(session);
 
                 if (suggestions.isEmpty())

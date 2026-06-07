@@ -81,9 +81,6 @@ public class PostgresqlDriver extends Driver
         @Override
         public List<Suggestion> getSuggestions(Session session)
         {
-                if (session.catalog() == null || session.schema() == null)
-                        return Lists.emptyList();
-
                 Set<Suggestion> ret = Sets.newHashSet();
 
                 ret.addAll(DMSuggestions.VALUES);
