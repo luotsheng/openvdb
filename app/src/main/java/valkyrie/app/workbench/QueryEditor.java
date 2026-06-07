@@ -176,9 +176,12 @@ public class QueryEditor extends SplitPane implements EventListener
                 getItems().add(topBorderPane);
         }
 
+        /**
+         * Driver 和 Session 可能为 NULL，需要校验
+         */
         private void updateEditorSuggestions(Driver driver, Session session)
         {
-                if (session.catalog() == null || session.schema() == null)
+                if (driver == null || (session.catalog() == null || session.schema() == null))
                         return;
 
                 List<Suggestion> suggestions = driver.getSuggestions(session);

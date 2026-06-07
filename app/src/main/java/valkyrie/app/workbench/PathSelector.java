@@ -105,7 +105,7 @@ public class PathSelector implements EventListener
         {
                 this.driver = driver;
 
-                if (onSelectorUpdateListener != null)
+                if (onSelectorUpdateListener != null && driver != null)
                         onSelectorUpdateListener.onUpdate(driver, session);
         }
 
@@ -308,6 +308,10 @@ public class PathSelector implements EventListener
         private void updateConnectionNodeComboBox(UIConnectionNode connectionNode)
         {
                 updateDriver(connectionNode.getDriver());
+
+                if (driver == null)
+                        return;
+
                 dbNodePath = driver.getNodeHierarchyPath();
 
                 catalogComboBox.setHidden(true);
