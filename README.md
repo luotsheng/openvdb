@@ -12,10 +12,11 @@
 
 统一连接和管理多种数据库系统
 
-- MySQL
-- SQLite
-- Redis 
-- 达梦数据库
+- `MySQL`
+- `PostgreSQL`
+- `SQLite`
+- `Redis` 
+- `达梦数据库`
 
 ### SQL 编辑与执行
 内置数据库查询编辑器，提供：
