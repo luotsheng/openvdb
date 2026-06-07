@@ -1,26 +1,29 @@
 package valkyrie.app.dialog.queryFile;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
-import javafx.scene.layout.*;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
 import valkyrie.app.widgets.dialog.VkDialog;
 import valkyrie.app.widgets.dialog.VkDialogStages;
-import valkyrie.core.model.QueryFile;
 
 /**
  * @author Luo Tiansheng
  * @since 2026/6/7
  */
-public class QueryFileConfirmOverwriteDialog extends VkDialog
+public class QueryFileOverwriteDialog extends VkDialog
 {
         private final Stage stage;
 
         private boolean isOk = false;
 
-        public QueryFileConfirmOverwriteDialog(Stage stage)
+        public QueryFileOverwriteDialog(Stage stage)
         {
                 this.stage = stage;
 
@@ -52,25 +55,15 @@ public class QueryFileConfirmOverwriteDialog extends VkDialog
                 stage.close();
         }
 
-        public static boolean showDialog(Stage parentStage, QueryFile scriptFile)
+        public static boolean showDialog()
         {
-                if (!scriptFile.exists())
-                        return true;
-
-                parentStage.hide();
-
                 Stage stage = VkDialogStages.create();
 
-                QueryFileConfirmOverwriteDialog dialog = new QueryFileConfirmOverwriteDialog(stage);
+                QueryFileOverwriteDialog dialog = new QueryFileOverwriteDialog(stage);
 
                 Scene scene = new Scene(dialog, 400, 150);
                 stage.setScene(scene);
                 stage.showAndWait();
-
-                parentStage.show();
-
-                if (dialog.isOk)
-                        scriptFile.forceDelete();
 
                 return dialog.isOk;
         }

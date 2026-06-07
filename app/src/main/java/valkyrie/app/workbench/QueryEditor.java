@@ -12,16 +12,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
+import valkyrie.app.dialog.queryFile.QueryFileOverwriteDialog;
 import valkyrie.app.dialog.queryFile.QueryFileSaveDialog;
 import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.pane.ExecuteLoggerPane;
 import valkyrie.app.pane.QueryResultDataPane;
-import valkyrie.app.utils.TabIdFactory;
 import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
-import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.core.model.QueryFile;
 import valkyrie.core.repository.QueryFileRepository;
 import valkyrie.driver.api.Driver;
@@ -380,13 +379,32 @@ public class QueryEditor extends SplitPane
                 String content = editor.getValue();
 
                 if (queryFile == null) {
-                        if ((queryFile = QueryFileSaveDialog.showDialog()) != null) {
-                                QueryFileRepository.save(queryFile, content);
-                                EventBus.publish(new RefreshQueryNodeEvent());
+                        QueryFile tmpQueryFile = QueryFileSaveDialog.showDialog();
+                        if (tmpQueryFile != null) {
+                                if (tmpQueryFile.exists()) {
+                                        overwriteQueryFile(tmpQueryFile, content);
+                                } else {
+                                        _realSaveToFile(tmpQueryFile, content);
+                                }
                         }
                 } else {
                         QueryFileRepository.save(queryFile, content);
                 }
+        }
+
+        private void overwriteQueryFile(QueryFile tmpQueryFile, String content)
+        {
+                if (QueryFileOverwriteDialog.showDialog()) {
+                        tmpQueryFile.forceDelete();
+                        _realSaveToFile(tmpQueryFile, content);
+                }
+        }
+
+        private void _realSaveToFile(QueryFile queryFile, String content)
+        {
+                QueryFileRepository.save(queryFile, content);
+                this.queryFile = queryFile;
+                EventBus.publish(new RefreshQueryNodeEvent());
         }
 }
 

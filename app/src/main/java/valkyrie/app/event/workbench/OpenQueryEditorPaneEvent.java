@@ -16,8 +16,6 @@ import valkyrie.core.model.QueryFile;
  */
 public class OpenQueryEditorPaneEvent extends OpenTabEvent
 {
-        private static int count = 0;
-
         private final QueryFile scriptFile;
         private final UIQueryDynamicNode queryDynamicNode;
 
@@ -25,7 +23,7 @@ public class OpenQueryEditorPaneEvent extends OpenTabEvent
         {
                 super(owner);
                 this.queryDynamicNode = owner;
-                scriptFile = owner != null ? owner.getScriptFile() : null;
+                scriptFile = owner != null ? owner.getQueryFile() : null;
         }
 
         @Override

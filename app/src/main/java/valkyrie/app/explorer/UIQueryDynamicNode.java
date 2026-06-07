@@ -2,18 +2,22 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import lombok.Getter;
+import valkyrie.app.dialog.queryFile.QueryFileOverwriteDialog;
 import valkyrie.app.dialog.queryFile.QueryFileRenameDialog;
+import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;
 import valkyrie.app.event.workbench.OpenQueryEditorPaneEvent;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.core.model.QueryFile;
+import valkyrie.core.repository.QueryFileRepository;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.node.DBNodeKind;
 import valkyrie.utils.collection.Lists;
 
 import java.util.List;
+
+import static valkyrie.utils.string.StaticLibrary.strne;
 
 /**
  * @author Luo Tiansheng
@@ -21,15 +25,14 @@ import java.util.List;
  */
 public class UIQueryDynamicNode extends UIDynamicNode
 {
-        @Getter
         static class QueryNodeWrapper extends DBNode
         {
-                private final QueryFile file;
+                private QueryFile queryFile;
 
                 public QueryNodeWrapper(QueryFile file)
                 {
                         super(file.getName(), DBNodeKind.QUERY, null);
-                        this.file = file;
+                        this.queryFile = file;
                 }
 
                 @Override
@@ -59,7 +62,7 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 openItem.setOnAction(e -> onMouseDoubleClickEvent());
 
                 MenuItem renameItem = new MenuItem("重命名");
-                renameItem.setOnAction(e -> rename());
+                renameItem.setOnAction(e -> checkAndRename());
 
                 contextMenu.getItems().addAll(
                         openItem,
@@ -87,13 +90,38 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 return getExplorerParent().getExplorerParent();
         }
 
-        public QueryFile getScriptFile()
+        public QueryFile getQueryFile()
         {
-                return ((QueryNodeWrapper) dbNode).getFile();
+                return ((QueryNodeWrapper) dbNode).queryFile;
         }
 
-        private void rename()
+        private void setQueryFile(QueryFile queryFile)
         {
-                QueryFileRenameDialog.showDialog(getScriptFile());
+                ((QueryNodeWrapper) dbNode).queryFile = queryFile;
+        }
+
+        private void checkAndRename()
+        {
+                QueryFile srcQueryFile = getQueryFile();
+                String newFileName = QueryFileRenameDialog.showDialog(srcQueryFile);
+                QueryFile dstQueryFile = new QueryFile(srcQueryFile.getParentFile(), newFileName);
+
+                if (strne(newFileName, srcQueryFile.getName())) {
+                        if (dstQueryFile.exists()) {
+                                if (QueryFileOverwriteDialog.showDialog()) {
+                                        dstQueryFile.forceDelete();
+                                        _realRename(srcQueryFile, newFileName);
+                                }
+                        } else {
+                                _realRename(srcQueryFile, newFileName);
+                        }
+                }
+        }
+
+        private void _realRename(QueryFile srcQueryFile, String newFileName)
+        {
+                QueryFile dstQueryFile = QueryFileRepository.rename(srcQueryFile, newFileName);
+                setQueryFile(dstQueryFile);
+                EventBus.publish(new RefreshQueryNodeEvent());
         }
 }

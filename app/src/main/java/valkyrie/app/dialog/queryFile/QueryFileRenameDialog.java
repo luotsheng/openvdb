@@ -24,15 +24,14 @@ public class QueryFileRenameDialog extends VkDialog
         private final Stage stage;
         private final TextField textField;
 
-        private QueryFile scriptFile;
+        private String newFileName;
 
-        public QueryFileRenameDialog(Stage stage, QueryFile scriptFile)
+        public QueryFileRenameDialog(Stage stage, QueryFile queryFile)
         {
                 this.stage = stage;
-                this.scriptFile = scriptFile;
 
                 Label title = new Label("查询名称：");
-                textField = new TextField(scriptFile.getName());
+                textField = new TextField(queryFile.getName());
                 textField.setPromptText("输入查询名称...");
                 VBox topBox = new VBox(title, textField);
                 topBox.setSpacing(10);
@@ -53,18 +52,7 @@ public class QueryFileRenameDialog extends VkDialog
 
         private void save()
         {
-                QueryFile newScriptFile = new QueryFile(scriptFile.getParentFile(), textField.getText());
-
-                if (QueryFileConfirmOverwriteDialog.showDialog(stage, newScriptFile)) {
-                        QueryFileRepository.rename(
-                                scriptFile, textField.getText()
-                        );
-
-                        scriptFile = newScriptFile;
-
-                        EventBus.publish(new RefreshQueryNodeEvent());
-                }
-
+                this.newFileName = textField.getText();
                 cancel();
         }
 
@@ -73,14 +61,16 @@ public class QueryFileRenameDialog extends VkDialog
                 stage.close();
         }
 
-        public static void showDialog(QueryFile scriptFile)
+        public static String showDialog(QueryFile queryFile)
         {
                 Stage stage = VkDialogStages.create();
 
-                QueryFileRenameDialog dialog = new QueryFileRenameDialog(stage, scriptFile);
+                QueryFileRenameDialog dialog = new QueryFileRenameDialog(stage, queryFile);
 
                 Scene scene = new Scene(dialog, 400, 150);
                 stage.setScene(scene);
                 stage.showAndWait();
+
+                return dialog.newFileName;
         }
 }

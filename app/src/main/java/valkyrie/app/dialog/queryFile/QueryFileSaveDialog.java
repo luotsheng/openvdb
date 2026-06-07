@@ -61,10 +61,7 @@ public class QueryFileSaveDialog extends VkDialog
                 topBox.setPadding(new Insets(20, 10, 5, 10));
 
                 Button ok = new Button("保存");
-                ok.setOnAction(e -> {
-                        save();
-                        cancel();
-                });
+                ok.setOnAction(e -> save());
 
                 Button cancel = new Button("取消");
                 cancel.setOnAction(e -> cancel());
@@ -79,21 +76,8 @@ public class QueryFileSaveDialog extends VkDialog
 
         private void save()
         {
-                QueryFile queryFile = QueryFileRepository.getFile(buildPath());
-
-                if (queryFile.exists()) {
-                        if (QueryFileConfirmOverwriteDialog.showDialog(stage, queryFile))
-                                saveAndRefreshQueryNode(queryFile);
-                } else {
-                        saveAndRefreshQueryNode(queryFile);
-                }
-        }
-
-        private void saveAndRefreshQueryNode(QueryFile queryFile)
-        {
-                this.queryFile = queryFile;
+                queryFile = QueryFileRepository.getFile(buildPath());
                 cancel();
-                EventBus.publish(new RefreshQueryNodeEvent());
         }
 
         private void cancel()
@@ -129,8 +113,6 @@ public class QueryFileSaveDialog extends VkDialog
                 Stage stage = VkDialogStages.create();
 
                 QueryFileSaveDialog dialog = new QueryFileSaveDialog(stage);
-
-                Platform.runLater(() -> {});
                 Scene scene = new Scene(dialog, 600, 300);
                 stage.setScene(scene);
                 stage.showAndWait();
