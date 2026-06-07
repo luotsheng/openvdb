@@ -120,6 +120,11 @@ public class UIDynamicNode extends UIExplorerNode
                 return getRoot().getDriver();
         }
 
+        public UIExplorerNode getPathNode()
+        {
+                return this;
+        }
+
         ///////////////////////////////////////////////////////////////////////
         ///                                 EVENT                           ///
         ///////////////////////////////////////////////////////////////////////

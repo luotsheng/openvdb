@@ -19,12 +19,6 @@ public class GlobalDynamicNodeContext
 
         public static synchronized void onSelectedEvent(UIExplorerNode explorerNode)
         {
-                selectedPathNode = switch (explorerNode) {
-                        case UIConnectionNode connectionNode -> connectionNode;
-                        case UICatalogDynamicNode catalogDynamicNode -> catalogDynamicNode;
-                        case UISchemaDynamicNode schemaDynamicNode -> schemaDynamicNode;
-                        case UIQueryDynamicNode queryDynamicNode -> queryDynamicNode;
-                        default -> selectedPathNode;
-                };
+                selectedPathNode = explorerNode;
         }
 }

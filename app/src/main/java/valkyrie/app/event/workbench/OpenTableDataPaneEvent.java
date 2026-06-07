@@ -28,7 +28,7 @@ public class OpenTableDataPaneEvent extends OpenTabEvent
         public String tabId()
         {
                 return fmt("V#%s@%s(%s)",
-                        tableDynamicNode.getDirectParent().getLabel(),
+                        tableDynamicNode.getPathNode().getLabel(),
                         tableDynamicNode.getLabel(),
                         tableDynamicNode.getRoot().getLabel());
         }

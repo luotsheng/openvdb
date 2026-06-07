@@ -86,6 +86,12 @@ public class UITableContainerDynamicNode extends UIDynamicNode
                 EventBus.publish(closeNavigationPaneEvent);
         }
 
+        @Override
+        public UIExplorerNode getPathNode()
+        {
+                return getExplorerParent();
+        }
+
         public UITableDynamicNode getTableDynamicNode(String tableName)
         {
                 return tableDynamicNodes.get(tableName);

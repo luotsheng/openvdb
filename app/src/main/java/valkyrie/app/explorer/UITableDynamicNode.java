@@ -78,7 +78,7 @@ public class UITableDynamicNode extends UIDynamicNode
                 EventBus.publish(new CloseWorkbenchTabEvent(this));
         }
 
-        public UIExplorerNode getDirectParent()
+        public UIExplorerNode getPathNode()
         {
                 /* 第一个父节点是 TableContainer 容器节点 */
                 return getExplorerParent().getExplorerParent();

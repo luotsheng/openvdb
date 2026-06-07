@@ -18,7 +18,7 @@ public class TabIdFactory
                         return "Q#新建查询脚本_" + (queryTabCount++);
 
                 return fmt("Q#%s@%s(%s)",
-                        queryDynamicNode.getDirectParent().getLabel(),
+                        queryDynamicNode.getPathNode().getLabel(),
                         queryDynamicNode.getLabel(),
                         queryDynamicNode.getRoot().getLabel());
         }

@@ -76,6 +76,12 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
         }
 
         @Override
+        public UIExplorerNode getPathNode()
+        {
+                return getExplorerParent();
+        }
+
+        @Override
         public void onEvent(Event event)
         {
                 if (event instanceof RefreshQueryNodeEvent) {

@@ -162,8 +162,8 @@ public class PathSelector implements EventListener
                         case UISchemaDynamicNode schemaDynamicNode ->
                                 restoreSchema(schemaDynamicNode);
 
-                        case UIQueryDynamicNode queryDynamicNode
-                                -> restoreQuery(queryDynamicNode);
+                        case UIDynamicNode dynamicNode
+                                -> restoreDynamicNode(dynamicNode);
 
                         default ->
                                 throw new UnsupportedOperationException("不支持的路径节点类型：" + pathNode);
@@ -205,9 +205,9 @@ public class PathSelector implements EventListener
                         .select(schemaDynamicNode);
         }
 
-        private void restoreQuery(UIQueryDynamicNode queryDynamicNode)
+        private void restoreDynamicNode(UIDynamicNode dynamicNode)
         {
-                UIExplorerNode parent = queryDynamicNode.getDirectParent();
+                UIExplorerNode parent = dynamicNode.getPathNode();
 
                 if (parent instanceof UISchemaDynamicNode schemaDynamicNode)
                         restoreSchema(schemaDynamicNode);

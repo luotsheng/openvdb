@@ -31,7 +31,7 @@ public class OpenTableDesignerPaneEvent extends OpenTabEvent
         public String tabId()
         {
                 return fmt("D#%s@%s(%s)",
-                        tableDynamicNode.getDirectParent().getLabel(),
+                        tableDynamicNode.getPathNode().getLabel(),
                         tableDynamicNode.getLabel(),
                         tableDynamicNode.getRoot().getLabel());
         }
