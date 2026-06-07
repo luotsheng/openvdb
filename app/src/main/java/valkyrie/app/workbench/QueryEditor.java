@@ -360,7 +360,7 @@ public class QueryEditor extends SplitPane
                         if (event.isShortcutDown()) {
                                 switch (event.getCode()) {
                                         case R -> runTask();
-                                        case S -> saveToFile();
+                                        case S -> writeQueryFile();
                                         default -> {}
                                 }
                                 event.consume();
@@ -374,37 +374,30 @@ public class QueryEditor extends SplitPane
         ///                           SAVE FILE                            ///
         //////////////////////////////////////////////////////////////////////
 
-        private void saveToFile()
+        private void writeQueryFile()
         {
                 String content = editor.getValue();
 
-                if (queryFile == null) {
-                        QueryFile tmpQueryFile = QueryFileSaveDialog.showDialog();
-                        if (tmpQueryFile != null) {
-                                if (tmpQueryFile.exists()) {
-                                        overwriteQueryFile(tmpQueryFile, content);
-                                } else {
-                                        _realSaveToFile(tmpQueryFile, content);
-                                }
-                        }
-                } else {
-                        QueryFileRepository.save(queryFile, content);
+                if (queryFile != null) {
+                        QueryFileRepository.write(queryFile, content);
+                        return;
                 }
-        }
 
-        private void overwriteQueryFile(QueryFile tmpQueryFile, String content)
-        {
+                QueryFile tmpQueryFile = QueryFileSaveDialog.showDialog();
+
+                if (tmpQueryFile == null)
+                        return;
+
+                if (!tmpQueryFile.exists()) {
+                        this.queryFile = QueryFileRepository.write(tmpQueryFile, content);
+                        EventBus.publish(new RefreshQueryNodeEvent());
+                        return;
+                }
+
                 if (QueryFileOverwriteDialog.showDialog()) {
                         tmpQueryFile.forceDelete();
-                        _realSaveToFile(tmpQueryFile, content);
+                        this.queryFile = QueryFileRepository.write(tmpQueryFile, content);
                 }
-        }
-
-        private void _realSaveToFile(QueryFile queryFile, String content)
-        {
-                QueryFileRepository.save(queryFile, content);
-                this.queryFile = queryFile;
-                EventBus.publish(new RefreshQueryNodeEvent());
         }
 }
 

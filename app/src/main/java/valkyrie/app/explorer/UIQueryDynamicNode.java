@@ -17,8 +17,6 @@ import valkyrie.utils.collection.Lists;
 
 import java.util.List;
 
-import static valkyrie.utils.string.StaticLibrary.strne;
-
 /**
  * @author Luo Tiansheng
  * @since 2026/6/7
@@ -106,22 +104,18 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 String newFileName = QueryFileRenameDialog.showDialog(srcQueryFile);
                 QueryFile dstQueryFile = new QueryFile(srcQueryFile.getParentFile(), newFileName);
 
-                if (strne(newFileName, srcQueryFile.getName())) {
-                        if (dstQueryFile.exists()) {
-                                if (QueryFileOverwriteDialog.showDialog()) {
-                                        dstQueryFile.forceDelete();
-                                        _realRename(srcQueryFile, newFileName);
-                                }
-                        } else {
-                                _realRename(srcQueryFile, newFileName);
-                        }
-                }
-        }
+                if (srcQueryFile.equals(dstQueryFile))
+                        return;
 
-        private void _realRename(QueryFile srcQueryFile, String newFileName)
-        {
-                QueryFile dstQueryFile = QueryFileRepository.rename(srcQueryFile, newFileName);
+                /* 当目标文件存在并且用户选择不覆盖时跳过 */
+                if (dstQueryFile.exists()) {
+                        if (!QueryFileOverwriteDialog.showDialog())
+                                return;
+                        dstQueryFile.forceDelete();
+                }
+
                 setQueryFile(dstQueryFile);
+                QueryFileRepository.rename(srcQueryFile, newFileName);
                 EventBus.publish(new RefreshQueryNodeEvent());
         }
 }

@@ -20,28 +20,28 @@ import java.util.Locale;
  */
 public class QueryFileRepository
 {
-        public static QueryFile save(String path, String content)
+        public static QueryFile write(String path, String content)
         {
-                return save(getFile(path), content);
+                return write(getFile(path), content);
         }
 
         @SuppressWarnings("ResultOfMethodCallIgnored")
-        public static QueryFile save(File scriptFile, String content)
+        public static QueryFile write(File file, String content)
         {
                 try {
-                        if (!scriptFile.exists()) {
-                                scriptFile.getParentFile().mkdirs();
-                                scriptFile.createNewFile();
+                        if (!file.exists()) {
+                                file.getParentFile().mkdirs();
+                                file.createNewFile();
                         }
 
-                        try (FileWriter fw = new FileWriter(scriptFile)) {
+                        try (FileWriter fw = new FileWriter(file)) {
                                 fw.write(content);
                         }
                 } catch (Exception e) {
                         throw new CoreException(e);
                 }
 
-                return new QueryFile(scriptFile);
+                return new QueryFile(file);
         }
 
         @SuppressWarnings("ResultOfMethodCallIgnored")
