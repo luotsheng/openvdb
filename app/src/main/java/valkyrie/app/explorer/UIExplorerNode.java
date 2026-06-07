@@ -20,9 +20,11 @@ import java.util.List;
 
 public abstract class UIExplorerNode extends TreeItem<String>
 {
-        private final @Getter String label;
+        private @Getter String label;
+
         private final @Getter UIExplorerNode explorerParent;
         private final String icon;
+
         private ContextMenu contextMenu;
         private Node oldGraphic;
 
@@ -35,6 +37,12 @@ public abstract class UIExplorerNode extends TreeItem<String>
 
                 if (icon != null)
                         setGraphic(Assets.use(icon));
+        }
+
+        public void setLabel(String label)
+        {
+                this.label = label;
+                setValue(label);
         }
 
         public Node createGraphic()

@@ -2,12 +2,15 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TreeItem;
 import valkyrie.app.dialog.queryFile.QueryFileOverwriteDialog;
 import valkyrie.app.dialog.queryFile.QueryFileRenameDialog;
 import valkyrie.app.event.RefreshQueryNodeEvent;
+import valkyrie.app.event.UpdateQueryFileEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;
 import valkyrie.app.event.workbench.OpenQueryEditorPaneEvent;
+import valkyrie.app.utils.TabIdFactory;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.core.model.QueryFile;
 import valkyrie.core.repository.QueryFileRepository;
@@ -16,6 +19,8 @@ import valkyrie.driver.api.node.DBNodeKind;
 import valkyrie.utils.collection.Lists;
 
 import java.util.List;
+
+import static valkyrie.utils.string.StaticLibrary.streq;
 
 /**
  * @author Luo Tiansheng
@@ -112,10 +117,28 @@ public class UIQueryDynamicNode extends UIDynamicNode
                         if (!QueryFileOverwriteDialog.showDialog())
                                 return;
                         dstQueryFile.forceDelete();
+
+                        UIQueryContainerDynamicNode queryContainerDynamicNode =
+                                (UIQueryContainerDynamicNode) getExplorerParent();
+
+                        UIExplorerNode removeItem = null;
+
+                        for (TreeItem<String> child : queryContainerDynamicNode.getChildren()) {
+                                UIQueryDynamicNode queryDynamicChild = (UIQueryDynamicNode) child;
+                                if (streq(queryDynamicChild.getLabel(), newFileName)) {
+                                        removeItem = queryDynamicChild;
+                                        break;
+                                }
+                        }
+
+                        queryContainerDynamicNode.getChildren().remove(removeItem);
                 }
 
                 setQueryFile(dstQueryFile);
                 QueryFileRepository.rename(srcQueryFile, newFileName);
-                EventBus.publish(new RefreshQueryNodeEvent(newFileName));
+
+                setLabel(newFileName);
+
+                EventBus.publish(new UpdateQueryFileEvent(srcQueryFile, dstQueryFile, this));
         }
 }

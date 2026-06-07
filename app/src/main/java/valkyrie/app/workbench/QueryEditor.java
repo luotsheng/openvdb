@@ -15,9 +15,13 @@ import valkyrie.app.assets.Assets;
 import valkyrie.app.dialog.queryFile.QueryFileOverwriteDialog;
 import valkyrie.app.dialog.queryFile.QueryFileSaveDialog;
 import valkyrie.app.event.RefreshQueryNodeEvent;
+import valkyrie.app.event.UpdateQueryFileEvent;
+import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
+import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.pane.ExecuteLoggerPane;
 import valkyrie.app.pane.QueryResultDataPane;
+import valkyrie.app.utils.TabIdFactory;
 import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
@@ -41,7 +45,7 @@ import static valkyrie.utils.string.StaticLibrary.strempty;
  * @since 2026/3/29
  */
 @SuppressWarnings({"unused", "FieldCanBeLocal", "FieldMayBeFinal"})
-public class QueryEditor extends SplitPane
+public class QueryEditor extends SplitPane implements EventListener
 {
         private static final Logger LOG = LoggerFactory.getLogger(QueryEditor.class);
 
@@ -97,6 +101,9 @@ public class QueryEditor extends SplitPane
 
                 setupBorderPane();
                 setupShortcutEvent();
+
+                // event subscribe
+                EventBus.subscribe(UpdateQueryFileEvent.class, this);
         }
 
         private ToolBar createToolBar()
@@ -397,6 +404,21 @@ public class QueryEditor extends SplitPane
                 if (QueryFileOverwriteDialog.showDialog()) {
                         tmpQueryFile.forceDelete();
                         this.queryFile = QueryFileRepository.write(tmpQueryFile, content);
+                }
+        }
+
+        //////////////////////////////////////////////////////////////////////
+        ///                             EVENT                              ///
+        //////////////////////////////////////////////////////////////////////
+
+        @Override
+        public void onEvent(Event event)
+        {
+                if (event instanceof UpdateQueryFileEvent updateEvent) {
+                        if (updateEvent.getOldQueryFile() == queryFile) {
+                                queryFile = updateEvent.getNewQueryFile();
+                                tab.setText(TabIdFactory.buildQueryTabId(updateEvent.getQueryDynamicNode()));
+                        }
                 }
         }
 }
