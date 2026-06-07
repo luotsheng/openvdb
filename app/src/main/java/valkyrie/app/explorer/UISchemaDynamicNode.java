@@ -2,6 +2,7 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TreeItem;
 import valkyrie.app.utils.Threads;
 import valkyrie.driver.api.node.DBNode;
 
@@ -39,5 +40,15 @@ public class UISchemaDynamicNode extends UIDynamicNode
                         openOrCloseMenuItem.setText("打开模式");
                         openOrCloseMenuItem.setOnAction(e -> Threads.runLater(this::expand));
                 }
+        }
+
+        public UIQueryContainerDynamicNode getQueryContainerNode()
+        {
+                for (TreeItem<String> child : getChildren()) {
+                        if (child instanceof UIQueryContainerDynamicNode node)
+                                return node;
+                }
+
+                return null;
         }
 }

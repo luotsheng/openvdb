@@ -49,16 +49,31 @@ public class PathSelector implements EventListener
                 EventBus.subscribe(CatalogDynamicNodeInitializedEvent.class, this);
         }
 
+        public UIConnectionNode getSelectedConnection()
+        {
+                return connectionComboBox.getSelectionModel().getSelectedItem();
+        }
+
+        public UICatalogDynamicNode getSelectedCatalog()
+        {
+                return catalogComboBox.getSelectionModel().getSelectedItem();
+        }
+
+        public UISchemaDynamicNode getSelectedSchema()
+        {
+                return schemaComboBox.getSelectionModel().getSelectedItem();
+        }
+
         public void useSelector(PathSelector selector)
         {
                 restoreItems(connectionComboBox, selector.connectionComboBox.getItems());
-                connectionComboBox.getSelectionModel().select(selector.connectionComboBox.getSelectionModel().getSelectedItem());
+                connectionComboBox.getSelectionModel().select(selector.getSelectedConnection());
 
                 restoreItems(catalogComboBox, selector.catalogComboBox.getItems());
-                catalogComboBox.getSelectionModel().select(selector.catalogComboBox.getSelectionModel().getSelectedItem());
+                catalogComboBox.getSelectionModel().select(selector.getSelectedCatalog());
 
-                schemaComboBox.getItems().addAll(selector.schemaComboBox.getItems());
-                schemaComboBox.getSelectionModel().select(selector.schemaComboBox.getSelectionModel().getSelectedItem());
+                restoreItems(schemaComboBox, selector.schemaComboBox.getItems());
+                schemaComboBox.getSelectionModel().select(selector.getSelectedSchema());
         }
 
         private static <T> void restoreItems(VkComboBox<T> comboBox, Collection<T> collection)
@@ -98,6 +113,9 @@ public class PathSelector implements EventListener
         {
                 this.selectedSchemaDynamicNode = schemaDynamicNode;
                 session.setSchema(schemaDynamicNode.getLabel());
+
+                if (!schemaDynamicNode.isInitialized())
+                        schemaDynamicNode.initialize();
         }
 
         //////////////////////////////////////////////////////////////////////

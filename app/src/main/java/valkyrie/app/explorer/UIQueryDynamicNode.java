@@ -51,7 +51,8 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 }
 
         }
-        public UIQueryDynamicNode(UIExplorerNode parent, QueryFile file)
+
+        public UIQueryDynamicNode(UIQueryContainerDynamicNode parent, QueryFile file)
         {
                 super(parent, new QueryNodeWrapper(file));
         }

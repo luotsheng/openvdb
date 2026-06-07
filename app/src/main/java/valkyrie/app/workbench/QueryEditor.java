@@ -19,6 +19,10 @@ import valkyrie.app.event.UpdateQueryFileEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
+import valkyrie.app.event.workbench.OpenQueryEditorPaneEvent;
+import valkyrie.app.event.workbench.RegisterTabManagerEvent;
+import valkyrie.app.explorer.UIQueryContainerDynamicNode;
+import valkyrie.app.explorer.UIQueryDynamicNode;
 import valkyrie.app.pane.ExecuteLoggerPane;
 import valkyrie.app.pane.QueryResultDataPane;
 import valkyrie.app.utils.TabIdFactory;
@@ -398,7 +402,6 @@ public class QueryEditor extends SplitPane implements EventListener
 
                 if (!tmpQueryFile.exists()) {
                         writeNewQueryFile(tmpQueryFile, pathSelector, content);
-                        EventBus.publish(new RefreshQueryNodeEvent());
                         return;
                 }
 
@@ -411,7 +414,29 @@ public class QueryEditor extends SplitPane implements EventListener
         private void writeNewQueryFile(QueryFile tmpQueryFile, PathSelector selector, String content)
         {
                 pathSelector.useSelector(selector);
+
+                UIQueryContainerDynamicNode queryContainerDynamicNode;
+
+                queryContainerDynamicNode = pathSelector.getSelectedCatalog()
+                        .getQueryContainerNode();
+
+                if (queryContainerDynamicNode == null)
+                        queryContainerDynamicNode = pathSelector.getSelectedSchema()
+                                .getQueryContainerNode();
+
                 this.queryFile = QueryFileRepository.write(tmpQueryFile, content);
+
+                UIQueryDynamicNode queryDynamicNode = new UIQueryDynamicNode(queryContainerDynamicNode, tmpQueryFile);
+                queryContainerDynamicNode.getChildren().add(queryDynamicNode);
+
+                queryContainerDynamicNode.getRoot()
+                        .getTreeView()
+                        .getSelectionModel()
+                        .select(queryDynamicNode);
+
+                tab.setText(TabIdFactory.buildQueryTabId(queryDynamicNode));
+
+                EventBus.publish(new RegisterTabManagerEvent(queryDynamicNode, tab));
         }
 
         //////////////////////////////////////////////////////////////////////

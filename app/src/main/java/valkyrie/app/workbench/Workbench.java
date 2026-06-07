@@ -14,10 +14,7 @@ import valkyrie.app.assets.Assets;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
-import valkyrie.app.event.workbench.CloseNavigationPaneEvent;
-import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;
-import valkyrie.app.event.workbench.OpenNavigationPaneEvent;
-import valkyrie.app.event.workbench.OpenTabEvent;
+import valkyrie.app.event.workbench.*;
 import valkyrie.app.exception.ApplicationException;
 import valkyrie.app.widgets.VkTabPane;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
@@ -67,6 +64,7 @@ public class Workbench extends VBox implements EventListener
                 EventBus.subscribe(CloseWorkbenchTabEvent.class, this);
                 EventBus.subscribe(OpenNavigationPaneEvent.class, this);
                 EventBus.subscribe(CloseNavigationPaneEvent.class, this);
+                EventBus.subscribe(RegisterTabManagerEvent.class, this);
         }
 
         private void setupTabPane()
@@ -153,6 +151,7 @@ public class Workbench extends VBox implements EventListener
                                 case CloseWorkbenchTabEvent e -> handleCloseTabEvent(e);
                                 case OpenNavigationPaneEvent e -> handleSetNavigationPaneEvent(e);
                                 case CloseNavigationPaneEvent e -> handleUnsetNavigationPaneEvent(e);
+                                case RegisterTabManagerEvent e -> handleRegisterTabManagerEvent(e);
                                 default -> throw new ApplicationException("unsupported event type");
                         }
                 } catch (Exception e) {
@@ -207,5 +206,11 @@ public class Workbench extends VBox implements EventListener
                         navigationTab.setContent(null);
                         navigationTabOwner = null;
                 }
+        }
+
+        private void handleRegisterTabManagerEvent(RegisterTabManagerEvent e)
+        {
+                tabPaneManager.computeIfAbsent(e.getOwner(), tabPane -> Lists.newArrayList())
+                        .add(e.getTab());
         }
 }
