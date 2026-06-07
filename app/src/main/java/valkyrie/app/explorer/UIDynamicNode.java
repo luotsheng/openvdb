@@ -83,6 +83,9 @@ public class UIDynamicNode extends UIExplorerNode
 
                 runnable.run();
 
+                if (oldSelectedNode == null)
+                        return;
+
                 /* 恢复选中节点 */
                 for (TreeItem<String> child : getChildren()) {
                         UIExplorerNode explorerChild = (UIExplorerNode) child;

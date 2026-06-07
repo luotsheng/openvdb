@@ -61,7 +61,7 @@ public class QueryEditor extends SplitPane implements EventListener
         private final QueryResultDataPane queryResultDataPane;
 
         // Selector
-        private final PathSelector pathSelector = new PathSelector();
+        private PathSelector pathSelector = new PathSelector();
 
         // Tool
         private Button runToolButton;
@@ -390,21 +390,28 @@ public class QueryEditor extends SplitPane implements EventListener
                         return;
                 }
 
-                QueryFile tmpQueryFile = QueryFileSaveDialog.showDialog();
+                PathSelector pathSelector = new PathSelector();
+                QueryFile tmpQueryFile = QueryFileSaveDialog.showDialog(pathSelector);
 
                 if (tmpQueryFile == null)
                         return;
 
                 if (!tmpQueryFile.exists()) {
-                        this.queryFile = QueryFileRepository.write(tmpQueryFile, content);
+                        writeNewQueryFile(tmpQueryFile, pathSelector, content);
                         EventBus.publish(new RefreshQueryNodeEvent());
                         return;
                 }
 
                 if (QueryFileOverwriteDialog.showDialog()) {
                         tmpQueryFile.forceDelete();
-                        this.queryFile = QueryFileRepository.write(tmpQueryFile, content);
+                        writeNewQueryFile(tmpQueryFile, pathSelector, content);
                 }
+        }
+
+        private void writeNewQueryFile(QueryFile tmpQueryFile, PathSelector selector, String content)
+        {
+                pathSelector.useSelector(selector);
+                this.queryFile = QueryFileRepository.write(tmpQueryFile, content);
         }
 
         //////////////////////////////////////////////////////////////////////

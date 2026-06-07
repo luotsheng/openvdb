@@ -17,6 +17,7 @@ import valkyrie.driver.api.Session;
 import valkyrie.driver.api.node.DBNodeKind;
 import valkyrie.driver.api.node.DBNodePath;
 
+import java.util.Collection;
 import java.util.function.Consumer;
 
 /**
@@ -48,6 +49,24 @@ public class PathSelector implements EventListener
                 EventBus.subscribe(CatalogDynamicNodeInitializedEvent.class, this);
         }
 
+        public void useSelector(PathSelector selector)
+        {
+                restoreItems(connectionComboBox, selector.connectionComboBox.getItems());
+                connectionComboBox.getSelectionModel().select(selector.connectionComboBox.getSelectionModel().getSelectedItem());
+
+                restoreItems(catalogComboBox, selector.catalogComboBox.getItems());
+                catalogComboBox.getSelectionModel().select(selector.catalogComboBox.getSelectionModel().getSelectedItem());
+
+                schemaComboBox.getItems().addAll(selector.schemaComboBox.getItems());
+                schemaComboBox.getSelectionModel().select(selector.schemaComboBox.getSelectionModel().getSelectedItem());
+        }
+
+        private static <T> void restoreItems(VkComboBox<T> comboBox, Collection<T> collection)
+        {
+                comboBox.getItems().clear();
+                comboBox.getItems().addAll(collection);
+        }
+
         //////////////////////////////////////////////////////////////////////
         ///                        ON SELECTED EVENT                       ///
         //////////////////////////////////////////////////////////////////////
@@ -56,8 +75,11 @@ public class PathSelector implements EventListener
         {
                 this.selectedConnectionNode = connectionNode;
 
-                if (!connectionNode.isConnect())
+                if (!connectionNode.isConnect()) {
                         connectionNode.connect();
+                } else {
+                        updateConnectionNodeComboBox(connectionNode);
+                }
         }
 
         private void onSelectedCatalogDynamicNode(UICatalogDynamicNode catalogDynamicNode)
@@ -65,8 +87,11 @@ public class PathSelector implements EventListener
                 this.selectedCatalogDynamicNode = catalogDynamicNode;
                 session.setCatalog(catalogDynamicNode.getLabel());
 
-                if (!catalogDynamicNode.isInitialized())
+                if (!catalogDynamicNode.isInitialized()) {
                         catalogDynamicNode.initialize();
+                } else {
+                        updateSchemaDynamicNodeComboBox(catalogDynamicNode);
+                }
         }
 
         private void onSelectedSchemaDynamicNode(UISchemaDynamicNode schemaDynamicNode)
@@ -142,8 +167,7 @@ public class PathSelector implements EventListener
 
         private void initializeFromCurrentSelectedNode()
         {
-                for (UIConnectionNode connectionNode :
-                        GlobalDynamicNodeContext.getConnectionNodes())
+                for (UIConnectionNode connectionNode : GlobalDynamicNodeContext.getConnectionNodes())
                         connectionComboBox.getItems().add(connectionNode);
 
                 UIExplorerNode pathNode =
@@ -261,6 +285,7 @@ public class PathSelector implements EventListener
         {
                 ObservableList<TreeItem<String>> children = parentNode.getChildren();
 
+                catalogComboBox.getItems().clear();
                 for (TreeItem<String> child : children) {
                         UICatalogDynamicNode catalogDynamicNode = (UICatalogDynamicNode) child;
                         catalogComboBox.getItems().add(catalogDynamicNode);
@@ -271,6 +296,7 @@ public class PathSelector implements EventListener
         {
                 ObservableList<TreeItem<String>> children = parentNode.getChildren();
 
+                schemaComboBox.getItems().clear();
                 for (TreeItem<String> child : children) {
                         UISchemaDynamicNode schemaDynamicNode = (UISchemaDynamicNode) child;
                         schemaComboBox.getItems().add(schemaDynamicNode);
@@ -295,5 +321,4 @@ public class PathSelector implements EventListener
                                 updateSchemaDynamicNodeComboBox(selectedCatalogDynamicNode);
                 }
         }
-
 }

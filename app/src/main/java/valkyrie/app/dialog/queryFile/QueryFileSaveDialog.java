@@ -32,16 +32,19 @@ public class QueryFileSaveDialog extends VkDialog
 {
         private final Stage stage;
         private final TextField textField;
-        private final PathSelector pathSelector = new PathSelector();
+        private final PathSelector pathSelector;
         private final VkComboBox<UIConnectionNode> connectionComboBox;
         private final VkComboBox<UICatalogDynamicNode> catalogComboBox;
         private final VkComboBox<UISchemaDynamicNode> schemaComboBox;
 
+        private final VBox topBox;
+
         private QueryFile queryFile;
 
-        public QueryFileSaveDialog(Stage stage)
+        public QueryFileSaveDialog(Stage stage, PathSelector pathSelector)
         {
                 this.stage = stage;
+                this.pathSelector = pathSelector;
 
                 Label title = new Label("查询名称：");
                 textField = new TextField();
@@ -56,7 +59,7 @@ public class QueryFileSaveDialog extends VkDialog
                 catalogComboBox.setPrefWidth(Double.MAX_VALUE);
                 schemaComboBox.setPrefWidth(Double.MAX_VALUE);
 
-                VBox topBox = new VBox(title, textField, savePath, connectionComboBox, catalogComboBox, schemaComboBox);
+                topBox = new VBox(title, textField, savePath, connectionComboBox, catalogComboBox, schemaComboBox);
                 topBox.setSpacing(10);
                 topBox.setPadding(new Insets(20, 10, 5, 10));
 
@@ -108,11 +111,11 @@ public class QueryFileSaveDialog extends VkDialog
         /**
          * @return 返回用户输入的脚本名称， {@code null} 表示用户取消保存
          */
-        public static QueryFile showDialog()
+        public static QueryFile showDialog(PathSelector pathSelector)
         {
                 Stage stage = VkDialogStages.create();
 
-                QueryFileSaveDialog dialog = new QueryFileSaveDialog(stage);
+                QueryFileSaveDialog dialog = new QueryFileSaveDialog(stage, pathSelector);
                 Scene scene = new Scene(dialog, 600, 300);
                 stage.setScene(scene);
                 stage.showAndWait();
