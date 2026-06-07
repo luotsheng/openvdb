@@ -1,4 +1,4 @@
-package valkyrie.app.dialog;
+package valkyrie.app.dialog.script;
 
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -15,14 +15,13 @@ import valkyrie.app.explorer.UIConnectionNode;
 import valkyrie.app.explorer.UISchemaDynamicNode;
 import valkyrie.app.widgets.VkComboBox;
 import valkyrie.app.workbench.PathSelector;
-import valkyrie.app.workbench.QueryEditor;
 
 /**
  * @author Luo Tiansheng
  * @since 2026/3/27
  */
 @SuppressWarnings("FieldCanBeLocal")
-public class SaveScriptDialog extends BorderPane
+public class QueryFileSaveDialog extends BorderPane
 {
         private final Stage stage;
         private final TextField textField;
@@ -33,7 +32,7 @@ public class SaveScriptDialog extends BorderPane
 
         private boolean isOk = false;
 
-        public SaveScriptDialog(Stage stage)
+        public QueryFileSaveDialog(Stage stage)
         {
                 this.stage = stage;
 
@@ -93,7 +92,7 @@ public class SaveScriptDialog extends BorderPane
                         pathBuilder.append("/").append(schemaDynamicNode.getLabel());
                 }
 
-                return pathBuilder.toString() + "/" + textField.getText();
+                return pathBuilder + "/" + textField.getText();
         }
 
         /**
@@ -104,7 +103,7 @@ public class SaveScriptDialog extends BorderPane
                 Stage stage = Application.createByPrimaryStage();
                 stage.initModality(Modality.APPLICATION_MODAL);
 
-                SaveScriptDialog dialog = new SaveScriptDialog(stage);
+                QueryFileSaveDialog dialog = new QueryFileSaveDialog(stage);
 
                 Platform.runLater(() -> {});
                 Scene scene = new Scene(dialog, 600, 300);

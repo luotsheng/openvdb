@@ -34,7 +34,7 @@ public class OpenQueryEditorPaneEvent extends OpenTabEvent
         public String tabId()
         {
                 if (queryDynamicNode == null)
-                        return "新建查询_" + (count++) + ".sql";
+                        return "新建查询脚本_" + (count++);
 
                 return fmt("Q#%s@%s(%s)",
                         queryDynamicNode.getDirectParent().getLabel(),

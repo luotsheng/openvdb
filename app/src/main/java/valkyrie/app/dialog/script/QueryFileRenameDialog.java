@@ -1,4 +1,4 @@
-package valkyrie.app.dialog;
+package valkyrie.app.dialog.script;
 
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -18,14 +18,14 @@ import valkyrie.core.repository.ScriptFileRepository;
  * @since 2026/3/27
  */
 @SuppressWarnings("FieldCanBeLocal")
-public class RenameScriptDialog extends BorderPane
+public class QueryFileRenameDialog extends BorderPane
 {
         private final Stage stage;
         private final TextField textField;
 
         private ScriptFile scriptFile;
 
-        public RenameScriptDialog(Stage stage, ScriptFile scriptFile)
+        public QueryFileRenameDialog(Stage stage, ScriptFile scriptFile)
         {
                 this.stage = stage;
                 this.scriptFile = scriptFile;
@@ -74,7 +74,7 @@ public class RenameScriptDialog extends BorderPane
         {
                 Stage stage = Application.createByPrimaryStage();
 
-                RenameScriptDialog dialog = new RenameScriptDialog(stage, scriptFile);
+                QueryFileRenameDialog dialog = new QueryFileRenameDialog(stage, scriptFile);
 
                 Scene scene = new Scene(dialog, 400, 150);
                 stage.setScene(scene);

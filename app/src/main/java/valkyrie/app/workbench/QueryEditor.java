@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
-import valkyrie.app.dialog.SaveScriptDialog;
+import valkyrie.app.dialog.script.QueryFileSaveDialog;
 import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.pane.ExecuteLoggerPane;
@@ -381,7 +381,7 @@ public class QueryEditor extends SplitPane
                 String content = editor.getValue();
 
                 if (scriptFile == null) {
-                        String path = SaveScriptDialog.showDialog();
+                        String path = QueryFileSaveDialog.showDialog();
                         scriptFile = ScriptFileRepository.save(path, content);
                         EventBus.publish(new RefreshQueryNodeEvent());
                 } else {

@@ -3,7 +3,7 @@ package valkyrie.app.explorer;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import lombok.Getter;
-import valkyrie.app.dialog.RenameScriptDialog;
+import valkyrie.app.dialog.script.QueryFileRenameDialog;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;
 import valkyrie.app.event.workbench.OpenQueryEditorPaneEvent;
@@ -94,6 +94,6 @@ public class UIQueryDynamicNode extends UIDynamicNode
 
         private void rename()
         {
-                RenameScriptDialog.showDialog(getScriptFile());
+                QueryFileRenameDialog.showDialog(getScriptFile());
         }
 }
