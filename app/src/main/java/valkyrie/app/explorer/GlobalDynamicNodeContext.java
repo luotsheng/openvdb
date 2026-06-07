@@ -24,7 +24,7 @@ public class GlobalDynamicNodeContext
                         case UICatalogDynamicNode catalogDynamicNode -> catalogDynamicNode;
                         case UISchemaDynamicNode schemaDynamicNode -> schemaDynamicNode;
                         case UIQueryDynamicNode queryDynamicNode -> queryDynamicNode;
-                        default -> null;
+                        default -> selectedPathNode;
                 };
         }
 }

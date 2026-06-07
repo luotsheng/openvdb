@@ -79,8 +79,6 @@ public class RenameScriptDialog extends BorderPane
                 Scene scene = new Scene(dialog, 400, 150);
                 stage.setScene(scene);
                 stage.showAndWait();
-
-                dialog.save();
         }
 
 }

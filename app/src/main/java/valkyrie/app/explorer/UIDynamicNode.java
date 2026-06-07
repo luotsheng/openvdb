@@ -4,6 +4,8 @@ import javafx.scene.control.TreeItem;
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.node.*;
 
+import static valkyrie.utils.string.StaticLibrary.streq;
+
 /**
  * @author Luo Tiansheng
  * @since 2026/6/5
@@ -67,6 +69,38 @@ public class UIDynamicNode extends UIExplorerNode
 
                 getChildren().clear();
                 initializeChildrenFlag = false;
+        }
+
+        protected void doRefresh(Runnable runnable)
+        {
+                /* 记录当前选中节点 */
+                var treeView = getRoot().getTreeView();
+
+                UIExplorerNode oldSelectedNode = (UIExplorerNode)
+                        treeView.getSelectionModel().getSelectedItem();
+
+                UIExplorerNode newSelectedNode = null;
+
+                runnable.run();
+
+                /* 恢复选中节点 */
+                for (TreeItem<String> child : getChildren()) {
+                        UIExplorerNode explorerChild = (UIExplorerNode) child;
+                        if (streq(explorerChild.getLabel(), oldSelectedNode.getLabel())) {
+                                newSelectedNode = explorerChild;
+                                break;
+                        }
+                }
+
+                if (newSelectedNode == null) {
+                        if (oldSelectedNode == treeView.getSelectionModel().getSelectedItem()) {
+                                treeView.getSelectionModel().select(oldSelectedNode);
+                        } else {
+                                treeView.getSelectionModel().select(oldSelectedNode.getExplorerParent());
+                        }
+                } else {
+                        treeView.getSelectionModel().select(newSelectedNode);
+                }
         }
 
         public void initialize()

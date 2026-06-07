@@ -1,9 +1,13 @@
 package valkyrie.app.explorer;
 
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import lombok.Getter;
+import valkyrie.app.dialog.RenameScriptDialog;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;
 import valkyrie.app.event.workbench.OpenQueryEditorPaneEvent;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.core.model.ScriptFile;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.node.DBNodeKind;
@@ -47,6 +51,25 @@ public class UIQueryDynamicNode extends UIDynamicNode
         }
 
         @Override
+        public ContextMenu configureContextMenu()
+        {
+                VkContextMenu contextMenu = new VkContextMenu();
+
+                MenuItem openItem = new MenuItem("打开查询");
+                openItem.setOnAction(e -> onMouseDoubleClickEvent());
+
+                MenuItem renameItem = new MenuItem("重命名");
+                renameItem.setOnAction(e -> rename());
+
+                contextMenu.getItems().addAll(
+                        openItem,
+                        renameItem
+                );
+
+                return contextMenu;
+        }
+
+        @Override
         public void onMouseDoubleClickEvent()
         {
                 EventBus.publish(new OpenQueryEditorPaneEvent(this));
@@ -67,5 +90,10 @@ public class UIQueryDynamicNode extends UIDynamicNode
         public ScriptFile getScriptFile()
         {
                 return ((QueryNodeWrapper) dbNode).getFile();
+        }
+
+        private void rename()
+        {
+                RenameScriptDialog.showDialog(getScriptFile());
         }
 }

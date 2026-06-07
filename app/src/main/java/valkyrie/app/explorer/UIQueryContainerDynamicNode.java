@@ -2,6 +2,10 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import valkyrie.app.event.RefreshQueryNodeEvent;
+import valkyrie.app.event.bus.Event;
+import valkyrie.app.event.bus.EventBus;
+import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.utils.Threads;
 import valkyrie.core.model.ScriptFile;
 import valkyrie.core.repository.ScriptFileRepository;
@@ -16,6 +20,7 @@ import java.util.List;
  * @since 2026/6/5
  */
 public class UIQueryContainerDynamicNode extends UIDynamicNode
+        implements EventListener
 {
         private final MenuItem openOrCloseMenuItem = new MenuItem("展开列表");
 
@@ -23,13 +28,20 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
         {
                 super(parent, dbNode);
                 reloadQueryNode();
+                // subscribe
+                EventBus.subscribe(RefreshQueryNodeEvent.class, this);
         }
 
         @Override
         public ContextMenu configureContextMenu()
         {
                 ContextMenu contextMenu = new ContextMenu();
-                contextMenu.getItems().addAll(openOrCloseMenuItem);
+                MenuItem refreshItem = new MenuItem("刷新列表");
+                refreshItem.setOnAction(e -> refreshQueryNode());
+                contextMenu.getItems().addAll(
+                        openOrCloseMenuItem,
+                        refreshItem
+                );
                 return contextMenu;
         }
 
@@ -50,9 +62,24 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
                 var scriptFiles = ScriptFileRepository.loadScriptFiles(new File(getPath()).getParent());
                 List<UIQueryDynamicNode> nodes = Lists.newArrayList();
 
+                getChildren().clear();
+
                 for (ScriptFile scriptFile : scriptFiles)
                         nodes.add(new UIQueryDynamicNode(this, scriptFile));
 
                 getChildren().addAll(nodes);
+        }
+
+        private void refreshQueryNode()
+        {
+                doRefresh(this::reloadQueryNode);
+        }
+
+        @Override
+        public void onEvent(Event event)
+        {
+                if (event instanceof RefreshQueryNodeEvent) {
+                        refreshQueryNode();
+                }
         }
 }

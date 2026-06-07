@@ -98,31 +98,10 @@ public class UITableContainerDynamicNode extends UIDynamicNode
 
         public void refresh()
         {
-                /* 记录当前选中节点 */
-                var treeView = getRoot().getTreeView();
-
-                UIExplorerNode oldSelectedNode = (UIExplorerNode)
-                        treeView.getSelectionModel().getSelectedItem();
-
-                UIExplorerNode newSelectedNode = null;
-
-                /* 刷新节点 */
-                getChildren().clear();
-                loadDynamicChildren(dbNode.getChildren());
-
-                /* 恢复选中节点 */
-                for (TreeItem<String> child : getChildren()) {
-                        UIExplorerNode explorerChild = (UIExplorerNode) child;
-                        if (streq(explorerChild.getLabel(), oldSelectedNode.getLabel())) {
-                                newSelectedNode = explorerChild;
-                                break;
-                        }
-                }
-
-                if (newSelectedNode == null) {
-                        treeView.getSelectionModel().select(oldSelectedNode.getExplorerParent());
-                } else {
-                        treeView.getSelectionModel().select(newSelectedNode);
-                }
+                doRefresh(() -> {
+                        /* 刷新节点 */
+                        getChildren().clear();
+                        loadDynamicChildren(dbNode.getChildren());
+                });
         }
 }
