@@ -107,6 +107,9 @@ public class QueryEditor extends SplitPane implements EventListener
 
                 toolBar = createToolBar();
 
+                if (queryFile != null)
+                        initializeMonacoEditorValue(queryFile);
+
                 // sql logger
                 queryResultDataPane = new QueryResultDataPane(tab, false);
                 sqlExecuteLoggerPane = new ExecuteLoggerPane();
@@ -125,7 +128,7 @@ public class QueryEditor extends SplitPane implements EventListener
         {
                 ToolBar toolBar = new ToolBar();
 
-                runToolButton = new VkIconButton("运行已选择", "run");
+                runToolButton = new VkIconButton("运行", "run");
                 runToolButton.setText("运行");
                 runToolButton.setOnAction(e -> runTask());
 
@@ -155,11 +158,6 @@ public class QueryEditor extends SplitPane implements EventListener
         {
                 MonacoEditor editor = new MonacoEditor();
 
-                if (queryFile != null) {
-                        String fileContent = IOUtils.strread(queryFile);
-                        editor.setValue(fileContent);
-                }
-
                 editor.setWebViewOnKeyPressedEvent(event -> {
                         if (event.isShortcutDown() && event.getCode() == KeyCode.C)
                                 Application.copyToClipboard(editor.getSelectedValue());
@@ -170,6 +168,14 @@ public class QueryEditor extends SplitPane implements EventListener
                 editor.bindContextMenu(contextMenu);
 
                 return editor;
+        }
+
+        private void initializeMonacoEditorValue(QueryFile queryFile)
+        {
+                if (queryFile != null) {
+                        String fileContent = IOUtils.strread(queryFile);
+                        editor.setValue(fileContent);
+                }
         }
 
         private void setupBorderPane()
@@ -234,7 +240,7 @@ public class QueryEditor extends SplitPane implements EventListener
                         String selectedValue = editor.getSelectedValue();
                         boolean isTaskRunning = runToolButton.isDisable();
                         boolean disable = strempty(selectedValue) || isTaskRunning;
-                        runSelectedSQLItem.setDisable(isTaskRunning);
+                        runSelectedSQLItem.setDisable(disable);
                 });
 
                 contextMenu.getItems().addAll(
@@ -311,8 +317,14 @@ public class QueryEditor extends SplitPane implements EventListener
                 if (runToolButton.isDisabled())
                         return;
 
+                /* 更新按钮状态 */
                 updateButtonForExecuting(true);
-                String selectedText = editor.getSelectedValue();
+
+                StringBuilder selectedText = new StringBuilder();
+                selectedText.append(editor.getSelectedValue());
+
+                if (selectedText.isEmpty())
+                        selectedText.append(editor.getValue());
 
                 Driver driver = pathSelector.getDriver();
                 Session session = pathSelector.getSession();
