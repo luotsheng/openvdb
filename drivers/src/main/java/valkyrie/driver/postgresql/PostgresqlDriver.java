@@ -88,7 +88,79 @@ public class PostgresqlDriver extends Driver
         @Override
         public String showCreateTable(Session session, String table)
         {
-                return "";
+                String schema = session.schema();
+                String quotedTable = dialect.quote(table);
+                StringBuilder ddl = new StringBuilder();
+
+                // 1. 获取列定义
+                String columnsSql = fmt("""
+                        SELECT
+                          a.attname AS column_name,
+                          pg_catalog.format_type(a.atttypid, a.atttypmod) AS data_type,
+                          NOT a.attnotnull AS is_nullable,
+                          pg_catalog.pg_get_expr(d.adbin, d.adrelid) AS column_default,
+                          col_description(c.oid, a.attnum) AS column_comment
+                        FROM pg_class c
+                        JOIN pg_namespace n ON n.oid = c.relnamespace
+                        JOIN pg_attribute a ON a.attrelid = c.oid
+                        LEFT JOIN pg_attrdef d ON d.adrelid = c.oid AND d.adnum = a.attnum
+                        WHERE c.relname = '%s'
+                          AND n.nspname = '%s'
+                          AND a.attnum > 0
+                          AND NOT a.attisdropped
+                        ORDER BY a.attnum;
+                        """, table, schema);
+
+                List<String> columnDefs = new ArrayList<>();
+                try (Connection conn = getConnection(session);
+                     Statement stmt = conn.createStatement();
+                     ResultSet rs = stmt.executeQuery(columnsSql)) {
+                        while (rs.next()) {
+                                String colName = dialect.quote(rs.getString("column_name"));
+                                String dataType = rs.getString("data_type");
+                                String nullable = rs.getBoolean("is_nullable") ? "" : " NOT NULL";
+                                String defaultValue = rs.getString("column_default");
+                                String defaultClause = (defaultValue != null) ? " DEFAULT " + defaultValue : "";
+                                columnDefs.add(colName + " " + dataType + defaultClause + nullable);
+                        }
+                } catch (SQLException e) {
+                        throw new DriverException(e);
+                }
+
+                if (columnDefs.isEmpty())
+                        return "";
+
+                ddl.append("CREATE TABLE ").append(dialect.quote(schema)).append(".").append(quotedTable).append(" (\n  ");
+                ddl.append(String.join(",\n  ", columnDefs));
+
+                // 2. 获取主键约束
+                String pkSql = fmt("""
+                        SELECT
+                            con.conname AS constraint_name,
+                            string_agg(attname, ',' ORDER BY attnum) AS pk_columns
+                        FROM pg_constraint con
+                        JOIN pg_class c ON c.oid = con.conrelid
+                        JOIN pg_namespace n ON n.oid = c.relnamespace
+                        JOIN pg_attribute a ON a.attrelid = c.oid AND a.attnum = ANY(con.conkey)
+                        WHERE c.relname = '%s'
+                          AND n.nspname = '%s'
+                          AND con.contype = 'p'
+                        GROUP BY con.conname;
+                        """, table, schema);
+
+                try (Connection conn = getConnection(session);
+                     Statement stmt = conn.createStatement();
+                     ResultSet rs = stmt.executeQuery(pkSql)) {
+                        if (rs.next()) {
+                                String pkColumns = rs.getString("pk_columns");
+                                ddl.append(",\n  PRIMARY KEY (").append(pkColumns).append(")");
+                        }
+                } catch (SQLException e) {
+                        LOG.warn("Failed to get primary key for table {}", table, e);
+                }
+
+                ddl.append("\n);");
+                return ddl.toString();
         }
 
         @Override
