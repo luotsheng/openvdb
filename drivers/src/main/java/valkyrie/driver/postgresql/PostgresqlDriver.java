@@ -55,8 +55,8 @@ public class PostgresqlDriver extends Driver
                 List<DBNode> catalogNodes = Lists.newArrayList();
                 PostgresqlMetadataProvider metadataProvider = new PostgresqlMetadataProvider(this);
 
-                List<Catalog> catalogs = getCatalogs();
-                for (Catalog catalog : catalogs)
+                List<String> catalogs = getCatalogs();
+                for (String catalog : catalogs)
                         catalogNodes.add(new PostgresqlCatalogNode(catalog, metadataProvider));
 
                 return catalogNodes;
@@ -164,7 +164,7 @@ public class PostgresqlDriver extends Driver
         }
 
         @Override
-        public List<Catalog> getCatalogs()
+        public List<String> getCatalogs()
         {
                 String sql = """
                         SELECT datname
@@ -176,22 +176,19 @@ public class PostgresqlDriver extends Driver
 
                 QueryResult rs = execute(new Session(), sql);
 
-                List<Catalog> catalogs = rs.getRows().stream()
-                        .map(t -> {
-                                var name = first(t);
-                                return Catalog.of(name, name);
-                        })
+                List<String> catalogs = rs.getRows().stream()
+                        .map(Lists::first)
                         .toList();
 
                 VkDataSource ds = dataSourceManager.get(defaultKey);
                 ConnectionConfig cnf = ds.getConnectionConfig();
 
-                for (Catalog catalog : catalogs) {
+                for (String catalog : catalogs) {
                         ConnectionConfig cc =
                                 BeanUtils.copyProperties(cnf, ConnectionConfig.class);
-                        String jdbcUrl = JdbcUtils.updateDefaultDatabase(cc.getJdbcUrl(), catalog.getName());
+                        String jdbcUrl = JdbcUtils.updateDefaultDatabase(cc.getJdbcUrl(), catalog);
                         cc.setJdbcUrl(jdbcUrl);
-                        dataSourceManager.put(catalog.getName(), new PooledDataSource(cc));
+                        dataSourceManager.put(catalog, new PooledDataSource(cc));
                 }
 
                 return catalogs;

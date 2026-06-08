@@ -66,9 +66,9 @@ public class SQLiteDriver extends Driver
         }
 
         @Override
-        public List<Catalog> getCatalogs()
+        public List<String> getCatalogs()
         {
-                return Lists.of(Catalog.of("main", "main"));
+                return Lists.of("main");
         }
 
         @Override

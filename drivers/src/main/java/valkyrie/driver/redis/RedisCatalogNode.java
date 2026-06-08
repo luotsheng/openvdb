@@ -1,6 +1,5 @@
 package valkyrie.driver.redis;
 
-import valkyrie.driver.api.Catalog;
 import valkyrie.driver.api.node.DBCatalogNode;
 import valkyrie.driver.api.node.DBMetadataProvider;
 import valkyrie.driver.api.node.DBNode;
@@ -13,7 +12,7 @@ import java.util.List;
  */
 public class RedisCatalogNode extends DBCatalogNode
 {
-        public RedisCatalogNode(Catalog catalog, DBMetadataProvider metadataProvider)
+        public RedisCatalogNode(String catalog, DBMetadataProvider metadataProvider)
         {
                 super(catalog, metadataProvider);
         }

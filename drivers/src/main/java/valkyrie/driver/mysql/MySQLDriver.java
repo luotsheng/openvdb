@@ -59,8 +59,8 @@ public class MySQLDriver extends Driver
                 List<DBNode> catalogNodes = Lists.newArrayList();
                 MySQLMetadataProvider metadataProvider = new MySQLMetadataProvider(this);
 
-                List<Catalog> catalogs = getCatalogs();
-                for (Catalog catalog : catalogs)
+                List<String> catalogs = getCatalogs();
+                for (String catalog : catalogs)
                         catalogNodes.add(new MySQLCatalogNode(catalog, metadataProvider));
 
                 return catalogNodes;

@@ -45,20 +45,21 @@ public class RedisDriver extends Driver
                 this.jedis = ((RedisDataSource) dataSource).getJedis();
         }
 
+        private static Integer parseCatalogLabel(String label)
+        {
+                return Integer.valueOf(label.substring(2, label.indexOf(" (")));
+        }
+
         @Override
-        public List<Catalog> getCatalogs() {
-                List<Catalog> catalogs = Lists.newArrayList();
+        public List<String> getCatalogs() {
+                List<String> catalogs = Lists.newArrayList();
                 int count = Integer.parseInt(jedis.configGet("databases").get("databases"));
-                NumberFormat numberFormat = NumberFormat.getInstance();
 
                 for (int i = 0; i < count; i++) {
                         jedis.select(i);
                         long dbSize = jedis.dbSize();
-                        if (dbSize > 0) {
-                                String index = String.valueOf(i);
-                                String lab = fmt("DB%s (%s keys)", index, numberFormat.format(dbSize));
-                                catalogs.add(Catalog.of(lab, index));
-                        }
+                        if (dbSize > 0)
+                                catalogs.add(String.valueOf(i));
                 }
 
                 return catalogs;
@@ -67,7 +68,7 @@ public class RedisDriver extends Driver
         @Override
         public QueryResult execute(long jobId, Session session, SQL sql, SQLExecuteCallback callback)
         {
-                String currentCommandRef = null;
+                String currentCommandRef;
 
                 try {
                         jedis.select(Integer.parseInt(session.catalog()));
@@ -130,8 +131,8 @@ public class RedisDriver extends Driver
                 List<DBNode> ret = Lists.newArrayList();
                 RedisMetadataProvider metadataProvider = new RedisMetadataProvider(this);
 
-                List<Catalog> catalogs = getCatalogs();
-                for (Catalog catalog : catalogs)
+                List<String> catalogs = getCatalogs();
+                for (String catalog : catalogs)
                         ret.add(new RedisCatalogNode(catalog, metadataProvider));
 
                 return ret;

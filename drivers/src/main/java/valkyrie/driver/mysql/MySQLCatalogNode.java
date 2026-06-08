@@ -1,6 +1,5 @@
 package valkyrie.driver.mysql;
 
-import valkyrie.driver.api.Catalog;
 import valkyrie.driver.api.node.DBCatalogNode;
 import valkyrie.driver.api.node.DBMetadataProvider;
 import valkyrie.driver.api.node.DBNode;
@@ -13,7 +12,7 @@ import java.util.List;
  */
 public class MySQLCatalogNode extends DBCatalogNode
 {
-        public MySQLCatalogNode(Catalog catalog, DBMetadataProvider metadataProvider)
+        public MySQLCatalogNode(String catalog, DBMetadataProvider metadataProvider)
         {
                 super(catalog, metadataProvider);
         }

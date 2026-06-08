@@ -1,10 +1,8 @@
 package valkyrie.driver.redis;
 
 import valkyrie.driver.api.Driver;
-import valkyrie.driver.api.node.DBCatalogNode;
-import valkyrie.driver.api.node.DBMetadataProvider;
-import valkyrie.driver.api.node.DBNode;
-import valkyrie.driver.api.node.DBSchemaNode;
+import valkyrie.driver.api.node.*;
+import valkyrie.utils.collection.Lists;
 
 import java.util.List;
 
@@ -12,6 +10,7 @@ import java.util.List;
  * @author Luo Tiansheng
  * @since 2026/6/5
  */
+@SuppressWarnings({"unused", "FieldCanBeLocal"})
 public class RedisMetadataProvider implements DBMetadataProvider
 {
         private final Driver driver;
@@ -24,7 +23,7 @@ public class RedisMetadataProvider implements DBMetadataProvider
         @Override
         public List<DBNode> getChildrenOfCatalog(DBCatalogNode catalogNode)
         {
-                return List.of();
+                return Lists.of(new DBQueryNode(catalogNode));
         }
 
         @Override
