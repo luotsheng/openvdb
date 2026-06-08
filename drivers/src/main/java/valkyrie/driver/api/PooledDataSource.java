@@ -20,8 +20,12 @@ public class PooledDataSource
 {
         private final HikariDataSource ds;
 
+        private final ConnectionConfig conf;
+
         public PooledDataSource(ConnectionConfig conf)
         {
+                this.conf = conf;
+
                 HikariConfig hconf = new HikariConfig();
 
                 hconf.setJdbcUrl(conf.getJdbcUrl());
@@ -43,6 +47,12 @@ public class PooledDataSource
         /* ******************************************************************************** */
         /*                            DATASOURCE PROXY IMPLEMENTS                           */
         /* ******************************************************************************** */
+
+        @Override
+        public ConnectionConfig getConnectionConfig()
+        {
+                return conf;
+        }
 
         @Override
         public Connection getConnection() throws SQLException

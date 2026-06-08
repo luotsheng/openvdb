@@ -9,16 +9,15 @@ import valkyrie.driver.api.node.DBNodeKind;
 import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.dm.DMSuggestions;
 import valkyrie.driver.suggestion.Suggestion;
+import valkyrie.driver.utils.JdbcUtils;
+import valkyrie.utils.bean.BeanUtils;
 import valkyrie.utils.collection.Lists;
 import valkyrie.utils.collection.Sets;
-
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static valkyrie.utils.collection.Lists.first;
 import static valkyrie.utils.collection.Lists.second;
@@ -35,9 +34,13 @@ public class PostgresqlDriver extends Driver
 {
         private static final Logger LOG = LoggerFactory.getLogger(PostgresqlDriver.class);
 
+        private final String defaultKey = "__init_default__";
+        private final Map<String, VkDataSource> dataSourceManager = new HashMap<>();
+
         public PostgresqlDriver(VkDataSource dataSource)
         {
                 super(dataSource);
+                dataSourceManager.put(defaultKey, dataSource);
         }
 
         @Override
@@ -72,10 +75,60 @@ public class PostgresqlDriver extends Driver
                 return new PostgresqlDialect();
         }
 
+        public Connection getConnection(Session session) throws SQLException
+        {
+                dataSource = dataSourceManager.get(defaultKey);
+
+                if (session.catalog() != null)
+                        dataSource = dataSourceManager.get(session.catalog());
+
+                return super.getConnection(session);
+        }
+
         @Override
         public String showCreateTable(Session session, String table)
         {
                 return "";
+        }
+
+        @Override
+        public List<Catalog> getCatalogs()
+        {
+                String sql = """
+                        SELECT datname
+                        FROM pg_database
+                        WHERE has_database_privilege(datname, 'CONNECT')
+                        AND NOT datistemplate
+                        ORDER BY datname;
+                        """;
+
+                QueryResult rs = execute(new Session(), sql);
+
+                List<Catalog> catalogs = rs.getRows().stream()
+                        .map(t -> {
+                                var name = first(t);
+                                return Catalog.of(name, name);
+                        })
+                        .toList();
+
+                VkDataSource ds = dataSourceManager.get(defaultKey);
+                ConnectionConfig cnf = ds.getConnectionConfig();
+
+                for (Catalog catalog : catalogs) {
+                        ConnectionConfig cc =
+                                BeanUtils.copyProperties(cnf, ConnectionConfig.class);
+                        String jdbcUrl = JdbcUtils.updateDefaultDatabase(cc.getJdbcUrl(), catalog.getName());
+                        cc.setJdbcUrl(jdbcUrl);
+                        dataSourceManager.put(catalog.getName(), new PooledDataSource(cc));
+                }
+
+                return catalogs;
+        }
+
+        @Override
+        public List<String> getSchemas(Session session)
+        {
+                return super.getSchemas(session);
         }
 
         @Override

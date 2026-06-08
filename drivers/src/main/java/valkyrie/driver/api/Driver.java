@@ -62,7 +62,7 @@ public abstract class Driver implements SQLExecutor
          * <p>
          * 该引用为 {@code protected}，允许子类直接访问以支持更灵活的连接管理。
          */
-        protected final @Getter VkDataSource dataSource;
+        protected @Getter VkDataSource dataSource;
 
         /**
          * 执行任务列表
@@ -283,10 +283,10 @@ public abstract class Driver implements SQLExecutor
          * @throws DriverException 如果数据库元数据访问失败
          * @see DatabaseMetaData#getSchemas()
          */
-        public List<String> getSchemas() {
+        public List<String> getSchemas(Session session) {
                 List<String> schemas = Lists.newArrayList();
 
-                try (Connection connection = getConnection()) {
+                try (Connection connection = getConnection(session)) {
                         DatabaseMetaData metadata = connection.getMetaData();
                         ResultSet rs = metadata.getSchemas();
 
@@ -297,6 +297,11 @@ public abstract class Driver implements SQLExecutor
                 } catch (SQLException e) {
                         throw new DriverException(e);
                 }
+        }
+
+        public List<String> getSchemas()
+        {
+                return getSchemas(null);
         }
 
         /**

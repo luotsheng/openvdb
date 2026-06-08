@@ -276,6 +276,7 @@ public class ConnectionPropertyModel
                 config.setPort(getPort());
                 config.setUsername(getUsername());
                 config.setPassword(getPassword());
+                config.setDefaultDatabase(getDb());
                 config.setJdbcUrl(getJdbcUrl());
 
                 return config;

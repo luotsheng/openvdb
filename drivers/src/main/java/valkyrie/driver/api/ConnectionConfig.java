@@ -18,5 +18,6 @@ public class ConnectionConfig
         private String port;
         private String username;
         private String password;
+        private String defaultDatabase;
         private String jdbcUrl;
 }

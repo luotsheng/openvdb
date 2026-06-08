@@ -27,7 +27,7 @@ public class PostgresqlMetadataProvider implements DBMetadataProvider
         {
                 List<DBNode> ret = new ArrayList<>();
 
-                List<String> schemas = driver.getSchemas();
+                List<String> schemas = driver.getSchemas(catalogNode.getSession());
                 for (String schema : schemas)
                         ret.add(new PostgresqlSchemaNode(catalogNode, schema, this));
 
