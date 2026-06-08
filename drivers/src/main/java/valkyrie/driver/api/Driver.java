@@ -129,8 +129,31 @@ public abstract class Driver implements SQLExecutor
          */
         public abstract DbType getType();
 
+        /**
+         * 获取数据库对象的节点层次结构。
+         * <p>
+         * 返回当前数据库连接下所有可见对象的树形结构，例如：
+         * 数据库（Catalog） → 模式（Schema） → 表（Table）/视图（View）/函数等。
+         * 不同数据库的层级结构可能存在差异（如 MySQL 中 Catalog 等同于 Database，
+         * 而 Oracle 或 PostgreSQL 中 Catalog 与 Schema 关系不同），具体实现应
+         * 遵循目标数据库的实际组织方式。
+         *
+         * @return 节点列表，表示根节点下的直接子节点；若无可展示对象则返回空列表（永不返回 {@code null}）
+         * @see DBNode
+         */
         public abstract List<DBNode> getNodeHierarchy();
 
+        /**
+         * 获取当前数据库对象节点的层级路径。
+         * <p>
+         * 返回从根节点到当前选中或活动对象（如当前 Catalog / Schema）的路径信息，
+         * 用于定位当前上下文在 {@link #getNodeHierarchy()} 返回的树形结构中的位置。
+         * 路径通常由一系列节点标识符组成，例如 {@code ["catalog_name", "schema_name"]}。
+         *
+         * @return 当前节点的层级路径（若无当前上下文或未选中任何节点，可能返回空路径或 {@code null}，
+         *         具体由实现决定）
+         * @see DBNodePath
+         */
         public abstract DBNodePath getNodeHierarchyPath();
 
         /**
