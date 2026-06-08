@@ -103,6 +103,31 @@ public interface SQLExecutor
          * @param args 格式化参数
          * @return 查询结果集（非查询语句返回 null）
          */
+        @SuppressWarnings("RedundantCast")
+        default QueryResult execute(Object sqlfmt, Object... args)
+        {
+                return execute((Session) null, sqlfmt, args);
+        }
+
+        /**
+         * 执行 SQL 任务
+         * <p>
+         * 执行规则：
+         * - SQL 为待执行的原始语句
+         * - 执行过程由具体数据库驱动实现
+         * <p>
+         * 返回规则：
+         * - 查询语句（SELECT / SHOW / DESCRIBE 等）返回 DataGrid
+         * - 非查询语句（INSERT / UPDATE / DELETE / DDL 等）返回 null
+         * <p>
+         * 注意：
+         * - 非查询语句的执行结果需通过执行状态或影响行数获取（实现层提供）
+         * - 该方法可能为异步执行，结果返回不代表任务已完成（视实现而定）
+         *
+         * @param sqlfmt 字符串对象
+         * @param args 格式化参数
+         * @return 查询结果集（非查询语句返回 null）
+         */
         default QueryResult execute(Session session, Object sqlfmt, Object... args) {
                 return execute(session, new SQL(sqlfmt, args));
         }

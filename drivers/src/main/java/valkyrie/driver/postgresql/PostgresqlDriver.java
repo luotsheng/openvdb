@@ -18,6 +18,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static valkyrie.utils.collection.Lists.first;
 import static valkyrie.utils.collection.Lists.second;
@@ -36,6 +37,8 @@ public class PostgresqlDriver extends Driver
 
         private final String defaultKey = "__init_default__";
         private final Map<String, VkDataSource> dataSourceManager = new HashMap<>();
+
+        private Set<String> indexTypes;
 
         public PostgresqlDriver(VkDataSource dataSource)
         {
@@ -79,7 +82,7 @@ public class PostgresqlDriver extends Driver
         {
                 dataSource = dataSourceManager.get(defaultKey);
 
-                if (session.catalog() != null)
+                if (session != null && session.catalog() != null)
                         dataSource = dataSourceManager.get(session.catalog());
 
                 return super.getConnection(session);
@@ -288,15 +291,57 @@ public class PostgresqlDriver extends Driver
         }
 
         @Override
+        @SuppressWarnings("ExtractMethodRecommender")
         public List<Index> getIndexes(Session session, String table)
         {
-                return List.of();
+                String sql = fmt("""
+                        SELECT
+                          idx_class.relname AS name,
+                          (
+                            SELECT string_agg(pg_get_indexdef(idx_class.oid, n, true), ', ')
+                            FROM generate_series(1, pg_index.indnkeyatts) n
+                          ) AS columns_text,
+                          am.amname AS type,
+                          pg_index.indisvalid AS visible
+                        FROM
+                          pg_class tbl
+                          JOIN pg_index ON tbl.oid = pg_index.indrelid
+                          JOIN pg_class idx_class ON pg_index.indexrelid = idx_class.oid
+                          JOIN pg_am am ON idx_class.relam = am.oid
+                        WHERE
+                          tbl.relname = '%s'
+                          AND tbl.relkind = 'r';
+                        """, table);
+
+                QueryResult rs = execute(session, sql);
+
+                List<Index> ret = Lists.newArrayList();
+
+                for (GridRow row : rs.getRows()) {
+                        Index index = new Index();
+                        index.setName(row.get(0));
+                        index.setColumnsText(row.get(1));
+                        index.setType(row.get(2));
+                        index.setVisible(Boolean.parseBoolean(row.get(3)));
+                        index.setOriginalName(index.getName());
+                        index.setOriginalVisible(index.isVisible());
+                        ret.add(index);
+                }
+
+                return ret;
         }
 
         @Override
         public Set<String> getIndexTypes()
         {
-                return Set.of();
+                if (indexTypes == null) {
+                        QueryResult rs = execute("SELECT amname FROM pg_am;");
+                        indexTypes = rs.getRows().stream()
+                                .map(Lists::first)
+                                .collect(Collectors.toSet());
+                }
+
+                return indexTypes;
         }
 
         @Override
