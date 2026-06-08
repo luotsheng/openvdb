@@ -26,7 +26,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
         private final @Getter UIExplorerNode explorerParent;
         private final String icon;
 
-        private AtomicBoolean progressing = new AtomicBoolean(false);
+        protected AtomicBoolean progressing = new AtomicBoolean(false);
         private ContextMenu contextMenu;
         private Node oldGraphic;
 

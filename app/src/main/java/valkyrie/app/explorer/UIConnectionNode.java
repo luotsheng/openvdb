@@ -71,6 +71,11 @@ public class UIConnectionNode extends UIExplorerNode
         @Override
         public void onContextMenuRequested(ContextMenu contextMenu)
         {
+                if (progressing.get()) {
+                        connectOrDisconnectMenuItem.setDisable(true);
+                        return;
+                }
+
                 if (connectFlag) {
                         connectOrDisconnectMenuItem.setText("关闭连接");
                         connectOrDisconnectMenuItem.setOnAction(e -> disconnect());
@@ -78,6 +83,8 @@ public class UIConnectionNode extends UIExplorerNode
                         connectOrDisconnectMenuItem.setText("打开连接");
                         connectOrDisconnectMenuItem.setOnAction(e -> connect());
                 }
+
+                connectOrDisconnectMenuItem.setDisable(false);
         }
 
         @Override
