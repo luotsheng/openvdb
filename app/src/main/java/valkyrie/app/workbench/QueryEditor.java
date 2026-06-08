@@ -43,6 +43,7 @@ import valkyrie.utils.exception.Causes;
 import valkyrie.utils.io.IOUtils;
 
 import java.util.List;
+import java.util.concurrent.*;
 
 import static valkyrie.utils.string.StaticLibrary.strempty;
 
@@ -67,6 +68,9 @@ public class QueryEditor extends SplitPane implements EventListener
         private final Tab sqlExecuteLoggerTab;
         private final ExecuteLoggerPane sqlExecuteLoggerPane;
         private final QueryResultDataPane queryResultDataPane;
+
+        // Thread Pool
+        private static final ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
 
         // Selector
         private PathSelector pathSelector = new PathSelector(
@@ -184,12 +188,14 @@ public class QueryEditor extends SplitPane implements EventListener
                 if (driver == null || (session.catalog() == null || session.schema() == null))
                         return;
 
-                List<Suggestion> suggestions = driver.getSuggestions(session);
+                singleThreadExecutor.execute(() -> {
+                        List<Suggestion> suggestions = driver.getSuggestions(session);
 
-                if (suggestions.isEmpty())
-                        return;
+                        if (suggestions.isEmpty())
+                                return;
 
-                editor.registerSuggestions(suggestions);
+                        editor.registerSuggestions(suggestions);
+                });
         }
 
         //////////////////////////////////////////////////////////////////////

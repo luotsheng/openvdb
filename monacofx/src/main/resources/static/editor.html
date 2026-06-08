@@ -40,7 +40,10 @@
     window.Suggestions = [];
 
     window.addSuggestions = function (suggestions) {
+        const start = performance.now();
         window.Suggestions = window.Suggestions.concat(suggestions);
+        const end = performance.now();
+        console.log(`window#addSuggestions 耗时: ${end - start} ms`);
     }
 
     require(['vs/editor/editor.main'], function () {
