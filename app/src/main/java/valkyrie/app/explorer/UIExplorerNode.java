@@ -12,6 +12,7 @@ import valkyrie.driver.api.node.DBNode;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Luo Tiansheng
@@ -25,6 +26,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
         private final @Getter UIExplorerNode explorerParent;
         private final String icon;
 
+        private AtomicBoolean progressing = new AtomicBoolean(false);
         private ContextMenu contextMenu;
         private Node oldGraphic;
 
@@ -90,6 +92,11 @@ public abstract class UIExplorerNode extends TreeItem<String>
 
         protected void useProgressIndicator(Runnable runnable)
         {
+                if (progressing.get())
+                        return;
+
+                progressing.set(true);
+
                 oldGraphic = getGraphic();
                 setGraphic(Assets.newProgressIndicator());
 
@@ -99,6 +106,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
                         } catch (Exception ex) {
                                 Platform.runLater(() -> VkDialogHelper.alert(ex));
                         } finally {
+                                progressing.set(false);
                                 Platform.runLater(() -> setGraphic(oldGraphic));
                         }
                 }).start();
