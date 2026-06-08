@@ -10,7 +10,6 @@ import valkyrie.app.dialog.connection.CreateOrEditConnectionDialog;
 import valkyrie.app.event.ConnectedSuccessEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.model.ConnectionPropertyModel;
-import valkyrie.app.model.UIExplorerStatus;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.core.repository.ConnectionRepository;
 import valkyrie.driver.api.ConnectionConfig;
@@ -109,7 +108,6 @@ public class UIConnectionNode extends UIExplorerNode
                 if (VkDialogHelper.askDangerous("确定要删除“%s”吗？", getLabel())) {
                         deleteRequestListener.onDeleteRequest(this);
                         ConnectionRepository.deleteConnection(getLabel());
-                        UIExplorerStatus.getInstance().removeConnection(this);
                 }
         }
 

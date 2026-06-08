@@ -21,11 +21,9 @@ import valkyrie.app.explorer.UIConnectionNode;
 import valkyrie.app.explorer.UIExplorerNode;
 import valkyrie.app.menu.ConnectionMenuBuilder;
 import valkyrie.app.model.ConnectionPropertyModel;
-import valkyrie.app.model.UIExplorerStatus;
 import valkyrie.app.widgets.VkTextField;
 import valkyrie.core.model.ConnectionProfile;
 import valkyrie.core.repository.ConnectionRepository;
-import valkyrie.utils.thread.ThreadPool;
 
 import java.text.Collator;
 import java.util.*;
@@ -267,7 +265,6 @@ public class ObjectExplorerPane extends VBox implements EventListener
                         ConnectionPropertyModel propertyModel = new ConnectionPropertyModel(profile);
 
                         UIConnectionNode connection = new UIConnectionNode(treeView, propertyModel);
-                        UIExplorerStatus.getInstance().addConnection(connection);
                         connections.put(profile.getName(), connection);
                         children.add(connection);
 
