@@ -176,6 +176,11 @@ public class QueryEditor extends SplitPane implements EventListener
                         String fileContent = IOUtils.strread(queryFile);
                         editor.setValue(fileContent);
                 }
+
+                editor.setOnDidChangeModelContent(() -> {
+                        if (queryFile != null)
+                                writeQueryFile();
+                });
         }
 
         private void setupBorderPane()
