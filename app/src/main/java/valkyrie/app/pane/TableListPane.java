@@ -28,6 +28,8 @@ import valkyrie.driver.api.Table;
 import java.util.Date;
 import java.util.List;
 
+import static valkyrie.utils.string.StaticLibrary.fmt;
+
 /**
  * 表列表总览
  *
@@ -159,10 +161,10 @@ public class TableListPane extends BorderPane
 
                 // 初始化宽度
                 name.setPrefWidth(450);
-                createTime.setPrefWidth(230);
-                updateTime.setPrefWidth(230);
+                createTime.setPrefWidth(170);
+                updateTime.setPrefWidth(170);
                 engine.setPrefWidth(120);
-                size.setPrefWidth(100);
+                size.setPrefWidth(130);
                 rows.setPrefWidth(100);
                 comment.setPrefWidth(600);
 
@@ -203,20 +205,8 @@ public class TableListPane extends BorderPane
                         {
                                 super.updateItem(item, empty);
 
-                                if (item != null) {
-                                        String unit = "K";
-                                        double value = item;
-
-                                        if (item > (1024 * 1024)) {
-                                                value = (item / 1024 / 1024);
-                                                unit = "G";
-                                        } else if (item > 1024) {
-                                                value = (item / 1024);
-                                                unit = "M";
-                                        }
-
-                                        setText(((int) value) + unit);
-                                }
+                                if (item != null)
+                                        setText(formatStorageSize(item.longValue()));
                         }
                 });
 
@@ -226,7 +216,36 @@ public class TableListPane extends BorderPane
 
         private void update(List<Table> tables)
         {
+                long totalSize = tables.stream()
+                        .mapToLong(t -> {
+                                if (t.getSize() == null)
+                                        return 0;
+                                return t.getSize().longValue();
+                        })
+                        .sum();
+
+                size.setText(fmt("磁盘 (%s)", formatStorageSize(totalSize)));
                 observable.setAll(tables);
                 tableView.refresh();
+        }
+
+        private static String formatStorageSize(long size)
+        {
+                String unit = "K";
+
+                double value = size;
+
+                if (size > 1024 * 1024 * 1024) {
+                        value = ((double) size / 1024 / 1024 / 1024);
+                        unit = "T";
+                } else if (size > (1024 * 1024)) {
+                        value = ((double) size / 1024 / 1024);
+                        unit = "G";
+                } else if (size > 1024) {
+                        value = ((double) size / 1024);
+                        unit = "M";
+                }
+
+                return fmt("%.2f%s", value, unit);
         }
 }
