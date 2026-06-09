@@ -1,7 +1,10 @@
 package valkyrie.app.explorer;
 
+import javafx.application.Platform;
+import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.TreeItem;
 import valkyrie.app.event.RefreshTableNodeEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.pane.TableListPane;
@@ -9,10 +12,13 @@ import valkyrie.app.utils.Threads;
 import valkyrie.driver.api.Table;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.node.DBTableContainerNode;
+import valkyrie.utils.collection.Lists;
 import valkyrie.utils.collection.Maps;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author Luo Tiansheng
@@ -93,13 +99,22 @@ public class UITableContainerDynamicNode extends UIDynamicNode
                 return ((DBTableContainerNode) dbNode).getTables();
         }
 
+        @SuppressWarnings("CodeBlock2Expr")
         public void refresh()
         {
-                runAndPreservingSelection(() -> {
-                        /* 刷新节点 */
-                        getChildren().clear();
-                        loadDynamicChildren(dbNode.getChildren());
-                        EventBus.publish(new RefreshTableNodeEvent(this));
-                });
+                CompletableFuture
+                        .supplyAsync(dbNode::getChildren)
+                        /* Java 线程 */
+                        .thenAccept(children -> {
+                                /* 切换到 Fx 线程 */
+                                Platform.runLater(() -> {
+                                        runAndPreservingSelection(() -> {
+                                                /* 刷新节点 */
+                                                getChildren().clear();
+                                                loadDynamicChildren(children);
+                                                EventBus.publish(new RefreshTableNodeEvent(this));
+                                        });
+                                });
+                        });
         }
 }
