@@ -1,0 +1,29 @@
+.root {
+    -fx-font-size: 14px;
+}
+
+/**
+ * tree-view
+ */
+.tree-view {
+    -fx-padding: 0;
+}
+
+.tree-cell {
+    -fx-padding: 5 4 5 4;
+}
+
+/**
+ * table-view
+ */
+.table-view {
+    -fx-padding: 0;
+}
+
+.table-cell {
+    -fx-padding: 3 4 3 4;
+}
+
+.table-row-cell {
+    -fx-cell-size: 20px;
+}

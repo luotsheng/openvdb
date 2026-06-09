@@ -85,11 +85,12 @@ public class Application extends javafx.application.Application
 
         static void initialize(Scene scene)
         {
+                addStylesheet(scene, "/css/vk-theme-root.css");
+                addStylesheet(scene, "/css/vk-theme-menu.css");
                 addStylesheet(scene, "/css/vk-table-view.css");
                 addStylesheet(scene, "/css/vk-icon-button.css");
                 addStylesheet(scene, "/css/vk-code-area.css");
                 addStylesheet(scene, "/css/vk-status-bar.css");
-                addStylesheet(scene, "/css/vk-theme-menu.css");
         }
 
         @Override
