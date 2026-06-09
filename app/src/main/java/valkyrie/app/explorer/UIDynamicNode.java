@@ -64,12 +64,10 @@ public class UIDynamicNode extends UIExplorerNode
                                 children.addAll(dbNode.getChildren());
 
                         if (!children.isEmpty()) {
-                                Platform.runLater(() -> {
-                                        loadDynamicChildren(children);
-                                        setExpanded(isExpanded);
-                                        initializeChildrenFlag = true;
-                                        onInitializedEvent();
-                                });
+                                loadDynamicChildren(children);
+                                Platform.runLater(() -> setExpanded(isExpanded));
+                                initializeChildrenFlag = true;
+                                onInitializedEvent();
                         }
                 });
         }
