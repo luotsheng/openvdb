@@ -258,7 +258,7 @@ public class PostgresqlDriver extends Driver
                           NULL::timestamp AS create_time,
                           NULL::timestamp AS update_time,
                           'PostgreSQL' AS engine,
-                          pg_total_relation_size(c.oid)/1024.0 AS size,
+                          pg_total_relation_size(c.oid) AS size,
                           c.reltuples::bigint AS rows,
                           obj_description(c.oid, 'pg_class') AS comment
                         FROM pg_class c

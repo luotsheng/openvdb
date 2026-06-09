@@ -154,7 +154,7 @@ public class DMDriver extends Driver
 
                                         // 计算表大小（KB）
                                         long usedPages = rs.getLong("usedPages");
-                                        float sizeInKB = (usedPages * pageSize) / 1024.0f;
+                                        float sizeInKB = (usedPages * pageSize);
 
                                         // 处理创建时间
                                         Timestamp createTimestamp = rs.getTimestamp("createTime");

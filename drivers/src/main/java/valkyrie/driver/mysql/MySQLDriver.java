@@ -132,7 +132,7 @@ public class MySQLDriver extends Driver
                             	`CREATE_TIME` AS `createTime`,
                             	`UPDATE_TIME` AS `updateTime`,
                             	`ENGINE` AS `engine`,
-                            	 ROUND((DATA_LENGTH + INDEX_LENGTH) / 1024, 2) AS `size`,
+                            	 ROUND((DATA_LENGTH + INDEX_LENGTH), 2) AS `size`,
                             	`TABLE_ROWS` AS `rows`,
                             	`TABLE_COMMENT` AS `comment`
                             FROM

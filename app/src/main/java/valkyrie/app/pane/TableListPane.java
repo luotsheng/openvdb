@@ -231,19 +231,29 @@ public class TableListPane extends BorderPane
 
         private static String formatStorageSize(long size)
         {
-                String unit = "K";
+                final long K = 1024;
+                final long M = K * 1024;
+                final long G = M * 1024;
+                final long T = G * 1024;
 
-                double value = size;
+                String unit;
+                double value;
 
-                if (size > 1024 * 1024 * 1024) {
-                        value = ((double) size / 1024 / 1024 / 1024);
+                if (size > T) {
+                        value = ((double) size / T);
                         unit = "T";
-                } else if (size > (1024 * 1024)) {
-                        value = ((double) size / 1024 / 1024);
+                } else if (size > G) {
+                        value = ((double) size / G);
                         unit = "G";
-                } else if (size > 1024) {
-                        value = ((double) size / 1024);
+                } else if (size > M) {
+                        value = ((double) size / M);
                         unit = "M";
+                } else if (size > K) {
+                        value = ((double) size / K);
+                        unit = "K";
+                } else {
+                        value = size;
+                        unit = "B";
                 }
 
                 return fmt("%.2f%s", value, unit);
