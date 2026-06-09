@@ -1,6 +1,8 @@
 package valkyrie.app.explorer;
 
+import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.node.*;
 
@@ -71,39 +73,29 @@ public class UIDynamicNode extends UIExplorerNode
                 initializeChildrenFlag = false;
         }
 
-        protected void runAndPreservingSelection(Runnable runnable)
+        protected void runPreservingSelection(Runnable action)
         {
-                /* 记录当前选中节点 */
-                var treeView = getRoot().getTreeView();
+                TreeView<String> treeView = getRoot().getTreeView();
 
-                UIExplorerNode oldSelectedNode = (UIExplorerNode)
-                        treeView.getSelectionModel().getSelectedItem();
+                UIExplorerNode selected =
+                        (UIExplorerNode) treeView.getSelectionModel().getSelectedItem();
 
-                UIExplorerNode newSelectedNode = null;
+                var children = selected.getParent().getChildren();
+                int nodeIndex = children.indexOf(selected);
 
-                runnable.run();
+                action.run();
 
-                if (oldSelectedNode == null)
+                if (children.isEmpty()) {
+                        treeView.getSelectionModel().select(parent);
                         return;
-
-                /* 恢复选中节点 */
-                for (TreeItem<String> child : getChildren()) {
-                        UIExplorerNode explorerChild = (UIExplorerNode) child;
-                        if (streq(explorerChild.getLabel(), oldSelectedNode.getLabel())) {
-                                newSelectedNode = explorerChild;
-                                break;
-                        }
                 }
 
-                if (newSelectedNode == null) {
-                        if (oldSelectedNode == treeView.getSelectionModel().getSelectedItem()) {
-                                treeView.getSelectionModel().select(oldSelectedNode);
-                        } else {
-                                treeView.getSelectionModel().select(oldSelectedNode.getExplorerParent());
-                        }
-                } else {
-                        treeView.getSelectionModel().select(newSelectedNode);
+                if (nodeIndex >= children.size()) {
+                        treeView.getSelectionModel().select(children.get(nodeIndex - 1));
+                        return;
                 }
+
+                treeView.getSelectionModel().select(children.get(nodeIndex));
         }
 
         public void initialize()

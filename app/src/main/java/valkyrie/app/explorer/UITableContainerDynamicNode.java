@@ -108,7 +108,7 @@ public class UITableContainerDynamicNode extends UIDynamicNode
                         .thenAccept(children -> {
                                 /* 切换到 Fx 线程 */
                                 Platform.runLater(() -> {
-                                        runAndPreservingSelection(() -> {
+                                        runPreservingSelection(() -> {
                                                 /* 刷新节点 */
                                                 getChildren().clear();
                                                 loadDynamicChildren(children);
