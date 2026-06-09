@@ -95,7 +95,7 @@ public class UITableContainerDynamicNode extends UIDynamicNode
 
         public void refresh()
         {
-                doRefresh(() -> {
+                runAndPreservingSelection(() -> {
                         /* 刷新节点 */
                         getChildren().clear();
                         loadDynamicChildren(dbNode.getChildren());

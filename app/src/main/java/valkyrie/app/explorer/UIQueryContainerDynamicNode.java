@@ -76,7 +76,7 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
 
         private void refreshQueryNode()
         {
-                doRefresh(this::reloadQueryNode);
+                runAndPreservingSelection(this::reloadQueryNode);
         }
 
         @Override

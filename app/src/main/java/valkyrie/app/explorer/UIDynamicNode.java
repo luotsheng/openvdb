@@ -71,7 +71,7 @@ public class UIDynamicNode extends UIExplorerNode
                 initializeChildrenFlag = false;
         }
 
-        protected void doRefresh(Runnable runnable)
+        protected void runAndPreservingSelection(Runnable runnable)
         {
                 /* 记录当前选中节点 */
                 var treeView = getRoot().getTreeView();
