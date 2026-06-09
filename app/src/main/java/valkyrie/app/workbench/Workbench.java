@@ -60,11 +60,12 @@ public class Workbench extends VBox implements EventListener
                 setupHomeTab();
 
                 // 订阅事件
-                EventBus.subscribe(OpenTabEvent.class, this);
-                EventBus.subscribe(CloseWorkbenchTabEvent.class, this);
-                EventBus.subscribe(OpenNavigationPaneEvent.class, this);
-                EventBus.subscribe(CloseNavigationPaneEvent.class, this);
-                EventBus.subscribe(RegisterTabManagerEvent.class, this);
+                EventBus.subscribe(this,
+                        OpenTabEvent.class,
+                        CloseWorkbenchTabEvent.class,
+                        OpenNavigationPaneEvent.class,
+                        CloseNavigationPaneEvent.class,
+                        RegisterTabManagerEvent.class);
         }
 
         private void setupTabPane()

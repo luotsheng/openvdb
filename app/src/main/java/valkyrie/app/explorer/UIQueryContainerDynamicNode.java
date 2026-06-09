@@ -4,6 +4,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
 import valkyrie.app.event.RefreshQueryNodeEvent;
+import valkyrie.app.event.RefreshTableNodeEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
@@ -32,7 +33,7 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
                 super(parent, dbNode);
                 reloadQueryNode();
                 // subscribe
-                EventBus.subscribe(RefreshQueryNodeEvent.class, this);
+                EventBus.subscribe(this, RefreshQueryNodeEvent.class);
         }
 
         @Override

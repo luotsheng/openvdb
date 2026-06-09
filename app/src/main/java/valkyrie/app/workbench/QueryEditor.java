@@ -119,7 +119,7 @@ public class QueryEditor extends SplitPane implements EventListener
                 setupShortcutEvent();
 
                 // event subscribe
-                EventBus.subscribe(UpdateQueryFileEvent.class, this);
+                EventBus.subscribe(this, UpdateQueryFileEvent.class);
         }
 
         private ToolBar createToolBar()

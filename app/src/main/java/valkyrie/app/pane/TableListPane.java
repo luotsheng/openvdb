@@ -46,13 +46,13 @@ public class TableListPane extends BorderPane implements EventListener
         private final TableView<Table> tableView;
         private final ToolBar toolBar;
 
-        private TableColumn<Table, String> name;
-        private TableColumn<Table, Date> createTime;
-        private TableColumn<Table, Date> updateTime;
-        private TableColumn<Table, String> engine;
-        private TableColumn<Table, Float> size;
-        private TableColumn<Table, String> rows;
-        private TableColumn<Table, String> comment;
+        private TableColumn<Table, String> nameColumn;
+        private TableColumn<Table, Date> createTimeColumn;
+        private TableColumn<Table, Date> updateTimeColumn;
+        private TableColumn<Table, String> engineColumn;
+        private TableColumn<Table, Float> sizeColumn;
+        private TableColumn<Table, String> rowsColumn;
+        private TableColumn<Table, String> commentColumn;
 
         private final VkTextField search = new VkTextField();
         private final ObservableList<Table> observable = FXCollections.observableArrayList();
@@ -78,7 +78,7 @@ public class TableListPane extends BorderPane implements EventListener
 
                 update(tableContainerDynamicNode.getTables());
 
-                EventBus.subscribe(RefreshTableNodeEvent.class, this);
+                EventBus.subscribe(this, RefreshTableNodeEvent.class);
         }
 
         private void setupToolBar()
@@ -147,41 +147,41 @@ public class TableListPane extends BorderPane implements EventListener
         private void initializeColumn()
         {
                 // 列
-                name = new VkTableColumn<>("名称");
-                createTime = new VkTableColumn<>("创建时间");
-                updateTime = new VkTableColumn<>("更新时间");
-                engine = new VkTableColumn<>("存储引擎");
-                size = new VkTableColumn<>("表大小");
-                rows = new VkTableColumn<>("数据条数");
-                comment = new VkTableColumn<>("注释");
+                nameColumn = new VkTableColumn<>("名称");
+                createTimeColumn = new VkTableColumn<>("创建时间");
+                updateTimeColumn = new VkTableColumn<>("更新时间");
+                engineColumn = new VkTableColumn<>("存储引擎");
+                sizeColumn = new VkTableColumn<>("表大小");
+                rowsColumn = new VkTableColumn<>("数据条数");
+                commentColumn = new VkTableColumn<>("注释");
 
                 // 属性配置
-                name.setCellValueFactory(new PropertyValueFactory<>("name"));
-                createTime.setCellValueFactory(new PropertyValueFactory<>("createTime"));
-                updateTime.setCellValueFactory(new PropertyValueFactory<>("updateTime"));
-                engine.setCellValueFactory(new PropertyValueFactory<>("engine"));
-                size.setCellValueFactory(new PropertyValueFactory<>("size"));
-                rows.setCellValueFactory(new PropertyValueFactory<>("rows"));
-                comment.setCellValueFactory(new PropertyValueFactory<>("comment"));
+                nameColumn.setCellValueFactory(new PropertyValueFactory<>("name"));
+                createTimeColumn.setCellValueFactory(new PropertyValueFactory<>("createTime"));
+                updateTimeColumn.setCellValueFactory(new PropertyValueFactory<>("updateTime"));
+                engineColumn.setCellValueFactory(new PropertyValueFactory<>("engine"));
+                sizeColumn.setCellValueFactory(new PropertyValueFactory<>("size"));
+                rowsColumn.setCellValueFactory(new PropertyValueFactory<>("rows"));
+                commentColumn.setCellValueFactory(new PropertyValueFactory<>("comment"));
 
                 // 初始化宽度
-                name.setPrefWidth(450);
-                createTime.setPrefWidth(170);
-                updateTime.setPrefWidth(170);
-                engine.setPrefWidth(120);
-                size.setPrefWidth(130);
-                rows.setPrefWidth(100);
-                comment.setPrefWidth(600);
+                nameColumn.setPrefWidth(450);
+                createTimeColumn.setPrefWidth(170);
+                updateTimeColumn.setPrefWidth(170);
+                engineColumn.setPrefWidth(120);
+                sizeColumn.setPrefWidth(130);
+                rowsColumn.setPrefWidth(100);
+                commentColumn.setPrefWidth(600);
 
                 // 绑定列
                 tableView.getColumns().addAll(
-                        name,
-                        createTime,
-                        updateTime,
-                        engine,
-                        size,
-                        rows,
-                        comment
+                        nameColumn,
+                        createTimeColumn,
+                        updateTimeColumn,
+                        engineColumn,
+                        sizeColumn,
+                        rowsColumn,
+                        commentColumn
                 );
 
                 tableView.getColumns().forEach(col -> col.setReorderable(false));
@@ -189,7 +189,7 @@ public class TableListPane extends BorderPane implements EventListener
 
         private void setupCellFactory()
         {
-                name.setCellFactory(col -> new TableCell<>()
+                nameColumn.setCellFactory(col -> new TableCell<>()
                 {
                         @Override
                         protected void updateItem(String item, boolean empty)
@@ -203,11 +203,10 @@ public class TableListPane extends BorderPane implements EventListener
                         }
                 });
 
-                size.setCellFactory(col -> new TableCell<>()
+                sizeColumn.setCellFactory(col -> new TableCell<>()
                 {
                         @Override
-                        protected void updateItem(Float item, boolean empty)
-                        {
+                        protected void updateItem(Float item, boolean empty) {
                                 super.updateItem(item, empty);
 
                                 if (item != null)
@@ -215,8 +214,8 @@ public class TableListPane extends BorderPane implements EventListener
                         }
                 });
 
-                createTime.setCellFactory(col -> new VkDateTableCell<>());
-                updateTime.setCellFactory(col -> new VkDateTableCell<>());
+                createTimeColumn.setCellFactory(col -> new VkDateTableCell<>());
+                updateTimeColumn.setCellFactory(col -> new VkDateTableCell<>());
         }
 
         private void update(List<Table> tables)
@@ -229,7 +228,7 @@ public class TableListPane extends BorderPane implements EventListener
                         })
                         .sum();
 
-                size.setText(fmt("磁盘 (%s)", formatStorageSize(totalSize)));
+                sizeColumn.setText(fmt("磁盘 (%s)", formatStorageSize(totalSize)));
                 observable.setAll(tables);
                 tableView.refresh();
         }

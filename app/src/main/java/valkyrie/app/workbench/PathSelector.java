@@ -59,8 +59,9 @@ public class PathSelector implements EventListener
                 setupComboBox();
 
                 // subscribe
-                EventBus.subscribe(ConnectedSuccessEvent.class, this);
-                EventBus.subscribe(CatalogDynamicNodeInitializedEvent.class, this);
+                EventBus.subscribe(this,
+                        ConnectedSuccessEvent.class,
+                        CatalogDynamicNodeInitializedEvent.class);
         }
 
         public UIConnectionNode getSelectedConnection()

@@ -53,7 +53,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 this.treeView = createTreeView();
                 this.rootContextMenu = createRootContextMenu();
 
-                EventBus.subscribe(RefreshConnectionEvent.class, this);
+                EventBus.subscribe(this, RefreshConnectionEvent.class);
 
                 setupContextMenu();
                 setupSearchField();

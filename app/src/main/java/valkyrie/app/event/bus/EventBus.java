@@ -28,20 +28,25 @@ public class EventBus
         /**
          * 订阅事件
          */
-        public static void subscribe(Class<? extends Event> event, EventListener listener)
+        @SafeVarargs
+        public static void subscribe(EventListener listener, Class<? extends Event> ...events)
         {
-                eventListeners.computeIfAbsent(event, k -> new CopyOnWriteArrayList<>())
-                        .add(listener);
+                for (Class<? extends Event> event : events)
+                        eventListeners.computeIfAbsent(event, k -> new CopyOnWriteArrayList<>())
+                                .add(listener);
         }
 
         /**
          * 取消订阅
          */
-        public static void unscribe(Class<? extends Event> event, EventListener listener)
+        @SafeVarargs
+        public static void unscribe(EventListener listener, Class<? extends Event> ...events)
         {
-                CopyOnWriteArrayList<EventListener> eventListeners = EventBus.eventListeners.get(event);
-                if (eventListeners != null)
-                        eventListeners.remove(listener);
+                for (Class<? extends Event> event : events) {
+                        CopyOnWriteArrayList<EventListener> eventListeners = EventBus.eventListeners.get(event);
+                        if (eventListeners != null)
+                                eventListeners.remove(listener);
+                }
         }
 
         /**
