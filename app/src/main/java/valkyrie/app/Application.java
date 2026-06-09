@@ -87,6 +87,7 @@ public class Application extends javafx.application.Application
         {
                 addStylesheet(scene, "/css/vk-theme-root.css");
                 addStylesheet(scene, "/css/vk-theme-menu.css");
+                addStylesheet(scene, "/css/vk-list-cell.css");
                 addStylesheet(scene, "/css/vk-table-view.css");
                 addStylesheet(scene, "/css/vk-icon-button.css");
                 addStylesheet(scene, "/css/vk-code-area.css");

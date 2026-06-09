@@ -1,0 +1,18 @@
+.list-cell {
+    -fx-background-color: transparent;
+    -fx-padding: 8 10;
+    -fx-background-radius: 8;
+    -fx-font-size: 13.5;
+    -fx-text-fill: #1c1c1e;
+    -fx-cursor: hand;
+}
+
+.list-cell:hover {
+    -fx-background-color: #007aff;
+    -fx-text-fill: white;
+}
+
+.combo-box-popup .list-view .list-cell:focused {
+    -fx-background-color: #007aff;
+    -fx-text-fill: white;
+}
