@@ -2,7 +2,6 @@ package valkyrie.driver.mysql;
 
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.Session;
-import valkyrie.driver.api.Table;
 import valkyrie.driver.api.node.*;
 import valkyrie.utils.collection.Lists;
 import java.util.List;
@@ -24,8 +23,8 @@ public class MySQLMetadataProvider implements DBMetadataProvider
         public List<DBNode> getChildrenOfCatalog(DBCatalogNode catalogNode)
         {
                 return Lists.of(
-                        new DBTableContainerNode(catalogNode, () -> driver.getTables(Session.ofCatalog(catalogNode.getLabel()))),
-                        new DBQueryNode(catalogNode)
+                        new DBTableContainerNode(catalogNode, driver::getTables),
+                        new DBQueryContainerNode(catalogNode)
                 );
         }
 

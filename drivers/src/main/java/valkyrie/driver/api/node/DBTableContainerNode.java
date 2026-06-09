@@ -19,19 +19,18 @@ public class DBTableContainerNode extends DBNode
         private final @Getter Session session;
 
         public interface TableLoader {
-                List<Table> load();
+                List<Table> load(Session session);
         }
 
         public DBTableContainerNode(DBNode parent, TableLoader tableLoader)
         {
                 super(parent, "数据表", DBNodeKind.TABLE, null);
                 this.tableLoader = tableLoader;
-                this.tables.addAll(tableLoader.load());
 
                 session = switch (parent) {
                         case DBCatalogNode catalogNode -> catalogNode.getSession();
                         case DBSchemaNode schemaNode -> schemaNode.getSession();
-                        default -> null;
+                        default -> throw new UnsupportedOperationException("DBTableContainerNode 节点只允许挂载到目录或模式下");
                 };
         }
 
@@ -45,7 +44,7 @@ public class DBTableContainerNode extends DBNode
         public List<DBNode> getChildren()
         {
                 tables.clear();
-                tables.addAll(tableLoader.load());
+                tables.addAll(tableLoader.load(session));
 
                 List<DBNode> children = Lists.newArrayList();
                 for (Table table : tables)

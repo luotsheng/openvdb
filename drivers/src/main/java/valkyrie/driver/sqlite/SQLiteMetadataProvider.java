@@ -1,4 +1,4 @@
-package valkyrie.driver.redis;
+package valkyrie.driver.sqlite;
 
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.node.*;
@@ -8,14 +8,13 @@ import java.util.List;
 
 /**
  * @author Luo Tiansheng
- * @since 2026/6/5
+ * @since 2026/6/9
  */
-@SuppressWarnings({"unused", "FieldCanBeLocal"})
-public class RedisMetadataProvider implements DBMetadataProvider
+public class SQLiteMetadataProvider implements DBMetadataProvider
 {
         private final Driver driver;
 
-        public RedisMetadataProvider(Driver driver)
+        public SQLiteMetadataProvider(Driver driver)
         {
                 this.driver = driver;
         }
@@ -23,12 +22,15 @@ public class RedisMetadataProvider implements DBMetadataProvider
         @Override
         public List<DBNode> getChildrenOfCatalog(DBCatalogNode catalogNode)
         {
-                return Lists.of(new DBQueryContainerNode(catalogNode));
+                return Lists.of(
+                        new DBTableContainerNode(catalogNode, driver::getTables),
+                        new DBQueryContainerNode(catalogNode)
+                );
         }
 
         @Override
         public List<DBNode> getChildrenOfSchema(DBSchemaNode schemaNode)
         {
-                throw new UnsupportedOperationException("Redis 不支持获取模式(Schema)列表");
+                return List.of();
         }
 }

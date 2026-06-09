@@ -1,8 +1,6 @@
 package valkyrie.driver.postgresql;
 
 import valkyrie.driver.api.Driver;
-import valkyrie.driver.api.Session;
-import valkyrie.driver.api.Table;
 import valkyrie.driver.api.node.*;
 import valkyrie.utils.collection.Lists;
 
@@ -38,8 +36,8 @@ public class PostgresqlMetadataProvider implements DBMetadataProvider
         public List<DBNode> getChildrenOfSchema(DBSchemaNode schemaNode)
         {
                 return Lists.of(
-                        new DBTableContainerNode(schemaNode, () -> driver.getTables(schemaNode.getSession())),
-                        new DBQueryNode(schemaNode)
+                        new DBTableContainerNode(schemaNode, driver::getTables),
+                        new DBQueryContainerNode(schemaNode)
                 );
         }
 }

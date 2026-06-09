@@ -1,6 +1,7 @@
 package valkyrie.app.event.workbench;
 
 import javafx.scene.Node;
+import javafx.scene.layout.Pane;
 import lombok.Getter;
 import valkyrie.app.event.bus.Event;
 
@@ -14,9 +15,9 @@ import valkyrie.app.event.bus.Event;
 public class OpenNavigationPaneEvent extends Event
 {
         private final Object owner;
-        private final Node pane;
+        private final Pane pane;
 
-        public OpenNavigationPaneEvent(Object owner, Node pane)
+        public OpenNavigationPaneEvent(Object owner, Pane pane)
         {
                 this.owner = owner;
                 this.pane = pane;

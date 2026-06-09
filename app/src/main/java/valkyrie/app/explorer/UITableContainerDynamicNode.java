@@ -2,11 +2,7 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TreeItem;
 import valkyrie.app.event.bus.EventBus;
-import valkyrie.app.event.workbench.CloseNavigationPaneEvent;
-import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;
-import valkyrie.app.event.workbench.OpenNavigationPaneEvent;
 import valkyrie.app.pane.TableListPane;
 import valkyrie.app.utils.Threads;
 import valkyrie.driver.api.Table;
@@ -17,8 +13,6 @@ import valkyrie.utils.collection.Maps;
 import java.util.List;
 import java.util.Map;
 
-import static valkyrie.utils.string.StaticLibrary.streq;
-
 /**
  * @author Luo Tiansheng
  * @since 2026/6/5
@@ -28,10 +22,6 @@ public class UITableContainerDynamicNode extends UIDynamicNode
         private final MenuItem openOrCloseMenuItem = new MenuItem("展开列表");
 
         private final Map<String, UITableDynamicNode> tableDynamicNodes = Maps.newHashMap();
-
-        private final TableListPane overviewPane = new TableListPane(this);
-        private final OpenNavigationPaneEvent openNavigationPaneEvent = new OpenNavigationPaneEvent(this, overviewPane);
-        private final CloseNavigationPaneEvent closeNavigationPaneEvent = new CloseNavigationPaneEvent(this);
 
         public UITableContainerDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
@@ -76,14 +66,14 @@ public class UITableContainerDynamicNode extends UIDynamicNode
         @Override
         public void onSelectedEvent(UIExplorerNode node)
         {
-                EventBus.publish(openNavigationPaneEvent);
+                EventBus.openNavigationPane(this, new TableListPane(this));
         }
 
         @Override
         public void onParentCloseEvent()
         {
                 super.onParentCloseEvent();
-                EventBus.publish(closeNavigationPaneEvent);
+                EventBus.closeNavigationPane(this);
         }
 
         @Override

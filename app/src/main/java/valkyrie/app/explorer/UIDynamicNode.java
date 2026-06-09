@@ -34,7 +34,7 @@ public class UIDynamicNode extends UIExplorerNode
                         case DBSchemaNode ignored -> new UISchemaDynamicNode(parent, dbNode);
                         case DBTableContainerNode ignored -> new UITableContainerDynamicNode(parent, dbNode);
                         case DBTableNode ignored -> new UITableDynamicNode(parent, dbNode);
-                        case DBQueryNode ignored -> new UIQueryContainerDynamicNode(parent, dbNode);
+                        case DBQueryContainerNode ignored -> new UIQueryContainerDynamicNode(parent, dbNode);
                         default -> new UIDynamicNode(parent, dbNode);
                 };
         }

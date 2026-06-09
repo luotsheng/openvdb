@@ -50,7 +50,12 @@ public class SQLiteDriver extends Driver
         @Override
         public List<DBNode> getNodeHierarchy()
         {
-                return List.of();
+                return Lists.of(
+                        new SQLiteCatalogNode(
+                                "Master",
+                                new SQLiteMetadataProvider(this)
+                        )
+                );
         }
 
         @Override

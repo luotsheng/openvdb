@@ -29,7 +29,7 @@ public class DMMetadataProvider implements DBMetadataProvider
         public List<DBNode> getChildrenOfSchema(DBSchemaNode schemaNode)
         {
                 return Lists.of(
-                        new DBTableContainerNode(schemaNode, () -> driver.getTables(schemaNode.getSession())),
-                        new DBQueryNode(schemaNode));
+                        new DBTableContainerNode(schemaNode, driver::getTables),
+                        new DBQueryContainerNode(schemaNode));
         }
 }

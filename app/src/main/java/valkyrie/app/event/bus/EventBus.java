@@ -1,8 +1,11 @@
 package valkyrie.app.event.bus;
 
 import javafx.application.Platform;
+import javafx.scene.layout.Pane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import valkyrie.app.event.workbench.CloseNavigationPaneEvent;
+import valkyrie.app.event.workbench.OpenNavigationPaneEvent;
 import valkyrie.app.event.workbench.OpenTabEvent;
 
 import java.util.Map;
@@ -66,6 +69,16 @@ public class EventBus
                                 }
                         });
                 });
+        }
+
+        public static void openNavigationPane(Object owner, Pane pane)
+        {
+                publish(new OpenNavigationPaneEvent(owner, pane));
+        }
+
+        public static void closeNavigationPane(Object owner)
+        {
+                publish(new CloseNavigationPaneEvent(owner));
         }
 
 }
