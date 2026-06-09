@@ -20,6 +20,10 @@ import java.util.List;
 import static valkyrie.utils.string.StaticLibrary.streq;
 
 /**
+ * QueryContainer 容器较为特殊，该节点不通过驱动提供的能力
+ * 加载查询脚本文件节点，而是通过自身 reloadQueryNode() 函数
+ * 加载驱动脚本
+ *
  * @author Luo Tiansheng
  * @since 2026/6/5
  */
@@ -72,6 +76,8 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
                         nodes.add(new UIQueryDynamicNode(this, scriptFile));
 
                 getChildren().addAll(nodes);
+
+                initializeChildrenFlag = true;
         }
 
         private void refreshQueryNode()
