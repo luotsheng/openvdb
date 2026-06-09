@@ -1,5 +1,6 @@
 package valkyrie.app.explorer;
 
+import javafx.application.Platform;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
@@ -128,8 +129,10 @@ public class UIConnectionNode extends UIExplorerNode
                         ConnectionConfig connectionConfig = propertyModel.toConnectionConfig();
                         driver = DriverFactory.create(connectionConfig);
                         List<DBNode> nodeHierarchy = driver.getNodeHierarchy();
-                        loadDynamicChildren(nodeHierarchy);
-                        setExpanded(true);
+                        Platform.runLater(() -> {
+                                loadDynamicChildren(nodeHierarchy);
+                                setExpanded(true);
+                        });
                         connectFlag = true;
                         // 发布事件
                         EventBus.publish(new ConnectedSuccessEvent(this));

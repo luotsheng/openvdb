@@ -89,7 +89,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
                 return dynamicNodes;
         }
 
-        protected void useProgressIndicator(Runnable runnable)
+        protected void useProgressIndicator(Runnable action)
         {
                 if (progressing.get())
                         return;
@@ -101,7 +101,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
 
                 new Thread(() -> {
                         try {
-                                runnable.run();
+                                action.run();
                         } catch (Exception ex) {
                                 Platform.runLater(() -> VkDialogHelper.alert(ex));
                         } finally {

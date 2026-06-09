@@ -1,5 +1,6 @@
 package valkyrie.app.explorer;
 
+import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
@@ -46,7 +47,7 @@ public class UIDynamicNode extends UIExplorerNode
         {
                 if (initializeChildrenFlag)
                         return;
-                useProgressIndicator(this::expand);
+                useProgressIndicator(() -> Platform.runLater(this::expand));
         }
 
         protected void expand()
