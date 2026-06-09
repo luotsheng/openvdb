@@ -18,8 +18,8 @@ import valkyrie.app.model.ConnectionPropertyModel;
 import valkyrie.core.repository.ConnectionRepository;
 import valkyrie.core.utils.JSONUtils;
 import valkyrie.driver.api.DbType;
-import valkyrie.driver.api.VkDataSource;
 import valkyrie.driver.api.DriverFactory;
+import valkyrie.driver.api.VkDataSource;
 import valkyrie.utils.exception.Causes;
 
 /**

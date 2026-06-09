@@ -4,7 +4,6 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import valkyrie.app.Publisher;
 import valkyrie.utils.system.OS;
 
 /**

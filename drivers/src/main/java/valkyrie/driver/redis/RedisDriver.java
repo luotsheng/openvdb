@@ -11,16 +11,13 @@ import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.utils.collection.Lists;
 
-import javax.sql.DataSource;
 import java.nio.charset.StandardCharsets;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 
 import static valkyrie.utils.TypeConverter.atos;
-import static valkyrie.utils.string.StaticLibrary.fmt;
 import static valkyrie.utils.string.StaticLibrary.strip;
 
 /**

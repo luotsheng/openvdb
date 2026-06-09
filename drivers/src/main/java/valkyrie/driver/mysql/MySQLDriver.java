@@ -8,7 +8,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.driver.api.*;
 import valkyrie.driver.api.exception.DriverException;
-import valkyrie.driver.api.node.DBCatalogNode;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.node.DBNodeKind;
 import valkyrie.driver.api.node.DBNodePath;
@@ -19,7 +18,6 @@ import valkyrie.utils.collection.Lists;
 import valkyrie.utils.collection.Maps;
 import valkyrie.utils.collection.Sets;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;

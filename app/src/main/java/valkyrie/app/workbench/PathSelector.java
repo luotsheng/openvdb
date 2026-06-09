@@ -5,7 +5,6 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListCell;
 import javafx.scene.control.TreeItem;
 import lombok.Getter;
-import lombok.Setter;
 import valkyrie.app.event.CatalogDynamicNodeInitializedEvent;
 import valkyrie.app.event.ConnectedSuccessEvent;
 import valkyrie.app.event.bus.Event;

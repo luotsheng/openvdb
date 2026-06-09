@@ -11,7 +11,6 @@ import valkyrie.utils.Captor;
 import valkyrie.utils.collection.Lists;
 import valkyrie.utils.collection.Sets;
 
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;

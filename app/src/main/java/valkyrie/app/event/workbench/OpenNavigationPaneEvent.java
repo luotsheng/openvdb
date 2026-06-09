@@ -1,6 +1,5 @@
 package valkyrie.app.event.workbench;
 
-import javafx.scene.Node;
 import javafx.scene.layout.Pane;
 import lombok.Getter;
 import valkyrie.app.event.bus.Event;

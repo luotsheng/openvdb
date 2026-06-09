@@ -1,9 +1,9 @@
 package valkyrie.driver.mysql;
 
 import valkyrie.driver.api.Driver;
-import valkyrie.driver.api.Session;
 import valkyrie.driver.api.node.*;
 import valkyrie.utils.collection.Lists;
+
 import java.util.List;
 
 /**

@@ -7,8 +7,6 @@ import valkyrie.driver.postgresql.PostgresqlDriver;
 import valkyrie.driver.redis.RedisDriver;
 import valkyrie.driver.sqlite.SQLiteDriver;
 
-import javax.sql.DataSource;
-
 import static valkyrie.utils.string.StaticLibrary.lowercase;
 
 /**

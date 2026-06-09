@@ -14,12 +14,10 @@ import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.dialog.queryFile.QueryFileOverwriteDialog;
 import valkyrie.app.dialog.queryFile.QueryFileSaveDialog;
-import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.UpdateQueryFileEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
-import valkyrie.app.event.workbench.OpenQueryEditorPaneEvent;
 import valkyrie.app.event.workbench.RegisterTabManagerEvent;
 import valkyrie.app.explorer.UIQueryContainerDynamicNode;
 import valkyrie.app.explorer.UIQueryDynamicNode;
@@ -38,12 +36,12 @@ import valkyrie.driver.api.Session;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.monacofx.MonacoEditor;
-import valkyrie.utils.collection.Lists;
 import valkyrie.utils.exception.Causes;
 import valkyrie.utils.io.IOUtils;
 
 import java.util.List;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static valkyrie.utils.string.StaticLibrary.strempty;
 

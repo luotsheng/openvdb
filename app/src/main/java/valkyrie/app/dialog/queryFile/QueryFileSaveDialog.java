@@ -1,6 +1,5 @@
 package valkyrie.app.dialog.queryFile;
 
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
@@ -11,8 +10,6 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
-import valkyrie.app.event.RefreshQueryNodeEvent;
-import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.explorer.UICatalogDynamicNode;
 import valkyrie.app.explorer.UIConnectionNode;
 import valkyrie.app.explorer.UISchemaDynamicNode;

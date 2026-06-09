@@ -3,7 +3,6 @@ package valkyrie.app.explorer;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.ProgressIndicator;
 import javafx.scene.control.TreeItem;
 import lombok.Getter;
 import valkyrie.app.assets.Assets;

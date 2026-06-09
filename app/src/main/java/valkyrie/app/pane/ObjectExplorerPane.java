@@ -1,7 +1,6 @@
 package valkyrie.app.pane;
 
 import javafx.animation.PauseTransition;
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
 import javafx.scene.Node;
 import javafx.scene.control.*;
