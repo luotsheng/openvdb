@@ -18,7 +18,12 @@ public class VkDateTableCell<S> extends TableCell<S, Date>
         protected void updateItem(Date item, boolean empty)
         {
                 super.updateItem(item, empty);
-                if (item != null)
-                        setText(sdf.format(item));
+
+                if (empty || item == null) {
+                        setText(null);
+                        return;
+                }
+
+                setText(sdf.format(item));
         }
 }
