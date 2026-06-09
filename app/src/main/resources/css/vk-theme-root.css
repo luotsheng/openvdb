@@ -11,14 +11,14 @@
 }
 
 .tree-cell {
-    -fx-padding: 5 4 5 4;
+    -fx-padding: 6 4;
     -fx-background-color: transparent;
 }
 
 .tree-cell:filled:selected {
     -fx-background-color: rgba(225, 225, 225, 1);
     -fx-background-radius: 8;
-    -fx-background-insets: 2 6 2 6;
+    -fx-background-insets: 2 6;
 }
 
 /**
