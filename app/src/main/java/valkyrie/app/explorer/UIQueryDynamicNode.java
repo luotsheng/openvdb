@@ -1,6 +1,5 @@
 package valkyrie.app.explorer;
 
-import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
 import valkyrie.app.dialog.queryFile.QueryFileOverwriteDialog;
@@ -56,7 +55,7 @@ public class UIQueryDynamicNode extends UIDynamicNode
         }
 
         @Override
-        public ContextMenu configureContextMenu()
+        public VkContextMenu configureContextMenu()
         {
                 VkContextMenu contextMenu = new VkContextMenu();
 

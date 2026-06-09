@@ -5,6 +5,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.dialog.connection.CreateOrEditConnectionDialog;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.driver.api.DbType;
 
 /**
@@ -41,8 +42,8 @@ public class ConnectionMenuBuilder
                 return newConnectionMenu;
         }
 
-        public static ContextMenu buildContextMenu() {
-                ContextMenu contextMenu = new ContextMenu();
+        public static VkContextMenu buildContextMenu() {
+                VkContextMenu contextMenu = new VkContextMenu();
                 contextMenu.getItems().addAll(buildMenu().getItems());
                 return contextMenu;
         }

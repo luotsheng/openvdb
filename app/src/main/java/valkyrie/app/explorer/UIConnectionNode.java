@@ -11,6 +11,7 @@ import valkyrie.app.dialog.connection.CreateOrEditConnectionDialog;
 import valkyrie.app.event.ConnectedSuccessEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.model.ConnectionPropertyModel;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.core.repository.ConnectionRepository;
 import valkyrie.driver.api.ConnectionConfig;
@@ -52,9 +53,9 @@ public class UIConnectionNode extends UIExplorerNode
         }
 
         @Override
-        public ContextMenu configureContextMenu()
+        public VkContextMenu configureContextMenu()
         {
-                ContextMenu contextMenu = new ContextMenu();
+                VkContextMenu contextMenu = new VkContextMenu();
 
                 MenuItem editMenuItem = new MenuItem("编辑连接");
                 editMenuItem.setOnAction(e -> edit());

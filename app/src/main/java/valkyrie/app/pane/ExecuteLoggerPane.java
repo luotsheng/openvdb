@@ -5,6 +5,7 @@ import javafx.scene.control.MenuItem;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;
 import valkyrie.app.Application;
+import valkyrie.app.widgets.VkContextMenu;
 
 /**
  * @author Luo Tiansheng
@@ -26,7 +27,7 @@ public class ExecuteLoggerPane extends VirtualizedScrollPane<CodeArea>
 
         private void setupContextMenu()
         {
-                ContextMenu contextMenu = new ContextMenu();
+                VkContextMenu contextMenu = new VkContextMenu();
 
                 MenuItem copyAllItem = new MenuItem("复制");
                 copyAllItem.setOnAction(event -> copySelectedText());

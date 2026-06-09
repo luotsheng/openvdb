@@ -1,6 +1,5 @@
 package valkyrie.app.explorer;
 
-import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import lombok.Getter;
@@ -33,7 +32,7 @@ public class UITableDynamicNode extends UIDynamicNode
         }
 
         @Override
-        public ContextMenu configureContextMenu()
+        public VkContextMenu configureContextMenu()
         {
                 VkContextMenu contextMenu = new VkContextMenu();
 

@@ -20,6 +20,7 @@ import valkyrie.app.explorer.UIConnectionNode;
 import valkyrie.app.explorer.UIExplorerNode;
 import valkyrie.app.menu.ConnectionMenuBuilder;
 import valkyrie.app.model.ConnectionPropertyModel;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkTextField;
 import valkyrie.core.model.ConnectionProfile;
 import valkyrie.core.repository.ConnectionRepository;
@@ -40,7 +41,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
 {
         private final TabPane tabPane;
         private final TreeView<String> treeView;
-        private final ContextMenu rootContextMenu;
+        private final VkContextMenu rootContextMenu;
 
         private final TreeItem<String> root = new TreeItem<>("我的连接", Assets.use("chain"));
         private final VkTextField search = new VkTextField();
@@ -138,9 +139,9 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 return treeView;
         }
 
-        private ContextMenu createRootContextMenu()
+        private VkContextMenu createRootContextMenu()
         {
-                ContextMenu rootContextMenu = new ContextMenu();
+                VkContextMenu rootContextMenu = new VkContextMenu();
 
                 Menu newConnectionMenu = ConnectionMenuBuilder.buildMenu();
                 MenuItem refreshAllItem = new MenuItem("刷新连接");
@@ -174,17 +175,14 @@ public class ObjectExplorerPane extends VBox implements EventListener
                                         return;
 
                                 if (item == treeView.getRoot()) {
-                                        rootContextMenu.show(cell, x, y);
+                                        rootContextMenu.show(x, y);
                                         return;
                                 }
 
                                 if (item instanceof UIExplorerNode explorerNode) {
-                                        explorerNode.showContextMenu(cell, x, y);
-                                        return;
+                                        explorerNode.showContextMenu(x, y);
                                 }
                         }
-
-                        event.consume();
                 });
         }
 

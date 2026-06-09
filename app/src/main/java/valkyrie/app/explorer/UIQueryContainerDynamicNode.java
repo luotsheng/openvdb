@@ -4,11 +4,11 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
 import valkyrie.app.event.RefreshQueryNodeEvent;
-import valkyrie.app.event.RefreshTableNodeEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.utils.Threads;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.core.model.QueryFile;
 import valkyrie.core.repository.QueryFileRepository;
 import valkyrie.driver.api.node.DBNode;
@@ -37,9 +37,9 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
         }
 
         @Override
-        public ContextMenu configureContextMenu()
+        public VkContextMenu configureContextMenu()
         {
-                ContextMenu contextMenu = new ContextMenu();
+                VkContextMenu contextMenu = new VkContextMenu();
                 MenuItem refreshItem = new MenuItem("刷新列表");
                 refreshItem.setOnAction(e -> refreshQueryNode());
                 contextMenu.getItems().addAll(

@@ -4,6 +4,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TreeItem;
 import valkyrie.app.utils.Threads;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.driver.api.node.DBNode;
 
 /**
@@ -20,9 +21,9 @@ public class UISchemaDynamicNode extends UIDynamicNode
         }
 
         @Override
-        public ContextMenu configureContextMenu()
+        public VkContextMenu configureContextMenu()
         {
-                ContextMenu contextMenu = new ContextMenu();
+                VkContextMenu contextMenu = new VkContextMenu();
                 contextMenu.getItems().addAll(openOrCloseMenuItem);
                 return contextMenu;
         }

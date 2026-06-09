@@ -10,6 +10,7 @@ import valkyrie.app.Publisher;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.OpenTabEvent;
 import valkyrie.app.menu.ConnectionMenuBuilder;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
 import valkyrie.blueprint.Blueprint;
@@ -24,12 +25,10 @@ public class AppToolBar extends ToolBar
         public AppToolBar()
         {
                 Button newConnectionButton = new VkIconButton(null, "新建连接", "chain");
-                ContextMenu contextMenu = ConnectionMenuBuilder.buildContextMenu();
+                VkContextMenu contextMenu = ConnectionMenuBuilder.buildContextMenu();
                 newConnectionButton.setOnMouseClicked(event -> {
                         if (event.getButton() == MouseButton.PRIMARY) {
-                                contextMenu.show(newConnectionButton,
-                                        event.getScreenX(),
-                                        event.getScreenY());
+                                contextMenu.show(event.getScreenX(), event.getScreenY());
                         }
                 });
 

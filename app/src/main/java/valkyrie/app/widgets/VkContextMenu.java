@@ -1,6 +1,7 @@
 package valkyrie.app.widgets;
 
 import javafx.scene.control.ContextMenu;
+import valkyrie.app.Application;
 
 /**
  * @author Luo Tiansheng
@@ -8,4 +9,8 @@ import javafx.scene.control.ContextMenu;
  */
 public class VkContextMenu extends ContextMenu
 {
+        public void show(double x, double y)
+        {
+                this.show(Application.getPrimaryStage(), x, y);
+        }
 }

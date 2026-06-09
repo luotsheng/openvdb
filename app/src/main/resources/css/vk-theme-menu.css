@@ -1,11 +1,9 @@
-.context-menu
-{
-    -fx-background-color: rgb(248, 249, 250);
+.context-menu {
+    -fx-background-color: rgb(252, 252, 253);
     -fx-background-radius: 12;
     -fx-border-radius: 12;
     -fx-border-width: 1;
-    -fx-border-color: rgb(230, 232, 235);
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.12), 24, 0, 0, 6);
+    -fx-border-color: rgb(225, 227, 230);
     -fx-padding: 5 0;
 }
 
@@ -13,7 +11,7 @@
     -fx-background-color: transparent;
     -fx-padding: 6 16;
     -fx-background-radius: 8;
-    -fx-background-insets: 2 4;
+    -fx-background-insets: 2 6;
     -fx-font-size: 13.5;
     -fx-text-fill: #1c1c1e;
 }

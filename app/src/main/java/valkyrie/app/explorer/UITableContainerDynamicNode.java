@@ -1,21 +1,18 @@
 package valkyrie.app.explorer;
 
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TreeItem;
 import valkyrie.app.event.RefreshTableNodeEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.pane.TableListPane;
 import valkyrie.app.utils.Threads;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.driver.api.Table;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.node.DBTableContainerNode;
-import valkyrie.utils.collection.Lists;
 import valkyrie.utils.collection.Maps;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -51,9 +48,9 @@ public class UITableContainerDynamicNode extends UIDynamicNode
         }
 
         @Override
-        public ContextMenu configureContextMenu()
+        public VkContextMenu configureContextMenu()
         {
-                ContextMenu contextMenu = new ContextMenu();
+                VkContextMenu contextMenu = new VkContextMenu();
                 contextMenu.getItems().addAll(openOrCloseMenuItem);
                 return contextMenu;
         }

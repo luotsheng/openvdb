@@ -1,13 +1,10 @@
 package valkyrie.app.explorer;
 
 import javafx.application.Platform;
-import javafx.collections.ObservableList;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.node.*;
-
-import static valkyrie.utils.string.StaticLibrary.streq;
 
 /**
  * @author Luo Tiansheng

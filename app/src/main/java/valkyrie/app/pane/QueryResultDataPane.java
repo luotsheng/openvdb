@@ -16,6 +16,7 @@ import javafx.stage.FileChooser;
 import lombok.Setter;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
@@ -279,7 +280,7 @@ public class QueryResultDataPane extends BorderPane
         {
                 tableView.enableRectangularSelection();
 
-                ContextMenu contextMenu = new ContextMenu();
+                VkContextMenu contextMenu = new VkContextMenu();
 
                 Menu copyItem = new Menu("复制为");
                 MenuItem copyAsInsert = new MenuItem("复制为 INSERT 语句");

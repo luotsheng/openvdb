@@ -6,6 +6,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.TreeItem;
 import lombok.Getter;
 import valkyrie.app.assets.Assets;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.driver.api.node.DBNode;
 
@@ -26,7 +27,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
         private final String icon;
 
         protected AtomicBoolean progressing = new AtomicBoolean(false);
-        private ContextMenu contextMenu;
+        private VkContextMenu contextMenu;
         private Node oldGraphic;
 
         public UIExplorerNode(UIExplorerNode parent, String label, String icon)
@@ -70,7 +71,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
                 return explorerParent.getPath() + "/" + label;
         }
 
-        public ContextMenu getContextMenu()
+        public VkContextMenu getContextMenu()
         {
                 if (contextMenu == null)
                         contextMenu = configureContextMenu();
@@ -114,18 +115,18 @@ public abstract class UIExplorerNode extends TreeItem<String>
         /**
          * 配置右键菜单
          */
-        public ContextMenu configureContextMenu()
+        public VkContextMenu configureContextMenu()
         {
                 return null;
         }
 
-        public void showContextMenu(Node anchor, double x, double y)
+        public void showContextMenu(double x, double y)
         {
-                ContextMenu contextMenu = getContextMenu();
+                VkContextMenu contextMenu = getContextMenu();
 
                 if (contextMenu != null) {
                         onContextMenuRequested(contextMenu);
-                        contextMenu.show(anchor, x, y);
+                        contextMenu.show(x, y);
                 }
         }
 

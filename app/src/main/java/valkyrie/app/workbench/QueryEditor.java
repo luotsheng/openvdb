@@ -25,6 +25,7 @@ import valkyrie.app.pane.ExecuteLoggerPane;
 import valkyrie.app.pane.QueryResultDataPane;
 import valkyrie.app.utils.TabIdFactory;
 import valkyrie.app.utils.Threads;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparator;
 import valkyrie.core.model.QueryFile;
@@ -213,7 +214,7 @@ public class QueryEditor extends SplitPane implements EventListener
 
         public ContextMenu createContextMenu(MonacoEditor editor)
         {
-                ContextMenu contextMenu = new ContextMenu();
+                VkContextMenu contextMenu = new VkContextMenu();
 
                 MenuItem runSelectedSQLItem = new MenuItem("运行已选择");
                 runSelectedSQLItem.setGraphic(Assets.use("run"));

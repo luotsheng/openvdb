@@ -1,7 +1,6 @@
 package valkyrie.app.workbench;
 
 import javafx.scene.Node;
-import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tab;
@@ -16,6 +15,7 @@ import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.event.workbench.*;
 import valkyrie.app.exception.ApplicationException;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkTabPane;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.utils.collection.Lists;
@@ -38,7 +38,7 @@ public class Workbench extends VBox implements EventListener
         private final Tab navigationTab = new Tab("首页");
         private final Map<Object, List<Tab>> tabPaneManager = Maps.newHashMap();
 
-        private final ContextMenu tabPaneContextMenu = new ContextMenu();
+        private final VkContextMenu tabPaneContextMenu = new VkContextMenu();
         private final MenuItem closeCurrent = new MenuItem("关闭当前");
         private final MenuItem closeAll = new MenuItem("关闭所有");
         private final MenuItem closeLeft = new MenuItem("关闭左侧");
@@ -140,7 +140,7 @@ public class Workbench extends VBox implements EventListener
                         tabPane.select(tab);
                 });
 
-                tabPaneContextMenu.show(tabPane, e.getScreenX(), e.getScreenY());
+                tabPaneContextMenu.show(e.getScreenX(), e.getScreenY());
         }
 
         @Override
