@@ -2,6 +2,7 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import valkyrie.app.event.RefreshTableNodeEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.pane.TableListPane;
 import valkyrie.app.utils.Threads;
@@ -98,6 +99,7 @@ public class UITableContainerDynamicNode extends UIDynamicNode
                         /* 刷新节点 */
                         getChildren().clear();
                         loadDynamicChildren(dbNode.getChildren());
+                        EventBus.publish(new RefreshTableNodeEvent(this));
                 });
         }
 }

@@ -13,7 +13,10 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.util.Duration;
 import valkyrie.app.assets.Assets;
+import valkyrie.app.event.RefreshTableNodeEvent;
+import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
+import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.event.workbench.OpenTableDataPaneEvent;
 import valkyrie.app.explorer.UITableContainerDynamicNode;
 import valkyrie.app.explorer.UITableDynamicNode;
@@ -37,7 +40,7 @@ import static valkyrie.utils.string.StaticLibrary.fmt;
  * @since 2026/3/27
  */
 @SuppressWarnings("FieldCanBeLocal")
-public class TableListPane extends BorderPane
+public class TableListPane extends BorderPane implements EventListener
 {
         private final UITableContainerDynamicNode tableContainerDynamicNode;
         private final TableView<Table> tableView;
@@ -74,6 +77,8 @@ public class TableListPane extends BorderPane
                 setCenter(tableView);
 
                 update(tableContainerDynamicNode.getTables());
+
+                EventBus.subscribe(RefreshTableNodeEvent.class, this);
         }
 
         private void setupToolBar()
@@ -227,6 +232,14 @@ public class TableListPane extends BorderPane
                 size.setText(fmt("磁盘 (%s)", formatStorageSize(totalSize)));
                 observable.setAll(tables);
                 tableView.refresh();
+        }
+
+        @Override
+        public void onEvent(Event event)
+        {
+                if (event instanceof RefreshTableNodeEvent e)
+                        if (e.nodeEquals(tableContainerDynamicNode))
+                                update(tableContainerDynamicNode.getTables());
         }
 
         private static String formatStorageSize(long size)
