@@ -8,13 +8,13 @@ import javafx.application.Platform;
  */
 public class Threads
 {
-        public static void start(Runnable runnable)
+        public static void start(Runnable action)
         {
-                new Thread(runnable).start();
+                new Thread(action).start();
         }
 
-        public static void runLater(Runnable runnable)
+        public static void runLater(Runnable action)
         {
-                new Thread(() -> Platform.runLater(runnable)).start();
+                new Thread(() -> Platform.runLater(action)).start();
         }
 }

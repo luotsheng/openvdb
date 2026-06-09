@@ -5,6 +5,9 @@ import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.node.*;
+import valkyrie.utils.collection.Lists;
+
+import java.util.List;
 
 /**
  * @author Luo Tiansheng
@@ -44,7 +47,7 @@ public class UIDynamicNode extends UIExplorerNode
         {
                 if (initializeChildrenFlag)
                         return;
-                useProgressIndicator(() -> Platform.runLater(this::expand));
+                this.expand();
         }
 
         protected void expand()
@@ -55,11 +58,20 @@ public class UIDynamicNode extends UIExplorerNode
         @SuppressWarnings("SameParameterValue")
         protected void expand(boolean isExpanded)
         {
-                if (dbNode.hasChildren())
-                        loadDynamicChildren(dbNode.getChildren());
-                setExpanded(isExpanded);
-                initializeChildrenFlag = true;
-                onInitializedEvent();
+                useProgressIndicator(() -> {
+                        List<DBNode> children = Lists.of();
+                        if (dbNode.hasChildren())
+                                children.addAll(dbNode.getChildren());
+
+                        if (!children.isEmpty()) {
+                                Platform.runLater(() -> {
+                                        loadDynamicChildren(children);
+                                        setExpanded(isExpanded);
+                                        initializeChildrenFlag = true;
+                                        onInitializedEvent();
+                                });
+                        }
+                });
         }
 
         protected void unexpand()

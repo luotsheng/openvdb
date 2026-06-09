@@ -8,7 +8,6 @@ import valkyrie.app.explorer.UIDynamicNode;
  * @author Luo Tiansheng
  * @since 2026/6/6
  */
-@SuppressWarnings("LombokGetterMayBeUsed")
 public class CatalogDynamicNodeInitializedEvent extends Event
 {
         private final @Getter UIDynamicNode dynamicNode;

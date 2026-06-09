@@ -6,6 +6,7 @@ import javafx.scene.control.ContextMenu;
 import javafx.scene.control.TreeItem;
 import lombok.Getter;
 import valkyrie.app.assets.Assets;
+import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.driver.api.node.DBNode;
@@ -100,7 +101,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
                 oldGraphic = getGraphic();
                 setGraphic(Assets.newProgressIndicator());
 
-                new Thread(() -> {
+                Threads.start(() -> {
                         try {
                                 action.run();
                         } catch (Exception ex) {
@@ -109,7 +110,7 @@ public abstract class UIExplorerNode extends TreeItem<String>
                                 progressing.set(false);
                                 Platform.runLater(() -> setGraphic(oldGraphic));
                         }
-                }).start();
+                });
         }
 
         /**
