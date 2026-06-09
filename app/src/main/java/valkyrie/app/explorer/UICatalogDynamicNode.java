@@ -37,11 +37,11 @@ public class UICatalogDynamicNode extends UIDynamicNode
                         openOrCloseMenuItem.setText("关闭数据库");
                         openOrCloseMenuItem.setOnAction(e -> {
                                 onParentCloseEvent();
-                                unexpand();
+                                unloadNodeData();
                         });
                 } else {
                         openOrCloseMenuItem.setText("打开数据库");
-                        openOrCloseMenuItem.setOnAction(e -> Threads.runLater(this::expand));
+                        openOrCloseMenuItem.setOnAction(e -> Threads.runLater(this::loadNodeData));
                 }
         }
 

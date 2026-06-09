@@ -35,11 +35,11 @@ public class UISchemaDynamicNode extends UIDynamicNode
                         openOrCloseMenuItem.setText("关闭模式");
                         openOrCloseMenuItem.setOnAction(e -> {
                                 onParentCloseEvent();
-                                unexpand();
+                                unloadNodeData();
                         });
                 } else {
                         openOrCloseMenuItem.setText("打开模式");
-                        openOrCloseMenuItem.setOnAction(e -> Threads.runLater(this::expand));
+                        openOrCloseMenuItem.setOnAction(e -> Threads.runLater(this::loadNodeData));
                 }
         }
 

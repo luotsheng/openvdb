@@ -47,16 +47,11 @@ public class UIDynamicNode extends UIExplorerNode
         {
                 if (initializeChildrenFlag)
                         return;
-                this.expand();
+                this.loadNodeData();
+                setExpanded(true);
         }
 
-        protected void expand()
-        {
-                expand(true);
-        }
-
-        @SuppressWarnings("SameParameterValue")
-        protected void expand(boolean isExpanded)
+        protected void loadNodeData()
         {
                 useProgressIndicator(() -> {
                         List<DBNode> children = Lists.of();
@@ -65,14 +60,13 @@ public class UIDynamicNode extends UIExplorerNode
 
                         if (!children.isEmpty()) {
                                 loadDynamicChildren(children);
-                                Platform.runLater(() -> setExpanded(isExpanded));
                                 initializeChildrenFlag = true;
                                 onInitializedEvent();
                         }
                 });
         }
 
-        protected void unexpand()
+        protected void unloadNodeData()
         {
                 if (!initializeChildrenFlag)
                         return;
