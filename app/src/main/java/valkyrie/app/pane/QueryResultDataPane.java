@@ -16,9 +16,7 @@ import javafx.stage.FileChooser;
 import lombok.Setter;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
-import valkyrie.app.widgets.VkContextMenu;
-import valkyrie.app.widgets.VkIconButton;
-import valkyrie.app.widgets.VkSeparatorItem;
+import valkyrie.app.widgets.*;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.app.widgets.table.VkTableView;
 import valkyrie.app.widgets.table.cell.VkTextFieldTableCell;
@@ -49,16 +47,16 @@ public class QueryResultDataPane extends BorderPane
         private final TabPane tabPane = new TabPane();
         private final Tab viewTab = new Tab();
         private final VkTableView<GridRow> tableView = new VkTableView<>();
-        private final ToolBar toolBar = new ToolBar();
+        private final VkToolBar toolBar = new VkToolBar();
         private final VBox vContainer;
         private final Tab attachedToTab;
 
-        private final Button plus = new VkIconButton("新增", "plus");
-        private final Button minus = new VkIconButton("删除", "minus");
-        private final Button submit = new VkIconButton("提交", "check");
-        private final Button cross = new VkIconButton("取消", "cross");
-        private final Button reload = new VkIconButton("刷新", "reload");
-        private final Button export = new VkIconButton("", "导出", "export");
+        private final Button plus = new VkToolButton("新增", "plus");
+        private final Button minus = new VkToolButton("删除", "minus");
+        private final Button submit = new VkToolButton("提交", "check");
+        private final Button cross = new VkToolButton("取消", "cross");
+        private final Button reload = new VkToolButton("刷新", "reload");
+        private final Button export = new VkToolButton("", "导出", "export");
 
         private final Node progressIndicator = Assets.newProgressIndicator();
 

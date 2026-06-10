@@ -25,10 +25,7 @@ import valkyrie.app.pane.ExecuteLoggerPane;
 import valkyrie.app.pane.QueryResultDataPane;
 import valkyrie.app.utils.TabIdFactory;
 import valkyrie.app.utils.Threads;
-import valkyrie.app.widgets.VkContextMenu;
-import valkyrie.app.widgets.VkIconButton;
-import valkyrie.app.widgets.VkSeparatorItem;
-import valkyrie.app.widgets.VkToolButton;
+import valkyrie.app.widgets.*;
 import valkyrie.core.model.QueryFile;
 import valkyrie.core.repository.QueryFileRepository;
 import valkyrie.driver.api.Driver;
@@ -62,7 +59,7 @@ public class QueryEditor extends SplitPane implements EventListener
         static final int QUERY_EXECUTE_LOGGER_FIRST = 1;
         
         private final Tab tab;
-        private final ToolBar toolBar;
+        private final VkToolBar toolBar;
         private final MonacoEditor editor = createMonacoEditor();
         private final BorderPane topBorderPane = new BorderPane();
         private final Tab sqlExecuteLoggerTab;
@@ -124,10 +121,9 @@ public class QueryEditor extends SplitPane implements EventListener
                 EventBus.subscribe(this, UpdateQueryFileEvent.class);
         }
 
-        private ToolBar createToolBar()
+        private VkToolBar createToolBar()
         {
-                ToolBar toolBar = new ToolBar();
-                toolBar.setStyle("-fx-background-color: white;");
+                VkToolBar toolBar = new VkToolBar();
 
                 runToolButton = new VkToolButton("运行", "run");
                 runToolButton.setText("运行");

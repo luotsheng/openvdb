@@ -20,9 +20,7 @@ import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.event.workbench.OpenTableDataPaneEvent;
 import valkyrie.app.explorer.UITableContainerDynamicNode;
 import valkyrie.app.explorer.UITableDynamicNode;
-import valkyrie.app.widgets.VkIconButton;
-import valkyrie.app.widgets.VkSeparatorItem;
-import valkyrie.app.widgets.VkTextField;
+import valkyrie.app.widgets.*;
 import valkyrie.app.widgets.table.VkTableColumn;
 import valkyrie.app.widgets.table.VkTableView;
 import valkyrie.app.widgets.table.cell.VkDateTableCell;
@@ -44,7 +42,7 @@ public class TableListPane extends BorderPane implements EventListener
 {
         private final UITableContainerDynamicNode tableContainerDynamicNode;
         private final TableView<Table> tableView;
-        private final ToolBar toolBar;
+        private final VkToolBar toolBar;
 
         private TableColumn<Table, String> nameColumn;
         private TableColumn<Table, Date> createTimeColumn;
@@ -65,7 +63,7 @@ public class TableListPane extends BorderPane implements EventListener
 
                 tableView = new VkTableView<>(VkTableView.LITE_STYLE);
                 tableView.setItems(observable);
-                toolBar = new ToolBar();
+                toolBar = new VkToolBar();
 
                 // setup
                 setupToolBar();
@@ -85,9 +83,9 @@ public class TableListPane extends BorderPane implements EventListener
         {
                 toolBar.setOrientation(Orientation.HORIZONTAL);
 
-                Button modifyTable = new VkIconButton("编辑表", "modify");
-                Button newTable = new VkIconButton("创建表", "plus");
-                Button delTable = new VkIconButton("删除表", "minus");
+                Button modifyTable = new VkToolButton("编辑表", "modify");
+                Button newTable = new VkToolButton("创建表", "plus");
+                Button delTable = new VkToolButton("删除表", "minus");
                 delTable.setOnAction(event -> deleteTable());
 
                 Region spacer = new Region();
