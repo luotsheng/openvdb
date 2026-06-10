@@ -12,6 +12,7 @@ import valkyrie.app.menu.ConnectionMenuBuilder;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparatorItem;
+import valkyrie.app.widgets.VkToolButton;
 import valkyrie.blueprint.Blueprint;
 import valkyrie.utils.Generator;
 
@@ -23,7 +24,7 @@ public class AppToolBar extends ToolBar
 {
         public AppToolBar()
         {
-                Button newConnectionButton = new VkIconButton(null, "新建连接", "chain");
+                Button newConnectionButton = new VkToolButton(null, "新建连接", "chain");
                 VkContextMenu contextMenu = ConnectionMenuBuilder.buildContextMenu();
                 newConnectionButton.setOnMouseClicked(event -> {
                         if (event.getButton() == MouseButton.PRIMARY) {
@@ -31,11 +32,11 @@ public class AppToolBar extends ToolBar
                         }
                 });
 
-                Button newQueryButton = new VkIconButton("查询", "sql");
+                Button newQueryButton = new VkToolButton("查询", "sql");
                 newQueryButton.setText("新建查询");
                 newQueryButton.setOnAction(e -> newQueryEditor());
 
-                Button debugButton = new VkIconButton("Debug", "code");
+                Button debugButton = new VkToolButton("Debug", "code");
                 debugButton.setText("Debug Pane");
                 debugButton.setOnAction(event -> debugPane());
 
