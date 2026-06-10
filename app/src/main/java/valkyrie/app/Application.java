@@ -5,6 +5,7 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
+import javafx.scene.web.WebView;
 import javafx.stage.Modality;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
@@ -23,6 +24,9 @@ import java.util.Objects;
 public final class Application extends javafx.application.Application {
         private static final Logger LOG = LoggerFactory.getLogger(Application.class);
         public static final String TITLE = "VALKYRIE v1.6.0";
+
+        @SuppressWarnings({"unused", "FieldCanBeLocal"})
+        private static WebView _WarmUp_ = null;
 
         public static Stage primaryStage;
 
@@ -51,6 +55,8 @@ public final class Application extends javafx.application.Application {
 
         @Override
         public void start(Stage stage) {
+                _WarmUp_ = new WebView();
+
                 primaryStage = stage;
                 setDockIcon(stage);
 
