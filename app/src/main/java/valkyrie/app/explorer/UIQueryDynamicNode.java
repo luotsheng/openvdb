@@ -1,7 +1,9 @@
 package valkyrie.app.explorer;
 
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TreeItem;
+import valkyrie.app.Publisher;
 import valkyrie.app.dialog.queryFile.QueryFileOverwriteDialog;
 import valkyrie.app.dialog.queryFile.QueryFileRenameDialog;
 import valkyrie.app.event.UpdateQueryFileEvent;
@@ -62,11 +64,16 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 MenuItem openItem = new MenuItem("打开查询");
                 openItem.setOnAction(e -> onMouseDoubleClickEvent());
 
+                MenuItem newQueryEditorItem =  new MenuItem("新建查询");
+                newQueryEditorItem.setOnAction(e -> Publisher.openQueryEditor());
+
                 MenuItem renameItem = new MenuItem("重命名");
                 renameItem.setOnAction(e -> checkAndRename());
 
                 contextMenu.getItems().addAll(
                         openItem,
+                        new SeparatorMenuItem(
+                        newQueryEditorItem,
                         renameItem
                 );
 

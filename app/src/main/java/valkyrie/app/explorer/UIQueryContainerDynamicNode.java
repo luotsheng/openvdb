@@ -2,7 +2,9 @@ package valkyrie.app.explorer;
 
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TreeItem;
+import valkyrie.app.Publisher;
 import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
@@ -44,9 +46,16 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
         public VkContextMenu configureContextMenu()
         {
                 VkContextMenu contextMenu = new VkContextMenu();
+
+                MenuItem newQueryEditorItem =  new MenuItem("新建查询");
+                newQueryEditorItem.setOnAction(e -> Publisher.openQueryEditor());
+
                 MenuItem refreshItem = new MenuItem("刷新列表");
                 refreshItem.setOnAction(e -> refreshQueryNode());
+
                 contextMenu.getItems().addAll(
+                        newQueryEditorItem,
+                        new SeparatorMenuItem(),
                         openOrCloseMenuItem,
                         refreshItem
                 );
