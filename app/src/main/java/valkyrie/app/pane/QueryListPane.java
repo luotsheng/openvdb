@@ -55,9 +55,7 @@ public class QueryListPane extends BorderPane implements EventListener
         private TableColumn<QueryFile, String> nameColumn;
         private TableColumn<QueryFile, String> creatingUserColumn;
         private TableColumn<QueryFile, Date> creatingTimeColumn;
-        private TableColumn<QueryFile, String> lastModifiedUserColumn;
         private TableColumn<QueryFile, Date> lastModifiedTimeColumn;
-        private TableColumn<QueryFile, String> lastAccessUserColumn;
         private TableColumn<QueryFile, Date> lastAccessTimeColumn;
         private TableColumn<QueryFile, Long> sizeColumn;
 
@@ -125,9 +123,7 @@ public class QueryListPane extends BorderPane implements EventListener
                 nameColumn = new VkTableColumn<>("名称");
                 creatingUserColumn = new VkTableColumn<>("创建用户");
                 creatingTimeColumn = new VkTableColumn<>("创建时间");
-                lastModifiedUserColumn = new VkTableColumn<>("最后更新用户");
                 lastModifiedTimeColumn = new VkTableColumn<>("最后更新时间");
-                lastAccessUserColumn = new VkTableColumn<>("最后访问用户");
                 lastAccessTimeColumn = new VkTableColumn<>("最后访问时间");
                 sizeColumn = new VkTableColumn<>("文件大小");
 
@@ -135,6 +131,10 @@ public class QueryListPane extends BorderPane implements EventListener
                 nameColumn.setCellValueFactory(cellData -> {
                         QueryFile queryFile = cellData.getValue();
                         return new SimpleStringProperty(queryFile.getName());
+                });
+
+                creatingUserColumn.setCellValueFactory(cellData -> {
+                        return new SimpleStringProperty(cellData.getValue().getOwner());
                 });
 
                 creatingTimeColumn.setCellValueFactory(cellData -> {
@@ -159,9 +159,7 @@ public class QueryListPane extends BorderPane implements EventListener
                 nameColumn.setPrefWidth(450);
                 creatingUserColumn.setPrefWidth(150);
                 creatingTimeColumn.setPrefWidth(180);
-                lastModifiedUserColumn.setPrefWidth(150);
                 lastModifiedTimeColumn.setPrefWidth(180);
-                lastAccessUserColumn.setPrefWidth(150);
                 lastAccessTimeColumn.setPrefWidth(180);
                 sizeColumn.setPrefWidth(130);
 
@@ -170,9 +168,7 @@ public class QueryListPane extends BorderPane implements EventListener
                         nameColumn,
                         creatingUserColumn,
                         creatingTimeColumn,
-                        lastModifiedUserColumn,
                         lastModifiedTimeColumn,
-                        lastAccessUserColumn,
                         lastAccessTimeColumn,
                         sizeColumn
                 );

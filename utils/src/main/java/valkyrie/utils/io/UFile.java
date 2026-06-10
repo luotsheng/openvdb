@@ -839,6 +839,11 @@ public class UFile extends java.io.File {
         return Files.readAttributes(Paths.get(getPath()), BasicFileAttributes.class);
     }
 
+    public String getOwner()
+    {
+        return Optional.ifError(() -> Files.getOwner(toPath()).getName(), null);
+    }
+
     public Date getCreatingTime() {
         return Optional.ifError(() -> {
             FileTime fileTime = getBasicFileAttributes().creationTime();
