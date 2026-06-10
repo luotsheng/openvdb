@@ -1,5 +1,1 @@
 jpackage --type app-image --name valkyrie --input launcher/target --main-jar launcher-v1.0.0-arch.1.jar --main-class "valkyrie.Launcher" --module-path "D:\dev\sdk\javafx-jmods-21.0.10" --add-modules javafx.controls,javafx.web,javafx.fxml,java.sql,java.naming,jdk.crypto.ec --win-console --dest build
-
-
-
-/Users/ekko/Documents/javafx-sdk-21.0.11
