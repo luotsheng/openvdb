@@ -71,3 +71,4 @@
 - [刘超1](https://www.iconfont.cn/user/detail?spm=a313x.search_index.0.d214f71f6.77f83a81nUsv14&uid=8510601&nid=0ERXXv8K7oMz)
 - [bddg](https://www.iconfont.cn/user/detail?spm=a313x.search_index.0.d214f71f6.77f83a811xQPvD&uid=10090073&nid=erMmXAGw4b2j)
 - [guoandzhong](https://www.iconfont.cn/user/detail?spm=a313x.search_index.0.d214f71f6.77f83a814fSNRf&uid=7699424&nid=2wTyZj9eSsRT)
+- [maan-icons](https://www.flaticon.com/authors/maan-icons)
