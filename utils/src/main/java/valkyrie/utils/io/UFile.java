@@ -27,9 +27,15 @@ import valkyrie.utils.string.StaticLibrary;
 import valkyrie.utils.system.OS;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.RandomAccessFile;
 import java.net.URI;
+import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.nio.file.attribute.FileTime;
+import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 
@@ -826,6 +832,32 @@ public class UFile extends java.io.File {
             throw new IOReadException(e);
         }
         return properties;
+    }
+
+    private BasicFileAttributes getBasicFileAttributes() throws IOException
+    {
+        return Files.readAttributes(Paths.get(getPath()), BasicFileAttributes.class);
+    }
+
+    public Date getCreatingTime() {
+        return Optional.ifError(() -> {
+            FileTime fileTime = getBasicFileAttributes().creationTime();
+            return new Date(fileTime.toMillis());
+        }, null);
+    }
+
+    public Date getLastModifiedTime() {
+        return Optional.ifError(() -> {
+            FileTime fileTime = getBasicFileAttributes().lastModifiedTime();
+            return new Date(fileTime.toMillis());
+        }, null);
+    }
+
+    public Date getLastAccessTime() {
+        return Optional.ifError(() -> {
+            FileTime fileTime = getBasicFileAttributes().lastAccessTime();
+            return new Date(fileTime.toMillis());
+        }, null);
     }
 
 }

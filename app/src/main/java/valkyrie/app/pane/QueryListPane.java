@@ -53,12 +53,12 @@ public class QueryListPane extends BorderPane implements EventListener
         private final VkToolBar toolBar;
 
         private TableColumn<QueryFile, String> nameColumn;
-        private TableColumn<QueryFile, String> createUserColumn;
-        private TableColumn<QueryFile, Date> createTimeColumn;
-        private TableColumn<QueryFile, String> updateUserColumn;
-        private TableColumn<QueryFile, Date> updateTimeColumn;
-        private TableColumn<QueryFile, String> accessUserColumn;
-        private TableColumn<QueryFile, Date> accessTimeColumn;
+        private TableColumn<QueryFile, String> creatingUserColumn;
+        private TableColumn<QueryFile, Date> creatingTimeColumn;
+        private TableColumn<QueryFile, String> lastModifiedUserColumn;
+        private TableColumn<QueryFile, Date> lastModifiedTimeColumn;
+        private TableColumn<QueryFile, String> lastAccessUserColumn;
+        private TableColumn<QueryFile, Date> lastAccessTimeColumn;
         private TableColumn<QueryFile, Long> sizeColumn;
 
         private final VkTextField search = new VkTextField();
@@ -118,17 +118,17 @@ public class QueryListPane extends BorderPane implements EventListener
         {
         }
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "CodeBlock2Expr"})
         private void initializeColumn()
         {
                 // 列
                 nameColumn = new VkTableColumn<>("名称");
-                createUserColumn = new VkTableColumn<>("创建用户");
-                createTimeColumn = new VkTableColumn<>("创建时间");
-                updateUserColumn = new VkTableColumn<>("更新用户");
-                updateTimeColumn = new VkTableColumn<>("更新时间");
-                accessUserColumn = new VkTableColumn<>("访问用户");
-                accessTimeColumn = new VkTableColumn<>("访问时间");
+                creatingUserColumn = new VkTableColumn<>("创建用户");
+                creatingTimeColumn = new VkTableColumn<>("创建时间");
+                lastModifiedUserColumn = new VkTableColumn<>("最后更新用户");
+                lastModifiedTimeColumn = new VkTableColumn<>("最后更新时间");
+                lastAccessUserColumn = new VkTableColumn<>("最后访问用户");
+                lastAccessTimeColumn = new VkTableColumn<>("最后访问时间");
                 sizeColumn = new VkTableColumn<>("文件大小");
 
                 // 属性配置
@@ -137,8 +137,18 @@ public class QueryListPane extends BorderPane implements EventListener
                         return new SimpleStringProperty(queryFile.getName());
                 });
 
-                createTimeColumn.setCellValueFactory(new PropertyValueFactory<>("createTime"));
-                updateTimeColumn.setCellValueFactory(new PropertyValueFactory<>("updateTime"));
+                creatingTimeColumn.setCellValueFactory(cellData -> {
+                        return new SimpleObjectProperty<>(cellData.getValue().getCreatingTime());
+                });
+
+                lastModifiedTimeColumn.setCellValueFactory(cellData -> {
+                        return new SimpleObjectProperty<>(cellData.getValue().getLastModifiedTime());
+                });
+
+                lastAccessTimeColumn.setCellValueFactory(cellData -> {
+                        return new SimpleObjectProperty<>(cellData.getValue().getLastAccessTime());
+                });
+
 
                 sizeColumn.setCellValueFactory(cellData -> {
                         QueryFile queryFile = cellData.getValue();
@@ -147,23 +157,23 @@ public class QueryListPane extends BorderPane implements EventListener
 
                 // 初始化宽度
                 nameColumn.setPrefWidth(450);
-                createUserColumn.setPrefWidth(150);
-                createTimeColumn.setPrefWidth(180);
-                updateUserColumn.setPrefWidth(150);
-                updateTimeColumn.setPrefWidth(180);
-                accessUserColumn.setPrefWidth(150);
-                accessTimeColumn.setPrefWidth(180);
+                creatingUserColumn.setPrefWidth(150);
+                creatingTimeColumn.setPrefWidth(180);
+                lastModifiedUserColumn.setPrefWidth(150);
+                lastModifiedTimeColumn.setPrefWidth(180);
+                lastAccessUserColumn.setPrefWidth(150);
+                lastAccessTimeColumn.setPrefWidth(180);
                 sizeColumn.setPrefWidth(130);
 
                 // 绑定列
                 tableView.getColumns().addAll(
                         nameColumn,
-                        createUserColumn,
-                        createTimeColumn,
-                        updateUserColumn,
-                        updateTimeColumn,
-                        accessUserColumn,
-                        accessTimeColumn,
+                        creatingUserColumn,
+                        creatingTimeColumn,
+                        lastModifiedUserColumn,
+                        lastModifiedTimeColumn,
+                        lastAccessUserColumn,
+                        lastAccessTimeColumn,
                         sizeColumn
                 );
 
@@ -197,8 +207,9 @@ public class QueryListPane extends BorderPane implements EventListener
                         }
                 });
 
-                createTimeColumn.setCellFactory(col -> new VkDateTableCell<>());
-                updateTimeColumn.setCellFactory(col -> new VkDateTableCell<>());
+                creatingTimeColumn.setCellFactory(col -> new VkDateTableCell<>());
+                lastModifiedTimeColumn.setCellFactory(col -> new VkDateTableCell<>());
+                lastAccessTimeColumn.setCellFactory(col -> new VkDateTableCell<>());
         }
 
         private void update(List<QueryFile> queryFiles)
