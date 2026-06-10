@@ -72,6 +72,12 @@ public class UITableDynamicNode extends UIDynamicNode
         }
 
         @Override
+        public void onSelectedEvent(UIExplorerNode node)
+        {
+                getExplorerParent().onSelectedEvent(node);
+        }
+
+        @Override
         public void onParentCloseEvent()
         {
                 EventBus.publish(new CloseWorkbenchTabEvent(this));
