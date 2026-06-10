@@ -158,9 +158,9 @@ public class QueryListPane extends BorderPane implements EventListener
                 // 初始化宽度
                 nameColumn.setPrefWidth(450);
                 creatingUserColumn.setPrefWidth(150);
-                creatingTimeColumn.setPrefWidth(180);
-                lastModifiedTimeColumn.setPrefWidth(180);
-                lastAccessTimeColumn.setPrefWidth(180);
+                creatingTimeColumn.setPrefWidth(200);
+                lastModifiedTimeColumn.setPrefWidth(200);
+                lastAccessTimeColumn.setPrefWidth(200);
                 sizeColumn.setPrefWidth(130);
 
                 // 绑定列
