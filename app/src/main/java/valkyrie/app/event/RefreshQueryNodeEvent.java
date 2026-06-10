@@ -2,6 +2,8 @@ package valkyrie.app.event;
 
 import lombok.Getter;
 import valkyrie.app.event.bus.Event;
+import valkyrie.app.explorer.UIExplorerNode;
+import valkyrie.app.explorer.UIQueryContainerDynamicNode;
 
 /**
  * 刷新查询节点事件
@@ -12,15 +14,15 @@ import valkyrie.app.event.bus.Event;
 @Getter
 public class RefreshQueryNodeEvent extends Event
 {
-        public final String selectNodeLabel;
+        private final UIQueryContainerDynamicNode queryContainerDynamicNode;
 
-        public RefreshQueryNodeEvent()
+        public RefreshQueryNodeEvent(UIQueryContainerDynamicNode queryContainerDynamicNode)
         {
-                this(null);
+                this.queryContainerDynamicNode = queryContainerDynamicNode;
         }
 
-        public RefreshQueryNodeEvent(String label)
+        public boolean nodeEquals(UIExplorerNode explorerNode)
         {
-                this.selectNodeLabel = label;
+                return explorerNode == queryContainerDynamicNode;
         }
 }

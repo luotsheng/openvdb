@@ -1,8 +1,6 @@
 package valkyrie.app.pane;
 
 import javafx.animation.PauseTransition;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.beans.property.SimpleLongProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -10,7 +8,6 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.control.*;
-import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -19,14 +16,13 @@ import javafx.util.Duration;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.RefreshTableNodeEvent;
+import valkyrie.app.event.UpdateQueryFileEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
-import valkyrie.app.event.workbench.OpenTableDataPaneEvent;
+import valkyrie.app.event.workbench.OpenQueryEditorPaneEvent;
 import valkyrie.app.explorer.UIQueryContainerDynamicNode;
-import valkyrie.app.explorer.UITableContainerDynamicNode;
-import valkyrie.app.explorer.UITableDynamicNode;
-import valkyrie.app.widgets.VkSeparatorItem;
+import valkyrie.app.explorer.UIQueryDynamicNode;
 import valkyrie.app.widgets.VkTextField;
 import valkyrie.app.widgets.VkToolBar;
 import valkyrie.app.widgets.VkToolButton;
@@ -34,7 +30,6 @@ import valkyrie.app.widgets.table.VkTableColumn;
 import valkyrie.app.widgets.table.VkTableView;
 import valkyrie.app.widgets.table.cell.VkDateTableCell;
 import valkyrie.core.model.QueryFile;
-import valkyrie.driver.api.Table;
 
 import java.util.Date;
 import java.util.List;
@@ -44,6 +39,7 @@ import static valkyrie.utils.string.StaticLibrary.fmt;
 /**
  * @author Luo Tiansheng
  * @since 2026/6/10
+ * @noinspection DuplicatedCode
  */
 @SuppressWarnings("FieldCanBeLocal")
 public class QueryListPane extends BorderPane implements EventListener
@@ -83,7 +79,7 @@ public class QueryListPane extends BorderPane implements EventListener
 
                 update(queryContainerDynamicNode.getQueryFiles());
 
-                EventBus.subscribe(this, RefreshTableNodeEvent.class);
+                EventBus.subscribe(this, RefreshQueryNodeEvent.class);
         }
 
         private void setupToolBar()
@@ -91,7 +87,7 @@ public class QueryListPane extends BorderPane implements EventListener
                 toolBar.setOrientation(Orientation.HORIZONTAL);
 
                 Button delTable = new VkToolButton("删除查询", "minus");
-                delTable.setOnAction(event -> deleteTable());
+                delTable.setOnAction(event -> deleteQuery());
 
                 Region spacer = new Region();
                 HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -106,13 +102,45 @@ public class QueryListPane extends BorderPane implements EventListener
                         delTable,
                         spacer,
                         searchBox);
+
+                // subscribe
+                EventBus.subscribe(this,
+                        RefreshQueryNodeEvent.class,
+                        UpdateQueryFileEvent.class);
         }
 
         private void setupTableView()
         {
+                tableView.setRowFactory(tv -> {
+                        TableRow<QueryFile> r = new TableRow<>();
+
+                        r.setOnMouseClicked(e -> {
+                                if (e.getClickCount() == 2 && !r.isEmpty()) {
+                                        QueryFile queryFile = r.getItem();
+                                        UIQueryDynamicNode queryDynamicNode =
+                                                queryContainerDynamicNode.getQueryDynamicNode(queryFile);
+                                        EventBus.publish(new OpenQueryEditorPaneEvent(queryDynamicNode));
+                                }
+                        });
+
+                        r.itemProperty().addListener((obs, oldItem, queryFile) -> {
+                                if (queryFile == null) {
+                                        r.setContextMenu(null);
+                                        return;
+                                }
+
+                                UIQueryDynamicNode queryDynamicNode =
+                                        queryContainerDynamicNode.getQueryDynamicNode(queryFile);
+
+                                if (queryDynamicNode != null)
+                                        r.setContextMenu(queryDynamicNode.getContextMenu());
+                        });
+
+                        return r;
+                });
         }
 
-        private void deleteTable()
+        private void deleteQuery()
         {
         }
 
@@ -222,7 +250,13 @@ public class QueryListPane extends BorderPane implements EventListener
         @Override
         public void onEvent(Event event)
         {
+                if (event instanceof UpdateQueryFileEvent e)
+                        if (e.getQueryContainerDynamicNode() == queryContainerDynamicNode)
+                                update(queryContainerDynamicNode.getQueryFiles());
 
+                if (event instanceof RefreshQueryNodeEvent e)
+                        if (e.nodeEquals(queryContainerDynamicNode))
+                                update(queryContainerDynamicNode.getQueryFiles());
         }
 
         private static String formatStorageSize(long size)

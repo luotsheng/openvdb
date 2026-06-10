@@ -20,7 +20,9 @@ import valkyrie.driver.api.node.DBNode;
 import valkyrie.utils.collection.Lists;
 
 import java.io.File;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static valkyrie.utils.string.StaticLibrary.streq;
@@ -34,7 +36,6 @@ import static valkyrie.utils.string.StaticLibrary.streq;
  * @since 2026/6/5
  */
 public class UIQueryContainerDynamicNode extends UIDynamicNode
-        implements EventListener
 {
         private final MenuItem openOrCloseMenuItem = new MenuItem("展开列表");
 
@@ -42,8 +43,6 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
         {
                 super(parent, dbNode);
                 reloadQueryNode();
-                // subscribe
-                EventBus.subscribe(this, RefreshQueryNodeEvent.class);
         }
 
         @Override
@@ -63,6 +62,7 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
                         openOrCloseMenuItem,
                         refreshItem
                 );
+
                 return contextMenu;
         }
 
@@ -86,17 +86,20 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
 
         private void reloadQueryNode()
         {
-                var scriptFiles = QueryFileRepository.loadScriptFiles(new File(getPath()).getParent());
+                var queryFiles = QueryFileRepository.loadScriptFiles(new File(getPath()).getParent());
                 List<UIQueryDynamicNode> nodes = Lists.newArrayList();
 
                 getChildren().clear();
 
-                for (QueryFile scriptFile : scriptFiles)
-                        nodes.add(new UIQueryDynamicNode(this, scriptFile));
+                for (QueryFile queryFile : queryFiles) {
+                        UIQueryDynamicNode queryDynamicNode = new UIQueryDynamicNode(this, queryFile);
+                        nodes.add(queryDynamicNode);
+                }
 
                 getChildren().addAll(nodes);
 
                 initializeChildrenFlag = true;
+                EventBus.publish(new RefreshQueryNodeEvent(this));
         }
 
         private void refreshQueryNode()
@@ -110,32 +113,30 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
                 return getExplorerParent();
         }
 
-        @Override
-        public void onEvent(Event event)
+        /**
+         * UIQueryDynamicNode 内部文件对象可能被外部修改，或用户重命名，
+         * 如果缓存 UIQueryDynamicNode 集合可能会导致意想不到的结果。
+         */
+        private List<UIQueryDynamicNode> getChildrenAsQueryDynamicNode()
         {
-                if (event instanceof RefreshQueryNodeEvent refreshQueryNodeEvent) {
-                        refreshQueryNode();
-
-                        String selectNodeLabel = refreshQueryNodeEvent.getSelectNodeLabel();
-                        if (selectNodeLabel != null)
-                                checkDefaultSelectNode(selectNodeLabel);
-                }
+                return getChildren().stream()
+                        .map(t -> ((UIQueryDynamicNode) t))
+                        .toList();
         }
 
-        private void checkDefaultSelectNode(String selectNodeLabel)
+        @SuppressWarnings("OptionalGetWithoutIsPresent")
+        public UIQueryDynamicNode getQueryDynamicNode(QueryFile queryFile)
         {
-                for (TreeItem<String> child : getChildren()) {
-                        if (streq(((UIExplorerNode) child).getLabel(), selectNodeLabel)) {
-                                getRoot().getTreeView().getSelectionModel().select(child);
-                                break;
-                        }
-                }
+                return getChildrenAsQueryDynamicNode().stream()
+                        .filter(t -> t.getQueryFile() == queryFile)
+                        .findFirst()
+                        .get();
         }
 
         public List<QueryFile> getQueryFiles()
         {
-                return getChildren().stream()
-                        .map(t -> ((UIQueryDynamicNode) t).getQueryFile())
-                        .collect(Collectors.toList());
+                return getChildrenAsQueryDynamicNode().stream()
+                        .map(UIQueryDynamicNode::getQueryFile)
+                        .toList();
         }
 }
