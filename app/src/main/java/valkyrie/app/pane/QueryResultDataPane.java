@@ -264,7 +264,7 @@ public class QueryResultDataPane extends BorderPane
                 fileChooser.setInitialFileName(initName);
 
                 // 打开对话框
-                File saveDirectory = fileChooser.showSaveDialog(Application.getPrimaryStage());
+                File saveDirectory = fileChooser.showSaveDialog(Application.primaryStage);
 
                 if (saveDirectory != null) {
                         WorkBook wb = WorkBook.create();

@@ -97,13 +97,6 @@ public class Workbench extends VBox implements EventListener
                         closeLeft,
                         closeRight,
                         closeOther);
-
-                Application.runLater((stage, scene) -> {
-                        scene.addEventFilter(MouseEvent.MOUSE_PRESSED, e -> {
-                                if (tabPaneContextMenu.isShowing())
-                                        tabPaneContextMenu.hide();
-                        });
-                });
         }
 
         private void setupHomeTab()

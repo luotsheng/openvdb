@@ -12,7 +12,7 @@ public class VkDialogStages extends Stage
 {
         public static Stage create()
         {
-                Stage primaryStage = Application.createByPrimaryStage();
+                Stage primaryStage = Application.createModalStage();
                 primaryStage.initModality(Modality.APPLICATION_MODAL);
                 primaryStage.setResizable(false);
                 return primaryStage;

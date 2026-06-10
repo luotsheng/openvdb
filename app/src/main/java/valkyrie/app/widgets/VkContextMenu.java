@@ -11,6 +11,6 @@ public class VkContextMenu extends ContextMenu
 {
         public void show(double x, double y)
         {
-                this.show(Application.getPrimaryStage(), x, y);
+                this.show(Application.primaryStage, x, y);
         }
 }
