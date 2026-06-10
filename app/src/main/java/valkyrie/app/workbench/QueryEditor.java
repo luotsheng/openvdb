@@ -194,7 +194,7 @@ public class QueryEditor extends SplitPane implements EventListener
          */
         private void updateEditorSuggestions(Driver driver, Session session)
         {
-                if (driver == null || (session.catalog() == null || session.schema() == null))
+                if (driver == null || (session.catalog() == null && session.schema() == null))
                         return;
 
                 singleThreadExecutor.execute(() -> {
