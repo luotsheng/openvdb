@@ -1,5 +1,7 @@
 package valkyrie.app.widgets;
 
+import static valkyrie.utils.string.StaticLibrary.fmt;
+
 /**
  * 图标按钮
  *
@@ -15,7 +17,7 @@ public class VkToolButton extends VkIconButton
 
         public VkToolButton(String tip, String text, String icon)
         {
-                super(tip, text, icon);
+                super(tip, text, fmt("%s@18px", icon));
                 getStyleClass().add("vk-tool-button");
         }
 }
