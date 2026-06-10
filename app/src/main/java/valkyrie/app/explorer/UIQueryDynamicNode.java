@@ -72,7 +72,7 @@ public class UIQueryDynamicNode extends UIDynamicNode
 
                 contextMenu.getItems().addAll(
                         openItem,
-                        new SeparatorMenuItem(
+                        new SeparatorMenuItem(),
                         newQueryEditorItem,
                         renameItem
                 );
