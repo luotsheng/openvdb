@@ -32,6 +32,7 @@ import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.SQLExecuteCallback;
 import valkyrie.driver.api.Session;
+import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.monacofx.MonacoEditor;
@@ -438,6 +439,8 @@ public class QueryEditor extends SplitPane implements EventListener
                 }
 
                 PathSelector pathSelector = new PathSelector();
+                pathSelector.useSelector(this.pathSelector);
+
                 QueryFile tmpQueryFile = QueryFileSaveDialog.showDialog(pathSelector);
 
                 if (tmpQueryFile == null)
@@ -458,14 +461,7 @@ public class QueryEditor extends SplitPane implements EventListener
         {
                 pathSelector.useSelector(selector);
 
-                UIQueryContainerDynamicNode queryContainerDynamicNode;
-
-                queryContainerDynamicNode = pathSelector.getSelectedCatalog()
-                        .getQueryContainerNode();
-
-                if (queryContainerDynamicNode == null)
-                        queryContainerDynamicNode = pathSelector.getSelectedSchema()
-                                .getQueryContainerNode();
+                UIQueryContainerDynamicNode queryContainerDynamicNode = getQueryContainerDynamicNode();
 
                 this.queryFile = QueryFileRepository.write(tmpQueryFile, content);
 
@@ -480,6 +476,16 @@ public class QueryEditor extends SplitPane implements EventListener
                 tab.setText(TabIdFactory.buildQueryTabId(queryDynamicNode));
 
                 EventBus.publish(new RegisterTabManagerEvent(queryDynamicNode, tab));
+        }
+
+        private UIQueryContainerDynamicNode getQueryContainerDynamicNode()
+        {
+                DBNodePath tail = pathSelector.getNodePath().tail();
+                return switch (tail.kind()) {
+                        case CATALOG -> pathSelector.getSelectedCatalog().getQueryContainerNode();
+                        case SCHEMA -> pathSelector.getSelectedSchema().getQueryContainerNode();
+                        default -> throw new UnsupportedOperationException("不支持的 NodeKind: " + tail.kind());
+                };
         }
 
         //////////////////////////////////////////////////////////////////////

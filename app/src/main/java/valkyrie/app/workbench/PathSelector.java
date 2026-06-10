@@ -29,7 +29,7 @@ public class PathSelector implements EventListener
 {
         private @Getter Driver driver;
         private final @Getter Session session = new Session();
-        private DBNodePath dbNodePath;
+        private @Getter DBNodePath nodePath;
 
         private UIConnectionNode selectedConnectionNode = null;
         private UICatalogDynamicNode selectedCatalogDynamicNode = null;
@@ -312,13 +312,13 @@ public class PathSelector implements EventListener
                 if (driver == null)
                         return;
 
-                dbNodePath = driver.getNodeHierarchyPath();
+                nodePath = driver.getNodeHierarchyPath();
 
                 catalogComboBox.setHidden(true);
                 schemaComboBox.setHidden(true);
 
                 // parent
-                switch (dbNodePath.kind()) {
+                switch (nodePath.kind()) {
                         case CATALOG -> {
                                 catalogComboBox.setHidden(false);
                                 setCatalogComboBoxItem(connectionNode);
@@ -328,23 +328,23 @@ public class PathSelector implements EventListener
                                 setSchemaComboBoxItem(connectionNode);
                         }
                         default ->
-                                throw new UnsupportedOperationException("查询编辑器 Parent 不支持类型：" + dbNodePath.kind());
+                                throw new UnsupportedOperationException("查询编辑器 Parent 不支持类型：" + nodePath.kind());
                 }
 
                 // child
-                DBNodePath child = dbNodePath.child();
+                DBNodePath child = nodePath.child();
                 if (child != null) {
                         switch (child.kind()) {
                                 case SCHEMA -> schemaComboBox.setHidden(false);
                                 default ->
-                                        throw new UnsupportedOperationException("查询 Child 编辑器不支持类型：" + dbNodePath.kind());
+                                        throw new UnsupportedOperationException("查询 Child 编辑器不支持类型：" + nodePath.kind());
                         }
                 }
         }
 
         private void updateSchemaDynamicNodeComboBox(UICatalogDynamicNode catalogDynamicNode)
         {
-                DBNodePath child = dbNodePath.child();
+                DBNodePath child = nodePath.child();
                 if (child != null && child.kind() == DBNodeKind.SCHEMA)
                         setSchemaComboBoxItem(catalogDynamicNode);
         }
