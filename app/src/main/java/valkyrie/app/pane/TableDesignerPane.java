@@ -11,7 +11,7 @@ import valkyrie.app.assets.Assets;
 import valkyrie.app.pane.designer.TableColumnDesignerPane;
 import valkyrie.app.pane.designer.TableIndexDesignerPane;
 import valkyrie.app.widgets.VkIconButton;
-import valkyrie.app.widgets.VkSeparator;
+import valkyrie.app.widgets.VkSeparatorItem;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.app.widgets.table.VkTableColumnFactory;
 import valkyrie.app.widgets.table.VkTableView;
@@ -122,10 +122,10 @@ public class TableDesignerPane extends BorderPane
 
                 toolBar.getItems().addAll(
                         saveButton,
-                        new VkSeparator(),
+                        new VkSeparatorItem(),
                         plusButton,
                         minusButton,
-                        new VkSeparator(),
+                        new VkSeparatorItem(),
                         reloadButton
                 );
         }

@@ -1,0 +1,9 @@
+.tool-bar .vk-tool-separator {
+    -fx-padding: 0;
+    -fx-min-width: 2;
+    -fx-pref-width: 2;
+}
+
+.tool-bar .vk-tool-button {
+    -fx-padding: 4;
+}

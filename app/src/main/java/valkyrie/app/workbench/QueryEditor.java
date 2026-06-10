@@ -27,7 +27,8 @@ import valkyrie.app.utils.TabIdFactory;
 import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkIconButton;
-import valkyrie.app.widgets.VkSeparator;
+import valkyrie.app.widgets.VkSeparatorItem;
+import valkyrie.app.widgets.VkToolButton;
 import valkyrie.core.model.QueryFile;
 import valkyrie.core.repository.QueryFileRepository;
 import valkyrie.driver.api.Driver;
@@ -126,17 +127,18 @@ public class QueryEditor extends SplitPane implements EventListener
         private ToolBar createToolBar()
         {
                 ToolBar toolBar = new ToolBar();
+                toolBar.setStyle("-fx-background-color: white;");
 
-                runToolButton = new VkIconButton("运行", "run");
+                runToolButton = new VkToolButton("运行", "run");
                 runToolButton.setText("运行");
                 runToolButton.setOnAction(e -> runTask());
 
-                stopToolButton = new VkIconButton("停止运行", "stop");
+                stopToolButton = new VkToolButton("停止运行", "stop");
                 stopToolButton.setText("停止");
                 stopToolButton.setDisable(true);
                 stopToolButton.setOnAction(e -> stopTask());
 
-                beautifyToolButton = new VkIconButton("美化SQL", "beautify");
+                beautifyToolButton = new VkToolButton("美化SQL", "beautify");
                 beautifyToolButton.setText("美化SQL");
                 beautifyToolButton.setOnAction(e -> beautifySQL());
 
@@ -144,10 +146,10 @@ public class QueryEditor extends SplitPane implements EventListener
                         pathSelector.getConnectionComboBox(),
                         pathSelector.getCatalogComboBox(),
                         pathSelector.getSchemaComboBox(),
-                        new VkSeparator(),
+                        new VkSeparatorItem(),
                         runToolButton,
                         stopToolButton,
-                        new VkSeparator(),
+                        new VkSeparatorItem(),
                         beautifyToolButton);
 
                 return toolBar;

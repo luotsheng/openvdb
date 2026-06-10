@@ -2,7 +2,6 @@ package valkyrie.app.tool;
 
 import javafx.scene.Node;
 import javafx.scene.control.Button;
-import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Tab;
 import javafx.scene.control.ToolBar;
 import javafx.scene.input.MouseButton;
@@ -12,7 +11,7 @@ import valkyrie.app.event.workbench.OpenTabEvent;
 import valkyrie.app.menu.ConnectionMenuBuilder;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkIconButton;
-import valkyrie.app.widgets.VkSeparator;
+import valkyrie.app.widgets.VkSeparatorItem;
 import valkyrie.blueprint.Blueprint;
 import valkyrie.utils.Generator;
 
@@ -43,7 +42,7 @@ public class AppToolBar extends ToolBar
                 getItems().addAll(
                         newConnectionButton,
                         newQueryButton,
-                        new VkSeparator(),
+                        new VkSeparatorItem(),
                         debugButton
                 );
         }

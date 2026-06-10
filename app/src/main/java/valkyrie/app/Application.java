@@ -92,6 +92,7 @@ public class Application extends javafx.application.Application
                 addStylesheet(scene, "/css/vk-icon-button.css");
                 addStylesheet(scene, "/css/vk-code-area.css");
                 addStylesheet(scene, "/css/vk-status-bar.css");
+                addStylesheet(scene, "/css/vk-tool-bar.css");
         }
 
         @Override

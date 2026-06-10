@@ -18,7 +18,7 @@ import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkIconButton;
-import valkyrie.app.widgets.VkSeparator;
+import valkyrie.app.widgets.VkSeparatorItem;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.app.widgets.table.VkTableView;
 import valkyrie.app.widgets.table.cell.VkTextFieldTableCell;
@@ -98,9 +98,9 @@ public class QueryResultDataPane extends BorderPane
 
                 toolBar.getItems().addAll(
                         plus, minus,
-                        new VkSeparator(),
+                        new VkSeparatorItem(),
                         submit, cross,
-                        new VkSeparator(),
+                        new VkSeparatorItem(),
                         reload,
                         spacer,
                         export);

@@ -21,7 +21,7 @@ import valkyrie.app.event.workbench.OpenTableDataPaneEvent;
 import valkyrie.app.explorer.UITableContainerDynamicNode;
 import valkyrie.app.explorer.UITableDynamicNode;
 import valkyrie.app.widgets.VkIconButton;
-import valkyrie.app.widgets.VkSeparator;
+import valkyrie.app.widgets.VkSeparatorItem;
 import valkyrie.app.widgets.VkTextField;
 import valkyrie.app.widgets.table.VkTableColumn;
 import valkyrie.app.widgets.table.VkTableView;
@@ -103,7 +103,7 @@ public class TableListPane extends BorderPane implements EventListener
                         modifyTable,
                         newTable,
                         delTable,
-                        new VkSeparator(),
+                        new VkSeparatorItem(),
                         spacer,
                         searchBox);
         }
