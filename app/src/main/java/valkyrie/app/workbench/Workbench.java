@@ -35,7 +35,7 @@ import static valkyrie.utils.string.StaticLibrary.streq;
 public class Workbench extends VBox implements EventListener
 {
         private final VkTabPane tabPane = new VkTabPane();
-        private final Tab navigationTab = new Tab("首页");
+        private final Tab navigationTab = new Tab("视图");
         private final Map<Object, List<Tab>> tabPaneManager = Maps.newHashMap();
 
         private final VkContextMenu tabPaneContextMenu = new VkContextMenu();
@@ -49,7 +49,7 @@ public class Workbench extends VBox implements EventListener
 
         public Workbench()
         {
-                navigationTab.setGraphic(Assets.use("home"));
+                navigationTab.setGraphic(Assets.use("list"));
 
                 setStyle("-fx-background-color: #ffffff;");
                 getChildren().add(tabPane);

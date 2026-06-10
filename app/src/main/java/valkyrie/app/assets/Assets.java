@@ -102,6 +102,7 @@ public class Assets
                 IMAGES.put("sqlite", load("/assets/icons/sqlite.png"));
                 IMAGES.put("postgresql", load("/assets/icons/postgresql.png"));
                 IMAGES.put("schema", load("/assets/icons/schema.png"));
+                IMAGES.put("list", load("/assets/icons/list.png"));
         }
 
         private static Image load(String path)
