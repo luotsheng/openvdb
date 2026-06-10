@@ -26,7 +26,7 @@ public final class Application extends javafx.application.Application {
         public static final String TITLE = "VALKYRIE v1.6.0";
 
         @SuppressWarnings({"unused", "FieldCanBeLocal"})
-        private static WebView _WarmUp_ = null;
+        private static WebView _WarmUp_WebView_ = null;
 
         public static Stage primaryStage;
 
@@ -53,9 +53,14 @@ public final class Application extends javafx.application.Application {
                 return stage;
         }
 
+        private void warmUp()
+        {
+                _WarmUp_WebView_ = new WebView();
+        }
+
         @Override
         public void start(Stage stage) {
-                _WarmUp_ = new WebView();
+                warmUp();
 
                 primaryStage = stage;
                 setDockIcon(stage);
