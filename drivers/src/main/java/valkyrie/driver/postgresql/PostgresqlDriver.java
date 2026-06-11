@@ -7,7 +7,6 @@ import valkyrie.driver.api.exception.DriverException;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.node.DBNodeKind;
 import valkyrie.driver.api.node.DBNodePath;
-import valkyrie.driver.dm.DMSuggestions;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.driver.utils.JdbcUtils;
 import valkyrie.utils.bean.BeanUtils;
