@@ -6,7 +6,7 @@ import valkyrie.app.assets.Assets;
 import valkyrie.app.explorer.UITableDynamicNode;
 import valkyrie.app.pane.QueryResultPane;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * @author Luo Tiansheng

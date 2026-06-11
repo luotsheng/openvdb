@@ -13,8 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static valkyrie.utils.TypeConverter.atobool;
-import static valkyrie.utils.string.StaticLibrary.fmt;
-import static valkyrie.utils.string.StaticLibrary.strempty;
+import static valkyrie.utils.string.StrStaticImports.fmt;
+import static valkyrie.utils.string.StrStaticImports.strempty;
 
 /**
  * 连接属性

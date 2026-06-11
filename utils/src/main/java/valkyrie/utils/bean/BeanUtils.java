@@ -28,8 +28,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import static valkyrie.utils.string.StaticLibrary.strcap;
-import static valkyrie.utils.string.StaticLibrary.strhas;
+import static valkyrie.utils.string.StrStaticImports.strcap;
+import static valkyrie.utils.string.StrStaticImports.strhas;
 
 /**
  * Bean工具类，方便实现对两个对象之间的属性拷贝，这属于浅拷贝。如果需要

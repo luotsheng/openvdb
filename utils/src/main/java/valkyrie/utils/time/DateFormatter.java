@@ -26,8 +26,8 @@ import valkyrie.utils.exception.ValidationException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-import static valkyrie.utils.string.StaticLibrary.strhas;
-import static valkyrie.utils.string.StaticLibrary.strlen;
+import static valkyrie.utils.string.StrStaticImports.strhas;
+import static valkyrie.utils.string.StrStaticImports.strlen;
 
 /**
  * `DateFormatter` 类提供日期和时间的格式化和解析功能。

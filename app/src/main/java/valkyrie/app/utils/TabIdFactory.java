@@ -2,7 +2,7 @@ package valkyrie.app.utils;
 
 import valkyrie.app.explorer.UIQueryDynamicNode;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * @author Luo Tiansheng

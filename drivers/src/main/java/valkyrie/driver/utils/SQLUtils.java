@@ -10,8 +10,8 @@ import valkyrie.utils.exception.SystemRuntimeException;
 import java.util.List;
 import java.util.Map;
 
-import static valkyrie.utils.string.StaticLibrary.strieq;
-import static valkyrie.utils.string.StaticLibrary.uppercase;
+import static valkyrie.utils.string.StrStaticImports.strieq;
+import static valkyrie.utils.string.StrStaticImports.uppercase;
 
 /**
  * SQL 工具类

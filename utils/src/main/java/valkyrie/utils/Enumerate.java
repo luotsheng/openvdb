@@ -22,7 +22,7 @@ package valkyrie.utils;
 
 import valkyrie.utils.exception.InvalidArgumentException;
 import valkyrie.utils.reflect.UClass;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 
 /**
  * `Enumerates` 是一个工具类，提供了获取和查找枚举值的方法。主要包括获取指定枚举类的所有
@@ -116,7 +116,7 @@ public class Enumerate {
     public static <E extends Enum<E>> E find(Class<? extends Enum<E>> enumClass, String name) {
         Enum<E>[] values = values(enumClass);
         for (Enum<E> value : values)
-            if (StaticLibrary.strieq(value.name(), name))
+            if (StrStaticImports.strieq(value.name(), name))
                 return (E) value;
         return null;
     }

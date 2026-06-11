@@ -23,7 +23,7 @@ package valkyrie.utils.reflect;
 import valkyrie.utils.Assert;
 import valkyrie.utils.Captor;
 import valkyrie.utils.Optional;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
@@ -89,7 +89,7 @@ public class UField {
         this.modifiers = field.getModifiers();
         this.inClass = field.getDeclaringClass();
         this.name = field.getName();
-        this.path = StaticLibrary.fmt("%s#%s", inClass.getName(), name);
+        this.path = StrStaticImports.fmt("%s#%s", inClass.getName(), name);
         this.originType = field.getType();
     }
 

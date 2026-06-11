@@ -23,7 +23,7 @@ import valkyrie.utils.Captor;
 import valkyrie.utils.Optional;
 import valkyrie.utils.collection.Lists;
 import valkyrie.utils.exception.IOReadException;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 import valkyrie.utils.system.OS;
 
 import java.io.File;
@@ -320,7 +320,7 @@ public class UFile extends java.io.File {
      */
     public String getCleanName() {
         String name = getName();
-        return StaticLibrary.strcut(getName(), 0, name.lastIndexOf("."));
+        return StrStaticImports.strcut(getName(), 0, name.lastIndexOf("."));
     }
 
     /**
@@ -331,7 +331,7 @@ public class UFile extends java.io.File {
      * @return 当前 File 文件和 {@code extension} 一致返回 `true`
      */
     public boolean typeEquals(String extension) {
-        return StaticLibrary.streq(extension, getExtension());
+        return StrStaticImports.streq(extension, getExtension());
     }
 
     /**
@@ -346,7 +346,7 @@ public class UFile extends java.io.File {
      *         否则返回 {@code false}
      */
     public boolean typeMatch(String... extensions) {
-        return StaticLibrary.strhas(getExtension(), extensions);
+        return StrStaticImports.strhas(getExtension(), extensions);
     }
 
     /**
@@ -357,7 +357,7 @@ public class UFile extends java.io.File {
         int index = name.indexOf(".");
         if (index == -1)
             return "";
-        return StaticLibrary.strcut(getName(), index, 0);
+        return StrStaticImports.strcut(getName(), index, 0);
     }
 
     private boolean forceDeleteDirectory(UFile dir) {

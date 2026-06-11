@@ -15,7 +15,6 @@ import javafx.scene.layout.Region;
 import javafx.util.Duration;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.event.RefreshQueryNodeEvent;
-import valkyrie.app.event.RefreshTableNodeEvent;
 import valkyrie.app.event.UpdateQueryFileEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
@@ -34,7 +33,7 @@ import valkyrie.core.model.QueryFile;
 import java.util.Date;
 import java.util.List;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * @author Luo Tiansheng

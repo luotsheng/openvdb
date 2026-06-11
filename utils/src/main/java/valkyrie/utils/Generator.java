@@ -1,7 +1,7 @@
 package valkyrie.utils;
 
 import valkyrie.utils.security.Codec;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 import valkyrie.utils.string.StringInterface;
 
 import java.util.Random;
@@ -58,7 +58,7 @@ public class Generator {
      * @return 生成不带符号的UUID
      */
     public static String uuid(StringInterface... iface) {
-        return StaticLibrary.uppercase(UUID.randomUUID(), iface)
+        return StrStaticImports.uppercase(UUID.randomUUID(), iface)
                 .replace("-", "");
     }
 
@@ -71,7 +71,7 @@ public class Generator {
      * @return 返回没有任何符号的 UUID
      */
     public static String uuid(int n, StringInterface... iface) {
-        return StaticLibrary.strcut(uuid(iface), 0, n);
+        return StrStaticImports.strcut(uuid(iface), 0, n);
     }
 
     /**

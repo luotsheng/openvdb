@@ -1,6 +1,6 @@
 package valkyrie.driver.dm;
 
-import static valkyrie.utils.string.StaticLibrary.uppercase;
+import static valkyrie.utils.string.StrStaticImports.uppercase;
 
 /**
  * @author Luo Tiansheng

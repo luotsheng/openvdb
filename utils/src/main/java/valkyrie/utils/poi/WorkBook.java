@@ -32,7 +32,7 @@ import valkyrie.utils.io.UFile;
 import valkyrie.utils.reflect.UClass;
 import valkyrie.utils.reflect.UField;
 import valkyrie.utils.stream.Streams;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 import valkyrie.utils.time.DateFormatter;
 
 import java.io.ByteArrayOutputStream;
@@ -331,7 +331,7 @@ public class WorkBook implements Iterable<Row> {
         for (int i = 0; i < lastCellNum; i++) {
             Cell cell = row.getCell(i);
             String value = cellFormatter.formatCellValue(cell);
-            retval.add(cell != null && StaticLibrary.strnempty(value) ? value : "NULL");
+            retval.add(cell != null && StrStaticImports.strnempty(value) ? value : "NULL");
         }
 
         return retval;
@@ -355,7 +355,7 @@ public class WorkBook implements Iterable<Row> {
         forEach(retval::add);
         return Streams.filter(retval, e -> {
             for (String cell : e) {
-                if (StaticLibrary.strne(cell, "NULL"))
+                if (StrStaticImports.strne(cell, "NULL"))
                     return true;
             }
             return false;
@@ -472,7 +472,7 @@ public class WorkBook implements Iterable<Row> {
         List<Row> rows = getRows();
         for (Row row : rows) {
             for (String cell : row) {
-                builder.append(StaticLibrary.strne(cell, "NULL") ? cell : "");
+                builder.append(StrStaticImports.strne(cell, "NULL") ? cell : "");
                 builder.append(",");
             }
             builder.deleteCharAt(builder.length() - 1);

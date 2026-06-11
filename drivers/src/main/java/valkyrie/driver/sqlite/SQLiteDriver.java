@@ -18,8 +18,8 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.*;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
-import static valkyrie.utils.string.StaticLibrary.streq;
+import static valkyrie.utils.string.StrStaticImports.fmt;
+import static valkyrie.utils.string.StrStaticImports.streq;
 
 /**
  * SQLite 驱动层实现

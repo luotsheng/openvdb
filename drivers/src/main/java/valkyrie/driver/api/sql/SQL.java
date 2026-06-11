@@ -12,8 +12,8 @@ import java.util.Iterator;
 import java.util.List;
 
 import static valkyrie.utils.collection.Lists.last;
-import static valkyrie.utils.string.StaticLibrary.fmt;
-import static valkyrie.utils.string.StaticLibrary.lowercase;
+import static valkyrie.utils.string.StrStaticImports.fmt;
+import static valkyrie.utils.string.StrStaticImports.lowercase;
 
 /**
  * SQL 执行单元

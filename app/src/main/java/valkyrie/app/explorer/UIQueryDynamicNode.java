@@ -19,7 +19,7 @@ import valkyrie.utils.collection.Lists;
 
 import java.util.List;
 
-import static valkyrie.utils.string.StaticLibrary.streq;
+import static valkyrie.utils.string.StrStaticImports.streq;
 
 /**
  * @author Luo Tiansheng

@@ -33,7 +33,7 @@ import valkyrie.utils.time.DateFormatter;
 import java.io.File;
 import java.util.List;
 
-import static valkyrie.utils.string.StaticLibrary.*;
+import static valkyrie.utils.string.StrStaticImports.*;
 
 /**
  * @author Luo Tiansheng

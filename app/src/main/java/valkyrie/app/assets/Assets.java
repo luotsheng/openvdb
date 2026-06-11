@@ -5,15 +5,13 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import valkyrie.utils.Captor;
 import valkyrie.utils.io.UFile;
-import valkyrie.utils.reflect.UClass;
 
-import java.io.File;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static valkyrie.utils.string.StaticLibrary.strrstr;
+import static valkyrie.utils.string.StrStaticImports.strrstr;
 
 /**
  * 资源管理

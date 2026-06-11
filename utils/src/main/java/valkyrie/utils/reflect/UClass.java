@@ -31,7 +31,7 @@ import valkyrie.utils.TypeConverter;
 import valkyrie.utils.collection.Lists;
 import valkyrie.utils.exception.SystemRuntimeException;
 import valkyrie.utils.stream.Streams;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Constructor;
@@ -150,7 +150,7 @@ public class UClass {
     public static <T> T getConstant(Class<?> aClass, String name) {
         UClass uClass = new UClass(aClass);
         for (UField field : uClass.fields.values()) {
-            if (field.isStatic() && field.isFinal() && StaticLibrary.streq(field.getName(), name))
+            if (field.isStatic() && field.isFinal() && StrStaticImports.streq(field.getName(), name))
                 return (T) field.get(null);
         }
         return null;
@@ -290,7 +290,7 @@ public class UClass {
      */
     public UField getDeclaredField(String name) {
         for (UField field : getDeclaredFields()) {
-            if (StaticLibrary.streq(field.getName(), name))
+            if (StrStaticImports.streq(field.getName(), name))
                 return field;
         }
         return null;

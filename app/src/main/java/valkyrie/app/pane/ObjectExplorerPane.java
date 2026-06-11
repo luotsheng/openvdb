@@ -28,7 +28,7 @@ import valkyrie.core.repository.ConnectionRepository;
 import java.text.Collator;
 import java.util.*;
 
-import static valkyrie.utils.string.StaticLibrary.strimatch;
+import static valkyrie.utils.string.StrStaticImports.strimatch;
 
 /**
  * 导航面板

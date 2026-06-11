@@ -27,7 +27,7 @@ import valkyrie.utils.security.codec.Base64Codec;
 import valkyrie.utils.security.codec.MD5Codec;
 import valkyrie.utils.security.codec.SHA256Codec;
 import valkyrie.utils.security.codec.URLCodec;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 import valkyrie.utils.string.StringInterface;
 
 import javax.crypto.KeyGenerator;
@@ -120,7 +120,7 @@ public class Codec {
         StringBuilder builder = new StringBuilder();
         for (byte b : bytes) {
             String tmp = Integer.toHexString(b & 0xFF);
-            if (StaticLibrary.strlen(tmp) == 1)
+            if (StrStaticImports.strlen(tmp) == 1)
                 builder.append("0");
             builder.append(tmp);
         }

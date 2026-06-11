@@ -2,7 +2,7 @@ package valkyrie.driver.sqlite;
 
 import valkyrie.driver.api.Dialect;
 
-import static valkyrie.utils.string.StaticLibrary.strcut;
+import static valkyrie.utils.string.StrStaticImports.strcut;
 
 /**
  * @author Luo Tiansheng

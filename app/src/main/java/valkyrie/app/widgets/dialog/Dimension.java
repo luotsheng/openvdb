@@ -1,6 +1,6 @@
 package valkyrie.app.widgets.dialog;
 
-import static valkyrie.utils.string.StaticLibrary.*;
+import static valkyrie.utils.string.StrStaticImports.*;
 
 /**
  * 提示框常量定义
@@ -56,7 +56,7 @@ class Dimension
                 if (strascii(text))
                         wScale = SCALE_ASCII_LINE_WIDTH;
 
-                width = Math.max(strmaxwidth(text) * wScale, DEFAULT_WINDOW_WIDTH);
-                height = Math.max(strnlines(text) * SCALE_LINE_HEIGHT, DEFAULT_WINDOW_HEIGHT);
+                width = Math.max(strwidth(text) * wScale, DEFAULT_WINDOW_WIDTH);
+                height = Math.max(strlines(text) * SCALE_LINE_HEIGHT, DEFAULT_WINDOW_HEIGHT);
         }
 }

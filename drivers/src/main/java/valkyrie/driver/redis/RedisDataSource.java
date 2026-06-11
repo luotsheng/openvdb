@@ -11,7 +11,7 @@ import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 
-import static valkyrie.utils.string.StaticLibrary.strnempty;
+import static valkyrie.utils.string.StrStaticImports.strnempty;
 
 /**
  * @author Luo Tiansheng

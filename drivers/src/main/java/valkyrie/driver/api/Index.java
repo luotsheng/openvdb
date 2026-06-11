@@ -6,8 +6,8 @@ import valkyrie.utils.security.Codec;
 
 import java.util.List;
 
-import static valkyrie.utils.string.StaticLibrary.strip;
-import static valkyrie.utils.string.StaticLibrary.strnempty;
+import static valkyrie.utils.string.StrStaticImports.strip;
+import static valkyrie.utils.string.StrStaticImports.strnempty;
 
 /**
  * @author Luo Tiansheng

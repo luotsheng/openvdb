@@ -21,7 +21,7 @@ package valkyrie.utils;
 import valkyrie.utils.collection.Lists;
 import valkyrie.utils.collection.Maps;
 import valkyrie.utils.exception.AssertException;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 
 import java.util.Collection;
 import java.util.Map;
@@ -165,7 +165,7 @@ public class Assert {
      * @throws AssertException 如果字符串为 null 或空字符串
      */
     public static void notEmpty(String source, String fmt, Object... args) {
-        if (StaticLibrary.strempty(source))
+        if (StrStaticImports.strempty(source))
             throw new AssertException(fmt, args);
     }
 
@@ -317,7 +317,7 @@ public class Assert {
      * @throws AssertException 如果不存在文本就抛出异常
      */
     public static void hasText(String text, String message, Object... args) {
-        if (StaticLibrary.strempty(text))
+        if (StrStaticImports.strempty(text))
             throw new AssertException(message, args);
     }
 

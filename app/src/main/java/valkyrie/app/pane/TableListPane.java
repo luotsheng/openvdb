@@ -29,7 +29,7 @@ import valkyrie.driver.api.Table;
 import java.util.Date;
 import java.util.List;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * 表列表总览

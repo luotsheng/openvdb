@@ -24,7 +24,7 @@ import static valkyrie.utils.TypeConverter.atobool;
 import static valkyrie.utils.TypeConverter.atos;
 import static valkyrie.utils.collection.Lists.first;
 import static valkyrie.utils.collection.Lists.second;
-import static valkyrie.utils.string.StaticLibrary.*;
+import static valkyrie.utils.string.StrStaticImports.*;
 
 /**
  * @author Luo Tiansheng

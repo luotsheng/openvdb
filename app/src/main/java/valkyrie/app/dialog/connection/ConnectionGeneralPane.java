@@ -8,7 +8,7 @@ import valkyrie.app.model.ConnectionPropertyModel;
 import valkyrie.app.pane.PropertyGridPane;
 import valkyrie.driver.api.DbType;
 
-import static valkyrie.utils.string.StaticLibrary.strhas;
+import static valkyrie.utils.string.StrStaticImports.strhas;
 
 /**
  * @author Luo Tiansheng

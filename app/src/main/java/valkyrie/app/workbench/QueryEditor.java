@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static valkyrie.utils.string.StaticLibrary.strempty;
+import static valkyrie.utils.string.StrStaticImports.strempty;
 
 /**
  * SQL 脚本编辑器
