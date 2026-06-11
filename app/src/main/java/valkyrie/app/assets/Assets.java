@@ -3,6 +3,7 @@ package valkyrie.app.assets;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import valkyrie.app.Application;
 import valkyrie.utils.Captor;
 import valkyrie.utils.io.UFile;
 
@@ -22,7 +23,6 @@ import static valkyrie.utils.string.StrStaticImports.strrstr;
 public class Assets
 {
         private static final double DEFAULT_SIZE = 19;
-        private static final ClassLoader classLoader = Assets.class.getClassLoader();
         private static final Map<String, Image> originImages = new HashMap<>();
 
         static {
@@ -75,8 +75,7 @@ public class Assets
         private static void loadImages()
         {
                 Captor.call(() -> {
-                        URI uri = Objects.requireNonNull(classLoader.getResource("assets/icons"))
-                                .toURI();
+                        URI uri = Application.getResourceURI("assets/icons");
 
                         UFile iconsDir = new UFile(uri);
                         UFile[] files = iconsDir.listFiles();

@@ -11,11 +11,16 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.layout.MainLayout;
+import valkyrie.utils.Optional;
+import valkyrie.utils.io.UFile;
 import valkyrie.utils.system.OS;
 
 import java.awt.*;
+import java.net.URI;
 import java.net.URL;
 import java.util.Objects;
+
+import static valkyrie.utils.string.StrStaticImports.strrstr;
 
 /**
  * @author Luo Tiansheng
@@ -24,11 +29,18 @@ import java.util.Objects;
 public final class Application extends javafx.application.Application {
         private static final Logger LOG = LoggerFactory.getLogger(Application.class);
         public static final String TITLE = "VALKYRIE v1.6.0";
+        public static final ClassLoader classLoader = Application.class.getClassLoader();
 
         @SuppressWarnings({"unused", "FieldCanBeLocal"})
         private static WebView _WarmUp_WebView_ = null;
 
         public static Stage primaryStage;
+
+        @SuppressWarnings("DataFlowIssue")
+        public static URI getResourceURI(String name)
+        {
+                return Optional.ifError(() -> classLoader.getResource(name).toURI(), null);
+        }
 
         public static void copyToClipboard(String text) {
                 Platform.runLater(() -> {
@@ -76,18 +88,14 @@ public final class Application extends javafx.application.Application {
         }
 
         private void addStylesheets(Scene scene) {
-                String[] sheets = {
-                        "/css/vk-theme-root.css",
-                        "/css/vk-theme-menu.css",
-                        "/css/vk-list-cell.css",
-                        "/css/vk-table-view.css",
-                        "/css/vk-icon-button.css",
-                        "/css/vk-code-area.css",
-                        "/css/vk-status-bar.css",
-                        "/css/vk-tool-bar.css"
-                };
+                URI uri = getResourceURI("css");
+                UFile cssDir = new UFile(uri);
 
-                for (String path : sheets) {
+                for (UFile cssFile : Objects.requireNonNull(cssDir.listFiles())) {
+                        String path = cssFile.getPath();
+                        int rIndex = strrstr(path, "/", 2);
+                        path = path.substring(rIndex);
+
                         URL url = getClass().getResource(path);
                         if (url != null) {
                                 scene.getStylesheets().add(url.toExternalForm());
