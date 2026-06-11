@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
+import static valkyrie.utils.string.StaticLibrary.strrstr;
+
 /**
  * 资源管理
  *
@@ -88,24 +90,10 @@ public class Assets
                 });
         }
 
-        public static int lastIndexOf(String str, char ch, int n)
-        {
-                int pos = str.length();
-
-                for (int i = 0; i < n; i++) {
-                        pos = str.lastIndexOf(ch, pos - 1);
-
-                        if (pos < 0)
-                                return -1;
-                }
-
-                return pos;
-        }
-
         private static String toResourcePath(UFile file)
         {
                 String path = file.getPath();
-                return path.substring(lastIndexOf(path, '/', 3));
+                return path.substring(strrstr(path, "/", 3));
         }
 
         private static Image load(UFile file)
