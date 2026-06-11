@@ -209,7 +209,7 @@ public class PostgresqlDriver extends Driver
         {
                 Set<Suggestion> ret = Sets.newHashSet();
 
-                ret.addAll(DMSuggestions.VALUES);
+                ret.addAll(PostgresqlSuggestions.VALUES);
 
                 /* 表信息 */
                 List<Table> tables = getTables(session);
