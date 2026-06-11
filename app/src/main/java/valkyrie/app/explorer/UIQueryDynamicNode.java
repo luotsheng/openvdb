@@ -4,8 +4,9 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TreeItem;
 import valkyrie.app.Publisher;
-import valkyrie.app.dialog.queryFile.QueryFileOverwriteDialog;
+import valkyrie.app.dialog.ConfirmationDialog;
 import valkyrie.app.dialog.queryFile.QueryFileRenameDialog;
+import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.UpdateQueryFileEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;
@@ -67,14 +68,19 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 MenuItem newQueryEditorItem =  new MenuItem("新建查询");
                 newQueryEditorItem.setOnAction(e -> Publisher.openQueryEditor());
 
-                MenuItem renameItem = new MenuItem("重命名");
-                renameItem.setOnAction(e -> checkAndRename());
+                MenuItem renameQueryItem = new MenuItem("重命名");
+                renameQueryItem.setOnAction(e -> checkAndRename());
+
+                MenuItem deleteQueryItem = new MenuItem("删除脚本");
+                deleteQueryItem.setOnAction(e -> deleteQuery());
 
                 contextMenu.getItems().addAll(
                         openItem,
                         new SeparatorMenuItem(),
                         newQueryEditorItem,
-                        renameItem
+                        renameQueryItem,
+                        new SeparatorMenuItem(),
+                        deleteQueryItem
                 );
 
                 return contextMenu;
@@ -125,7 +131,7 @@ public class UIQueryDynamicNode extends UIDynamicNode
 
                 /* 当目标文件存在并且用户选择不覆盖时跳过 */
                 if (dstQueryFile.exists()) {
-                        if (!QueryFileOverwriteDialog.showDialog())
+                        if (!ConfirmationDialog.showDialog("已存在相同名称的查询脚本，是否覆盖？"))
                                 return;
                         dstQueryFile.forceDelete();
 
@@ -151,5 +157,16 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 setLabel(newFileName);
 
                 EventBus.publish(new UpdateQueryFileEvent(srcQueryFile, dstQueryFile, this));
+        }
+
+        private void deleteQuery()
+        {
+                QueryFile queryFile = getQueryFile();
+                if (ConfirmationDialog.showDialog("确认删除查询脚本：%s", queryFile.getName())) {
+                        queryFile.forceDelete();
+                        UIQueryContainerDynamicNode containerDynamicNode
+                                = (UIQueryContainerDynamicNode) getExplorerParent();;
+                        containerDynamicNode.refreshQueryNode();
+                }
         }
 }

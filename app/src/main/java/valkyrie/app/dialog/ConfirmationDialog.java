@@ -1,4 +1,4 @@
-package valkyrie.app.dialog.queryFile;
+package valkyrie.app.dialog;
 
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -12,21 +12,23 @@ import javafx.stage.Stage;
 import valkyrie.app.widgets.dialog.VkDialog;
 import valkyrie.app.widgets.dialog.VkDialogStages;
 
+import static valkyrie.utils.string.StrStaticImports.fmt;
+
 /**
  * @author Luo Tiansheng
  * @since 2026/6/7
  */
-public class QueryFileOverwriteDialog extends VkDialog
+public class ConfirmationDialog extends VkDialog
 {
         private final Stage stage;
 
         private boolean isOk = false;
 
-        public QueryFileOverwriteDialog(Stage stage)
+        public ConfirmationDialog(Stage stage, String label)
         {
                 this.stage = stage;
 
-                VBox topBox = new VBox(new Label("已存在相同名称的查询脚本，是否覆盖？"));
+                VBox topBox = new VBox(new Label(label));
                 topBox.setSpacing(10);
                 topBox.setPadding(new Insets(20, 10, 5, 10));
 
@@ -54,11 +56,11 @@ public class QueryFileOverwriteDialog extends VkDialog
                 stage.close();
         }
 
-        public static boolean showDialog()
+        public static boolean showDialog(String label, Object... args)
         {
                 Stage stage = VkDialogStages.create();
 
-                QueryFileOverwriteDialog dialog = new QueryFileOverwriteDialog(stage);
+                ConfirmationDialog dialog = new ConfirmationDialog(stage, fmt(label, args));
 
                 Scene scene = new Scene(dialog, 400, 150);
                 stage.setScene(scene);

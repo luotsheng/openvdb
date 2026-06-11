@@ -92,7 +92,7 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
                 EventBus.publish(new RefreshQueryNodeEvent(this));
         }
 
-        private void refreshQueryNode()
+        void refreshQueryNode()
         {
                 runPreservingSelection(this::reloadQueryNode);
         }
