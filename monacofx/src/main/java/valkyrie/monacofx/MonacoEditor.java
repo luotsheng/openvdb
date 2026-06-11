@@ -15,6 +15,8 @@ import javafx.scene.web.WebView;
 import javafx.util.Duration;
 import lombok.Setter;
 import netscape.javascript.JSObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
@@ -29,6 +31,8 @@ import static valkyrie.utils.TypeConverter.atos;
 @SuppressWarnings("ALL")
 public class MonacoEditor extends StackPane
 {
+        private static final Logger LOG = LoggerFactory.getLogger(MonacoEditor.class);
+
         private final WebView webView = new WebView();
         private final WebEngine engine = webView.getEngine();
         private final MonacoHook hook = new MonacoHook(this);
@@ -121,9 +125,9 @@ public class MonacoEditor extends StackPane
                 /**
                  * 打印日志
                  */
-                public void println(Object message)
+                public void info(Object message)
                 {
-                        System.out.println(message);
+                        LOG.info("Monaco editor: {}", message);
                 }
 
                 /**
@@ -153,7 +157,7 @@ public class MonacoEditor extends StackPane
                         engine.executeScript(
                                 """
                                    console.log = function(message) {
-                                       window.hook.println(message);
+                                       window.hook.info(message);
                                    };
                                    
                                    window.writeClipboard = function(message) {
