@@ -78,7 +78,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 TabPane tabPane = new TabPane();
 
                 Tab navTab = new Tab("连接管理");
-                navTab.setGraphic(Assets.use("nav0"));
+                navTab.setGraphic(Assets.use("navigation"));
                 navTab.setClosable(false);
 
                 tabPane.getTabs().addAll(navTab);

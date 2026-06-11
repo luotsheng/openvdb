@@ -3,7 +3,12 @@ package valkyrie.app.assets;
 import javafx.scene.control.ProgressIndicator;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import valkyrie.utils.Captor;
+import valkyrie.utils.io.UFile;
+import valkyrie.utils.reflect.UClass;
 
+import java.io.File;
+import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -17,7 +22,8 @@ import java.util.Objects;
 public class Assets
 {
         private static final double DEFAULT_SIZE = 19;
-        private static final Map<String, Image> IMAGES = new HashMap<>();
+        private static final ClassLoader classLoader = Assets.class.getClassLoader();
+        private static final Map<String, Image> originImages = new HashMap<>();
 
         static {
                 loadImages();
@@ -39,7 +45,7 @@ public class Assets
 
                 double size = parseScale(scale);
 
-                Image image = IMAGES.get(split[0]);
+                Image image = originImages.get(split[0]);
                 Image scaledImage = new Image(image.getUrl(), size, size, true, true);
                 imageView.setImage(scaledImage);
 
@@ -68,47 +74,44 @@ public class Assets
 
         private static void loadImages()
         {
-                IMAGES.put("chain", load("/assets/icons/chain.png"));
-                IMAGES.put("connect", load("/assets/icons/connect.png"));
-                IMAGES.put("database0", load("/assets/icons/database0.png"));
-                IMAGES.put("database1", load("/assets/icons/database1.png"));
-                IMAGES.put("query", load("/assets/icons/query.png"));
-                IMAGES.put("run", load("/assets/icons/run.png"));
-                IMAGES.put("sql", load("/assets/icons/sql.png"));
-                IMAGES.put("table", load("/assets/icons/table.png"));
-                IMAGES.put("modify", load("/assets/icons/modify.png"));
-                IMAGES.put("plus", load("/assets/icons/plus.png"));
-                IMAGES.put("minus", load("/assets/icons/minus.png"));
-                IMAGES.put("search", load("/assets/icons/search.png"));
-                IMAGES.put("stop", load("/assets/icons/stop.png"));
-                IMAGES.put("beautify", load("/assets/icons/beautify.png"));
-                IMAGES.put("check", load("/assets/icons/check.png"));
-                IMAGES.put("cross", load("/assets/icons/cross.png"));
-                IMAGES.put("reload", load("/assets/icons/reload.png"));
-                IMAGES.put("save", load("/assets/icons/save.png"));
-                IMAGES.put("struct0", load("/assets/icons/struct0.png"));
-                IMAGES.put("struct1", load("/assets/icons/struct1.png"));
-                IMAGES.put("index0", load("/assets/icons/index0.png"));
-                IMAGES.put("storage", load("/assets/icons/storage.png"));
-                IMAGES.put("warning", load("/assets/icons/warning.png"));
-                IMAGES.put("mysql", load("/assets/icons/mysql.png"));
-                IMAGES.put("dm2", load("/assets/icons/dm2.png"));
-                IMAGES.put("nav0", load("/assets/icons/navigation.png"));
-                IMAGES.put("home", load("/assets/icons/home.png"));
-                IMAGES.put("table2", load("/assets/icons/table2.png"));
-                IMAGES.put("export", load("/assets/icons/export.png"));
-                IMAGES.put("redis", load("/assets/icons/redis.png"));
-                IMAGES.put("code", load("/assets/icons/code.png"));
-                IMAGES.put("sqlite", load("/assets/icons/sqlite.png"));
-                IMAGES.put("postgresql", load("/assets/icons/postgresql.png"));
-                IMAGES.put("schema", load("/assets/icons/schema.png"));
-                IMAGES.put("list", load("/assets/icons/list.png"));
+                Captor.call(() -> {
+                        URI uri = Objects.requireNonNull(classLoader.getResource("assets/icons"))
+                                .toURI();
+
+                        UFile iconsDir = new UFile(uri);
+                        UFile[] files = iconsDir.listFiles();
+
+                        if (files != null) {
+                                for (UFile icon : files)
+                                        originImages.put(icon.getCleanName(), load(icon));
+                        }
+                });
         }
 
-        private static Image load(String path)
+        public static int lastIndexOf(String str, char ch, int n)
+        {
+                int pos = str.length();
+
+                for (int i = 0; i < n; i++) {
+                        pos = str.lastIndexOf(ch, pos - 1);
+
+                        if (pos < 0)
+                                return -1;
+                }
+
+                return pos;
+        }
+
+        private static String toResourcePath(UFile file)
+        {
+                String path = file.getPath();
+                return path.substring(lastIndexOf(path, '/', 3));
+        }
+
+        private static Image load(UFile file)
         {
                 return new Image(Objects.requireNonNull(Assets.class
-                                .getResource(path))
+                                .getResource(toResourcePath(file)))
                                 .toExternalForm());
         }
 }
