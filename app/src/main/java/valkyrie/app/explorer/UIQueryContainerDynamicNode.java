@@ -69,6 +69,13 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
         }
 
         @Override
+        public void onParentCloseEvent()
+        {
+                super.onParentCloseEvent();
+                EventBus.closeNavigationPane(this);
+        }
+
+        @Override
         public void onSelectedEvent(UIExplorerNode node)
         {
                 EventBus.openNavigationPane(this, new QueryListPane(this));
