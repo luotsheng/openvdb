@@ -71,7 +71,6 @@
         <dependency>
             <groupId>com.github.jsqlparser</groupId>
             <artifactId>jsqlparser</artifactId>
-            <version>${jsqlparser.version}</version>
         </dependency>
         <dependency>
             <groupId>org.fxmisc.richtext</groupId>

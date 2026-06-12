@@ -18,9 +18,11 @@
         <module>richtextfx</module>
         <module>monacofx</module>
         <module>blueprint</module>
+        <module>test</module>
     </modules>
 
     <properties>
+        <junit.version>4.13.2</junit.version>
         <richtextfx.version>v1.0.0-arch.1</richtextfx.version>
         <groovy.version>5.0.5</groovy.version>
         <revision>v1.0.0-arch.1</revision>
@@ -42,6 +44,17 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>com.github.jsqlparser</groupId>
+                <artifactId>jsqlparser</artifactId>
+                <version>${jsqlparser.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
+                <version>${junit.version}</version>
+                <scope>test</scope>
+            </dependency>
             <dependency>
                 <groupId>org.openjfx</groupId>
                 <artifactId>javafx-base</artifactId>
