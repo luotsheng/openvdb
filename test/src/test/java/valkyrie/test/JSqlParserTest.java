@@ -9,8 +9,12 @@ import org.junit.Test;
  * @author Luo Tiansheng
  * @since 2026/6/12
  */
+@SuppressWarnings("ALL")
 public class JSqlParserTest
 {
+        /**
+         * 如果列名包含关键字，会解析错误（JsqlParser issue: 2434）
+         */
         @Test
         public void parseDDLFromSQLite() throws JSQLParserException
         {
