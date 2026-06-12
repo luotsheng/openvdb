@@ -1,17 +1,19 @@
 package valkyrie.driver.utils;
 
+import net.sf.jsqlparser.JSQLParserException;
 import net.sf.jsqlparser.parser.CCJSqlParserUtil;
 import net.sf.jsqlparser.statement.create.table.ColumnDefinition;
 import net.sf.jsqlparser.statement.create.table.CreateTable;
 import valkyrie.driver.api.Column;
 import valkyrie.driver.api.Dialect;
+import valkyrie.driver.api.exception.ParserException;
+import valkyrie.utils.exception.Causes;
 import valkyrie.utils.exception.SystemRuntimeException;
 
 import java.util.List;
 import java.util.Map;
 
-import static valkyrie.utils.string.StrStaticImports.strieq;
-import static valkyrie.utils.string.StrStaticImports.uppercase;
+import static valkyrie.utils.string.StrStaticImports.*;
 
 /**
  * SQL 工具类
@@ -66,8 +68,8 @@ public class SQLUtils
                                                 isDefault = true;
                                 }
                         }
-                } catch (Exception e) {
-                        throw new SystemRuntimeException(e);
+                } catch (JSQLParserException e) {
+                        throw new ParserException(e);
                 }
         }
 
