@@ -10,7 +10,6 @@ import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.OpenTabEvent;
 import valkyrie.app.menu.ConnectionMenuBuilder;
 import valkyrie.app.widgets.VkContextMenu;
-import valkyrie.app.widgets.VkIconButton;
 import valkyrie.app.widgets.VkSeparatorItem;
 import valkyrie.app.widgets.VkToolButton;
 import valkyrie.blueprint.Blueprint;

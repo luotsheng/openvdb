@@ -27,7 +27,6 @@ import valkyrie.app.widgets.VkToolBar;
 import valkyrie.app.widgets.VkToolButton;
 import valkyrie.app.widgets.table.VkListTableView;
 import valkyrie.app.widgets.table.VkTableColumn;
-import valkyrie.app.widgets.table.VkDataTableView;
 import valkyrie.app.widgets.table.cell.VkDateTableCell;
 import valkyrie.core.model.QueryFile;
 

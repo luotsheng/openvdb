@@ -6,7 +6,6 @@ import javafx.scene.control.TreeItem;
 import valkyrie.app.Publisher;
 import valkyrie.app.dialog.ConfirmationDialog;
 import valkyrie.app.dialog.queryFile.QueryFileRenameDialog;
-import valkyrie.app.event.RefreshQueryNodeEvent;
 import valkyrie.app.event.UpdateQueryFileEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.workbench.CloseWorkbenchTabEvent;

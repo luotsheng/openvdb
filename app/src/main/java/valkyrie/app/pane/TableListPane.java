@@ -20,10 +20,12 @@ import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.event.workbench.OpenTableDataPaneEvent;
 import valkyrie.app.explorer.UITableContainerDynamicNode;
 import valkyrie.app.explorer.UITableDynamicNode;
-import valkyrie.app.widgets.*;
+import valkyrie.app.widgets.VkSeparatorItem;
+import valkyrie.app.widgets.VkTextField;
+import valkyrie.app.widgets.VkToolBar;
+import valkyrie.app.widgets.VkToolButton;
 import valkyrie.app.widgets.table.VkListTableView;
 import valkyrie.app.widgets.table.VkTableColumn;
-import valkyrie.app.widgets.table.VkDataTableView;
 import valkyrie.app.widgets.table.cell.VkDateTableCell;
 import valkyrie.driver.api.Table;
 
