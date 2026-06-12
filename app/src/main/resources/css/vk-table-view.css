@@ -20,6 +20,10 @@
     -fx-background-color: #C9E2FF;
 }
 
+.vk-data-table-view .table-cell .text-field:focused {
+    -fx-background-color: white;
+}
+
 .vk-data-table-view .table-row-cell:even {
     -fx-background-color: #ffffff;
 }
