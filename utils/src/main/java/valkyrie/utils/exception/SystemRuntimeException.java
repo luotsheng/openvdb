@@ -18,7 +18,7 @@ package valkyrie.utils.exception;
 |*                                                                                  *|
 \* -------------------------------------------------------------------------------- */
 
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 
 /**
  * `SystemRuntimeException` 是一个自定义的运行时异常类，用于在系统中抛出各种运行时异常。
@@ -79,7 +79,7 @@ public class SystemRuntimeException extends RuntimeException {
      * @param args 格式化参数。
      */
     public SystemRuntimeException(String fmt, Object... args) {
-        super(StaticLibrary.fmt(fmt, args));
+        super(StrStaticImports.fmt(fmt, args));
     }
 
     /**
@@ -90,7 +90,7 @@ public class SystemRuntimeException extends RuntimeException {
      * @param args 格式化参数。
      */
     public SystemRuntimeException(String fmt, Throwable e, Object... args) {
-        super(StaticLibrary.fmt(fmt, args), e);
+        super(StrStaticImports.fmt(fmt, args), e);
     }
 
 }

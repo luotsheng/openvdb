@@ -12,20 +12,11 @@ import javafx.util.Duration;
  */
 public class VkTableView<S> extends TableView<S>
 {
-        public static final String FULL_STYLE = "vk-table-view-full";
-
-        public static final String LITE_STYLE = "vk-table-view-lite";
-
         private TablePosition<?, ?> start;
 
         public VkTableView()
         {
-                this(FULL_STYLE);
-        }
-
-        public VkTableView(String style)
-        {
-                getStyleClass().add(style);
+                getStyleClass().add("vk-table-view");
                 setFixedCellSize(26);
         }
 

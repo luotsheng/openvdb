@@ -7,7 +7,7 @@ import valkyrie.driver.postgresql.PostgresqlDriver;
 import valkyrie.driver.redis.RedisDriver;
 import valkyrie.driver.sqlite.SQLiteDriver;
 
-import static valkyrie.utils.string.StaticLibrary.lowercase;
+import static valkyrie.utils.string.StrStaticImports.lowercase;
 
 /**
  * @author Luo Tiansheng

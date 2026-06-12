@@ -6,7 +6,7 @@ import valkyrie.app.assets.Assets;
 import valkyrie.app.explorer.UITableDynamicNode;
 import valkyrie.app.pane.TableDesignerPane;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * 打开设计表面板事件

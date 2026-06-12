@@ -1,0 +1,17 @@
+/**
+ * tree-view
+ */
+.tree-view {
+    -fx-padding: 0;
+}
+
+.tree-cell {
+    -fx-padding: 6 4;
+    -fx-background-color: transparent;
+}
+
+.tree-cell:filled:selected {
+    -fx-background-color: #C9E2FF;
+    -fx-background-radius: 8;
+    -fx-background-insets: 2 6;
+}

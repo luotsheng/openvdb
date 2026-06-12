@@ -2,7 +2,7 @@ package valkyrie.utils.security.codec;
 
 import valkyrie.utils.Captor;
 import valkyrie.utils.security.URL;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -26,13 +26,13 @@ public class URLCodec implements URL {
         try {
             String temporary = "";
             if (source.startsWith(CRYPT_PREFIX_HTTPS)) {
-                source = StaticLibrary.strcut(source, StaticLibrary.strlen(CRYPT_PREFIX_HTTPS), 0);
+                source = StrStaticImports.strcut(source, StrStaticImports.strlen(CRYPT_PREFIX_HTTPS), 0);
                 temporary = CRYPT_PREFIX_HTTPS;
             } else if (source.startsWith(CRYPT_PREFIX_HTTP)) {
-                source = StaticLibrary.strcut(source, StaticLibrary.strlen(CRYPT_PREFIX_HTTP), 0);
+                source = StrStaticImports.strcut(source, StrStaticImports.strlen(CRYPT_PREFIX_HTTP), 0);
                 temporary = CRYPT_PREFIX_HTTP;
             }
-            return StaticLibrary.fmt("%s%s", temporary, URLEncoder.encode(source, enc));
+            return StrStaticImports.fmt("%s%s", temporary, URLEncoder.encode(source, enc));
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }

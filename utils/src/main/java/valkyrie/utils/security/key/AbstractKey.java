@@ -22,7 +22,7 @@ package valkyrie.utils.security.key;
 
 import valkyrie.utils.TypeConverter;
 import valkyrie.utils.security.Codec;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 
 import java.security.Key;
 
@@ -48,10 +48,10 @@ public abstract class AbstractKey {
     public abstract String toPEMFormat();
 
     public static byte[] decodePEMFormat(String pem) {
-        String[] lines = StaticLibrary.strtok(pem, "\n");
+        String[] lines = StrStaticImports.strtok(pem, "\n");
         StringBuilder remakeBuilder = new StringBuilder();
         for (int i = 1; i < (lines.length - 1); i++) {
-            remakeBuilder.append(StaticLibrary.strcut(lines[i], 0, 0));
+            remakeBuilder.append(StrStaticImports.strcut(lines[i], 0, 0));
         }
         return Codec.BASE64.decodeBytes(TypeConverter.atos(remakeBuilder));
     }
@@ -60,7 +60,7 @@ public abstract class AbstractKey {
         StringBuilder secretBuilder = new StringBuilder();
 
         String base64Encode = Codec.BASE64.encode(encoded);
-        int encodeLength = StaticLibrary.strlen(base64Encode);
+        int encodeLength = StrStaticImports.strlen(base64Encode);
         int len = 64;
         int loopCount = encodeLength / len;
         int copyLength = 0;
@@ -69,13 +69,13 @@ public abstract class AbstractKey {
             int off = i * len;
             if (off + len > encodeLength)
                 len = Math.abs((off + len) - encodeLength);
-            secretBuilder.append(StaticLibrary.strcut(base64Encode, off, len)).append("\n");
+            secretBuilder.append(StrStaticImports.strcut(base64Encode, off, len)).append("\n");
             copyLength += len;
         }
 
         // 检查是否还有剩余内容
         if (copyLength < encodeLength)
-            secretBuilder.append(StaticLibrary.strcut(base64Encode, copyLength, 0)).append("\n");
+            secretBuilder.append(StrStaticImports.strcut(base64Encode, copyLength, 0)).append("\n");
 
         secretBuilder.delete(secretBuilder.length() - 1, secretBuilder.length());
         return "-----BEGIN " + keyType + "-----\n" + TypeConverter.atos(secretBuilder) + "\n-----END " + keyType + "-----";

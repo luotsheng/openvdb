@@ -22,8 +22,8 @@ import valkyrie.utils.time.Chrono;
 
 import java.util.Map;
 
-import static valkyrie.utils.string.StaticLibrary.strihas;
-import static valkyrie.utils.string.StaticLibrary.strrexp;
+import static valkyrie.utils.string.StrStaticImports.strihas;
+import static valkyrie.utils.string.StrStaticImports.strrexp;
 
 /**
  * `SystemUtils` 是一个类，用于管理和操作操作系统环境变量。

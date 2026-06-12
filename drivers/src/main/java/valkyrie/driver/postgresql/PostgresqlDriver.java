@@ -7,7 +7,6 @@ import valkyrie.driver.api.exception.DriverException;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.driver.api.node.DBNodeKind;
 import valkyrie.driver.api.node.DBNodePath;
-import valkyrie.driver.dm.DMSuggestions;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.driver.utils.JdbcUtils;
 import valkyrie.utils.bean.BeanUtils;
@@ -23,7 +22,7 @@ import java.util.stream.Collectors;
 
 import static valkyrie.utils.collection.Lists.first;
 import static valkyrie.utils.collection.Lists.second;
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * Postgresql 驱动层实现
@@ -209,7 +208,7 @@ public class PostgresqlDriver extends Driver
         {
                 Set<Suggestion> ret = Sets.newHashSet();
 
-                ret.addAll(DMSuggestions.VALUES);
+                ret.addAll(PostgresqlSuggestions.VALUES);
 
                 /* 表信息 */
                 List<Table> tables = getTables(session);

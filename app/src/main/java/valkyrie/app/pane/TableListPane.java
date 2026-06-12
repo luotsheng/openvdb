@@ -20,16 +20,19 @@ import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.event.workbench.OpenTableDataPaneEvent;
 import valkyrie.app.explorer.UITableContainerDynamicNode;
 import valkyrie.app.explorer.UITableDynamicNode;
-import valkyrie.app.widgets.*;
+import valkyrie.app.widgets.VkSeparatorItem;
+import valkyrie.app.widgets.VkTextField;
+import valkyrie.app.widgets.VkToolBar;
+import valkyrie.app.widgets.VkToolButton;
+import valkyrie.app.widgets.table.VkListTableView;
 import valkyrie.app.widgets.table.VkTableColumn;
-import valkyrie.app.widgets.table.VkTableView;
 import valkyrie.app.widgets.table.cell.VkDateTableCell;
 import valkyrie.driver.api.Table;
 
 import java.util.Date;
 import java.util.List;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * 表列表总览
@@ -61,7 +64,7 @@ public class TableListPane extends BorderPane implements EventListener
         {
                 this.tableContainerDynamicNode = tableContainerDynamicNode;
 
-                tableView = new VkTableView<>(VkTableView.LITE_STYLE);
+                tableView = new VkListTableView<>();
                 tableView.setItems(observable);
                 toolBar = new VkToolBar();
 

@@ -23,7 +23,7 @@ import valkyrie.utils.exception.SystemRuntimeException;
 import java.awt.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * Dialog

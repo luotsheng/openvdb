@@ -1,6 +1,5 @@
 package valkyrie.app.explorer;
 
-import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import valkyrie.driver.api.Driver;

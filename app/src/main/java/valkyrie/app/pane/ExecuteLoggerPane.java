@@ -1,6 +1,5 @@
 package valkyrie.app.pane;
 
-import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import org.fxmisc.flowless.VirtualizedScrollPane;
 import org.fxmisc.richtext.CodeArea;

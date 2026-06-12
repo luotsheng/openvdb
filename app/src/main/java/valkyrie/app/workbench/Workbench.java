@@ -5,10 +5,8 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Tab;
 import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
-import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
@@ -25,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 import static valkyrie.utils.collection.Lists.first;
-import static valkyrie.utils.string.StaticLibrary.streq;
+import static valkyrie.utils.string.StrStaticImports.streq;
 
 /**
  * @author Luo Tiansheng
@@ -35,7 +33,7 @@ import static valkyrie.utils.string.StaticLibrary.streq;
 public class Workbench extends VBox implements EventListener
 {
         private final VkTabPane tabPane = new VkTabPane();
-        private final Tab navigationTab = new Tab("视图");
+        private final Tab navigationTab = new Tab("列表");
         private final Map<Object, List<Tab>> tabPaneManager = Maps.newHashMap();
 
         private final VkContextMenu tabPaneContextMenu = new VkContextMenu();

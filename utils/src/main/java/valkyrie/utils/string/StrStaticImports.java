@@ -32,7 +32,7 @@ import java.util.regex.Pattern;
 import static valkyrie.utils.TypeConverter.atos;
 
 /**
- * `StringUtils` 是一个工具类，提供了一系列针对字符串的操作方法。这些方法用于处理
+ * `STRSL(String static library)` 是一个工具类，提供了一系列针对字符串的操作方法。这些方法用于处理
  * 字符串的常见操作，如获取长度、大小写转换、字符串比较、格式化、查找、替换和分割等。
  *
  * <p>该类中的所有方法都是静态的，用户可以直接调用而无需实例化。其设计目的是为了提高
@@ -69,9 +69,9 @@ import static valkyrie.utils.TypeConverter.atos;
  * @author Luo Tiansheng
  * @since 1.0
  */
-public class StaticLibrary
+@SuppressWarnings("SpellCheckingInspection")
+public class StrStaticImports
 {
-
     private static final Map<String, Pattern> compiled = new WeakHashMap<>();
 
     private static final Map<String, PathMatcher> pathMatcherCache = new WeakHashMap<>();
@@ -416,6 +416,39 @@ public class StaticLibrary
     }
 
     /**
+     * #brief: 查找字符串中倒数第 N 次出现的子串位置
+     *
+     * <p>从字符串末尾开始反向查找指定子串，返回倒数第 {@code n} 次出现的位置索引。
+     * 如果子串不存在或出现次数不足 {@code n} 次，则返回 {@code -1}。
+     *
+     * <pre>
+     * strrstr("/a/b/c/d", "/", 1) = 6
+     * strrstr("/a/b/c/d", "/", 2) = 4
+     * strrstr("/a/b/c/d", "/", 3) = 2
+     * strrstr("/a/b/c/d", "/", 4) = 0
+     * strrstr("/a/b/c/d", "/", 5) = -1
+     * </pre>
+     *
+     * @param str 待搜索的字符串
+     * @param substr 要查找的子串
+     * @param n 倒数第几次出现，从 1 开始
+     * @return 倒数第 {@code n} 次出现的索引位置，不存在返回 {@code -1}
+     */
+    public static int strrstr(String str, String substr, int n)
+    {
+        int pos = str.length();
+
+        for (int i = 0; i < n; i++) {
+            pos = str.lastIndexOf(substr, pos - 1);
+
+            if (pos < 0)
+                return -1;
+        }
+
+        return pos;
+    }
+
+    /**
      * 统计字符串中的行数。
      *
      * <p>此方法通过遍历字符串并统计换行符（'\n'）的数量来计算文本的行数。
@@ -430,7 +463,7 @@ public class StaticLibrary
      * @param wstr 要处理的字符串对象
      * @return 字符串中包含的行数（即 '\n' 的数量）
      */
-    public static int strnlines(Object wstr)
+    public static int strlines(Object wstr)
     {
         String text = atos(wstr);
 
@@ -455,7 +488,7 @@ public class StaticLibrary
      * @param wstr 要处理的字符串对象
      * @return 所有行中最长一行的字符数量
      */
-    public static int strmaxwidth(Object wstr)
+    public static int strwidth(Object wstr)
     {
         String text = atos(wstr);
 
@@ -542,7 +575,7 @@ public class StaticLibrary
      * @return 如果字符串匹配则返回 true；否则返回 false
      */
     public static boolean strmatch(Object obj, String regexp) {
-        return strxmatch(obj, regexp, false);
+        return strmatchepc(obj, regexp, false);
     }
 
     /**
@@ -556,7 +589,7 @@ public class StaticLibrary
      * @return 如果字符串匹配则返回 true；否则返回 false
      */
     public static boolean strxmatch(Object obj, String regexp) {
-        return strxmatch(obj, regexp, true);
+        return strmatchepc(obj, regexp, true);
     }
 
     /**
@@ -583,7 +616,7 @@ public class StaticLibrary
      * @param enablePatternCache 是否启用正则表达式缓存
      * @return 如果字符串匹配则返回 true；否则返回 false
      */
-    private static boolean strxmatch(Object obj, String regexp, boolean enablePatternCache) {
+    private static boolean strmatchepc(Object obj, String regexp, boolean enablePatternCache) {
         Pattern pattern = enablePatternCache ? _patternCacheComputeIfAbsent(regexp) : Pattern.compile(regexp);
         assert pattern != null;
         return pattern.matcher(TypeConverter.atos(obj)).find();
@@ -614,20 +647,6 @@ public class StaticLibrary
     }
 
     /**
-     * 去除字符串前后的空白字符。
-     *
-     * <p>此方法用于清理输入字符串的前后空白，包括空格、制表符等。
-     * 适用于用户输入的规范化处理。
-     *
-     * @param wstr 要处理的字符串对象
-     * @param iface 后处理操作
-     * @return 去除前后空白后的字符串
-     */
-    public static String strip(Object wstr, StringInterface... iface) {
-        return StringInterface.pipelineExecutor(TypeConverter.atos(wstr).trim(), iface);
-    }
-
-    /**
      * 移除字符串中的换行符。
      *
      * <p>此方法用于将输入字符串中的所有换行符（包括回车和换行）替换为空字符串。
@@ -636,9 +655,8 @@ public class StaticLibrary
      * @param wstr 要处理的字符串对象
      * @return 移除换行符后的字符串
      */
-    @Deprecated
-    public static String strxip(Object wstr) {
-        return TypeConverter.atos(wstr).replaceAll("[\r\n]+", "");
+    public static String strip(Object wstr) {
+        return TypeConverter.atos(wstr).trim().replaceAll("[\r\n]+", "");
     }
 
     /**

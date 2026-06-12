@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
-import valkyrie.app.dialog.queryFile.QueryFileOverwriteDialog;
+import valkyrie.app.dialog.ConfirmationDialog;
 import valkyrie.app.dialog.queryFile.QueryFileSaveDialog;
 import valkyrie.app.event.UpdateQueryFileEvent;
 import valkyrie.app.event.bus.Event;
@@ -25,7 +25,10 @@ import valkyrie.app.pane.ExecuteLoggerPane;
 import valkyrie.app.pane.QueryResultDataPane;
 import valkyrie.app.utils.TabIdFactory;
 import valkyrie.app.utils.Threads;
-import valkyrie.app.widgets.*;
+import valkyrie.app.widgets.VkContextMenu;
+import valkyrie.app.widgets.VkSeparatorItem;
+import valkyrie.app.widgets.VkToolBar;
+import valkyrie.app.widgets.VkToolButton;
 import valkyrie.core.model.QueryFile;
 import valkyrie.core.repository.QueryFileRepository;
 import valkyrie.driver.api.Driver;
@@ -43,7 +46,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static valkyrie.utils.string.StaticLibrary.strempty;
+import static valkyrie.utils.string.StrStaticImports.strempty;
 
 /**
  * SQL 脚本编辑器
@@ -451,7 +454,7 @@ public class QueryEditor extends SplitPane implements EventListener
                         return;
                 }
 
-                if (QueryFileOverwriteDialog.showDialog()) {
+                if (ConfirmationDialog.showDialog("已存在相同名称的查询脚本，是否覆盖？")) {
                         tmpQueryFile.forceDelete();
                         writeNewQueryFile(tmpQueryFile, pathSelector, content);
                 }

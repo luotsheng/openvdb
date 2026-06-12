@@ -15,7 +15,6 @@ import javafx.scene.layout.Region;
 import javafx.util.Duration;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.event.RefreshQueryNodeEvent;
-import valkyrie.app.event.RefreshTableNodeEvent;
 import valkyrie.app.event.UpdateQueryFileEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
@@ -26,15 +25,15 @@ import valkyrie.app.explorer.UIQueryDynamicNode;
 import valkyrie.app.widgets.VkTextField;
 import valkyrie.app.widgets.VkToolBar;
 import valkyrie.app.widgets.VkToolButton;
+import valkyrie.app.widgets.table.VkListTableView;
 import valkyrie.app.widgets.table.VkTableColumn;
-import valkyrie.app.widgets.table.VkTableView;
 import valkyrie.app.widgets.table.cell.VkDateTableCell;
 import valkyrie.core.model.QueryFile;
 
 import java.util.Date;
 import java.util.List;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * @author Luo Tiansheng
@@ -64,7 +63,7 @@ public class QueryListPane extends BorderPane implements EventListener
         {
                 this.queryContainerDynamicNode = queryContainerDynamicNode;
 
-                tableView = new VkTableView<>(VkTableView.LITE_STYLE);
+                tableView = new VkListTableView<>();
                 tableView.setItems(observable);
                 toolBar = new VkToolBar();
 

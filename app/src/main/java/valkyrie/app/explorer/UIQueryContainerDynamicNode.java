@@ -3,29 +3,19 @@ package valkyrie.app.explorer;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
-import javafx.scene.control.TreeItem;
 import valkyrie.app.Publisher;
 import valkyrie.app.event.RefreshQueryNodeEvent;
-import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
-import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.pane.QueryListPane;
-import valkyrie.app.pane.TableListPane;
 import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.core.model.QueryFile;
 import valkyrie.core.repository.QueryFileRepository;
-import valkyrie.driver.api.Table;
 import valkyrie.driver.api.node.DBNode;
 import valkyrie.utils.collection.Lists;
 
 import java.io.File;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static valkyrie.utils.string.StaticLibrary.streq;
 
 /**
  * QueryContainer 容器较为特殊，该节点不通过驱动提供的能力
@@ -79,6 +69,13 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
         }
 
         @Override
+        public void onParentCloseEvent()
+        {
+                super.onParentCloseEvent();
+                EventBus.closeNavigationPane(this);
+        }
+
+        @Override
         public void onSelectedEvent(UIExplorerNode node)
         {
                 EventBus.openNavigationPane(this, new QueryListPane(this));
@@ -102,7 +99,7 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
                 EventBus.publish(new RefreshQueryNodeEvent(this));
         }
 
-        private void refreshQueryNode()
+        void refreshQueryNode()
         {
                 runPreservingSelection(this::reloadQueryNode);
         }

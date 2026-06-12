@@ -28,7 +28,7 @@ import valkyrie.core.repository.ConnectionRepository;
 import java.text.Collator;
 import java.util.*;
 
-import static valkyrie.utils.string.StaticLibrary.strimatch;
+import static valkyrie.utils.string.StrStaticImports.strimatch;
 
 /**
  * 导航面板
@@ -78,7 +78,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 TabPane tabPane = new TabPane();
 
                 Tab navTab = new Tab("连接管理");
-                navTab.setGraphic(Assets.use("nav0"));
+                navTab.setGraphic(Assets.use("navigation"));
                 navTab.setClosable(false);
 
                 tabPane.getTabs().addAll(navTab);

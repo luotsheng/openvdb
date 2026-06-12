@@ -18,7 +18,7 @@ import java.util.List;
 import java.util.Set;
 
 import static valkyrie.utils.TypeConverter.atos;
-import static valkyrie.utils.string.StaticLibrary.strip;
+import static valkyrie.utils.string.StrStaticImports.strip;
 
 /**
  * Redis 驱动层实现

@@ -1,6 +1,5 @@
 package valkyrie.app.menu;
 
-import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import valkyrie.app.assets.Assets;

@@ -4,7 +4,7 @@ import lombok.Getter;
 import lombok.Setter;
 import valkyrie.utils.security.Codec;
 
-import static valkyrie.utils.string.StaticLibrary.strip;
+import static valkyrie.utils.string.StrStaticImports.strip;
 
 /**
  * 数据库列元数据实体。

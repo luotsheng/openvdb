@@ -1,6 +1,6 @@
 package valkyrie.app.widgets;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * 图标按钮

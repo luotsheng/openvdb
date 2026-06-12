@@ -22,7 +22,7 @@ package valkyrie.utils;
 
 import valkyrie.utils.iface.ActionFunction;
 import valkyrie.utils.iface.CallableFunction;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 
 /**
  * @author Luo Tiansheng
@@ -67,7 +67,7 @@ public class Optional {
      * @return 如果 {@code value} 为 null，则返回 {@code orBlank}，否则返回 {@code value}
      */
     public static String ifBlank(String value, String orBlank) {
-        return StaticLibrary.strempty(value) ? orBlank : value;
+        return StrStaticImports.strempty(value) ? orBlank : value;
     }
 
     /**

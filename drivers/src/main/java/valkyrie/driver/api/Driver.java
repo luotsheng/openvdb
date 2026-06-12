@@ -9,7 +9,7 @@ import valkyrie.driver.api.sql.SQLExecutor;
 import valkyrie.driver.api.sql.SQLParsedStatement;
 import valkyrie.driver.suggestion.Suggestion;
 import valkyrie.driver.utils.ResultSets;
-import valkyrie.driver.utils.SQLUtils;
+import valkyrie.driver.utils.SQLParser;
 import valkyrie.utils.Captor;
 import valkyrie.utils.Optional;
 import valkyrie.utils.collection.Lists;
@@ -19,7 +19,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static valkyrie.utils.string.StaticLibrary.fmt;
+import static valkyrie.utils.string.StrStaticImports.fmt;
 
 /**
  * JDBC 驱动抽象层。
@@ -386,7 +386,7 @@ public abstract class Driver implements SQLExecutor
 
                         String createTableDDL = dialect.normalize(showCreateTable(session, table));
 
-                        SQLUtils.parseColumnDefSpec(createTableDDL, dialect, columnMap);
+                        SQLParser.parseColumnDefSpec(createTableDDL, dialect, columnMap);
 
                         /* 防篡改码生成 */
                         columns.forEach(Column::finalIntegrityCode);

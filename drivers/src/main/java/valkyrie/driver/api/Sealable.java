@@ -1,6 +1,6 @@
 package valkyrie.driver.api;
 
-import static valkyrie.utils.string.StaticLibrary.streq;
+import static valkyrie.utils.string.StrStaticImports.streq;
 
 /**
  * 可封存完整性码的抽象基类。

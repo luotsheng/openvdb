@@ -23,14 +23,16 @@ import valkyrie.utils.exception.UnsupportedOperationException;
 import valkyrie.utils.iface.TypeMapper;
 import valkyrie.utils.io.ByteBuffer;
 import valkyrie.utils.reflect.UClass;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 import valkyrie.utils.string.StringInterface;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
+import static valkyrie.utils.string.StrStaticImports.strxmatch;
+
 /**
- * Transformer 类提供了多种类型转换和比较功能。
+ * TypeConverter 类提供了多种类型转换和比较功能。
  *
  * <p>该类支持将对象转换为基本数据类型，如 int、long、boolean 和 String。
  * 通过自动识别对象类型，该类简化了数据转换过程，确保类型安全。
@@ -392,8 +394,8 @@ public class TypeConverter
             return (Boolean) obj;
         if (obj instanceof Number)
             return ((Number) obj).intValue() > 0;
-        String bool = atos(obj, StaticLibrary::uppercase);
-        return StaticLibrary.strxmatch(bool, "TRUE|ON|Y|YES");
+        String bool = atos(obj, StrStaticImports::uppercase);
+        return strxmatch(bool, "TRUE|ON|Y|YES");
     }
 
     /**

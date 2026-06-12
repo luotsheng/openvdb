@@ -2,7 +2,7 @@ package valkyrie.utils.security.codec;
 
 import valkyrie.utils.exception.SystemRuntimeException;
 import valkyrie.utils.security.MD5;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -76,7 +76,7 @@ public class MD5Codec implements MD5 {
             }
             /* 判断是获取 16 位的 md5 字符串还是 16 位的 */
             int flag = n > 16 ? 0 : 8;
-            return StaticLibrary.strcut(chars, flag, (n + flag));
+            return StrStaticImports.strcut(chars, flag, (n + flag));
         } catch (NoSuchAlgorithmException e) {
             throw new SystemRuntimeException(e);
         }

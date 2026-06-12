@@ -21,7 +21,7 @@ package valkyrie.utils.io;
 /* Creates on 2023/5/8. */
 
 import valkyrie.utils.ArrayUtils;
-import valkyrie.utils.string.StaticLibrary;
+import valkyrie.utils.string.StrStaticImports;
 
 /**
  * ByteBuffer 默认抽象实现类
@@ -248,6 +248,6 @@ public abstract class AbstractByteBuffer extends ByteBuffer {
 
     @Override
     public String toString() {
-        return StaticLibrary.fmt("%s [size=%s, cap=%s, index=%s]", super.toString(), size(), capacity(), index());
+        return StrStaticImports.fmt("%s [size=%s, cap=%s, index=%s]", super.toString(), size(), capacity(), index());
     }
 }
