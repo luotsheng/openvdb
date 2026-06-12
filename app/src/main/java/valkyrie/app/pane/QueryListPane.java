@@ -25,8 +25,9 @@ import valkyrie.app.explorer.UIQueryDynamicNode;
 import valkyrie.app.widgets.VkTextField;
 import valkyrie.app.widgets.VkToolBar;
 import valkyrie.app.widgets.VkToolButton;
+import valkyrie.app.widgets.table.VkListTableView;
 import valkyrie.app.widgets.table.VkTableColumn;
-import valkyrie.app.widgets.table.VkTableView;
+import valkyrie.app.widgets.table.VkDataTableView;
 import valkyrie.app.widgets.table.cell.VkDateTableCell;
 import valkyrie.core.model.QueryFile;
 
@@ -63,7 +64,7 @@ public class QueryListPane extends BorderPane implements EventListener
         {
                 this.queryContainerDynamicNode = queryContainerDynamicNode;
 
-                tableView = new VkTableView<>(VkTableView.LITE_STYLE);
+                tableView = new VkListTableView<>();
                 tableView.setItems(observable);
                 toolBar = new VkToolBar();
 

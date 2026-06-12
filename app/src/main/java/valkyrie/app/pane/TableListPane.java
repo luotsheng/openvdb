@@ -21,8 +21,9 @@ import valkyrie.app.event.workbench.OpenTableDataPaneEvent;
 import valkyrie.app.explorer.UITableContainerDynamicNode;
 import valkyrie.app.explorer.UITableDynamicNode;
 import valkyrie.app.widgets.*;
+import valkyrie.app.widgets.table.VkListTableView;
 import valkyrie.app.widgets.table.VkTableColumn;
-import valkyrie.app.widgets.table.VkTableView;
+import valkyrie.app.widgets.table.VkDataTableView;
 import valkyrie.app.widgets.table.cell.VkDateTableCell;
 import valkyrie.driver.api.Table;
 
@@ -61,7 +62,7 @@ public class TableListPane extends BorderPane implements EventListener
         {
                 this.tableContainerDynamicNode = tableContainerDynamicNode;
 
-                tableView = new VkTableView<>(VkTableView.LITE_STYLE);
+                tableView = new VkListTableView<>();
                 tableView.setItems(observable);
                 toolBar = new VkToolBar();
 

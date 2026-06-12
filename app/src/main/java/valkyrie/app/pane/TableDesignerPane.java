@@ -16,6 +16,7 @@ import valkyrie.app.widgets.VkToolBar;
 import valkyrie.app.widgets.VkToolButton;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.app.widgets.table.VkTableColumnFactory;
+import valkyrie.app.widgets.table.VkDataTableView;
 import valkyrie.app.widgets.table.VkTableView;
 import valkyrie.app.widgets.table.cell.VkCheckBoxTableCell;
 import valkyrie.app.widgets.table.cell.VkComboBoxTableCell;
@@ -37,8 +38,8 @@ public class TableDesignerPane extends BorderPane
         private final Session session;
         private final Driver driver;
         private final Table table;
-        private final VkTableView<Column> structureView = new VkTableView<>();
-        private final VkTableView<Index> indexView = new VkTableView<>();
+        private final VkTableView<Column> structureView = new VkDataTableView<>();
+        private final VkTableView<Index> indexView = new VkDataTableView<>();
         private final VkToolBar toolBar = new VkToolBar();
         private final TabPane tabPane = new TabPane();
         private final Tab structureTab = new Tab("表结构");

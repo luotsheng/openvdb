@@ -1,40 +1,60 @@
-.vk-table-view-full .table-cell:filled {
-    -fx-border-color: transparent #e0e0e0 transparent transparent;
-    -fx-border-width: 0 1 0 0;
+/**
+ * table-view
+ */
+.table-view {
+    -fx-padding: 0;
 }
 
-.vk-table-view-full .column-header:filled {
-    -fx-border-color: transparent #e0e0e0 transparent transparent;
-    -fx-border-width: 0 1 0 0;
+.table-cell {
+    -fx-padding: 3 4 3 4;
 }
 
-.vk-table-view-full .table-row-cell:filled {
-    -fx-border-color: transparent transparent #e0e0e0 transparent;
-    -fx-border-width: 0 0 1 0;
+.table-row-cell {
+    -fx-cell-size: 20px;
 }
 
-.vk-table-view-full .table-row-cell:filled:odd {
-    -fx-background-color: white;
+/**
+ * vk-data-table-view
+ */
+.vk-data-table-view .table-cell:selected {
+    -fx-background-color: #C9E2FF;
 }
 
-.vk-table-view-full .table-row-cell:filled:even {
-    -fx-background-color: #f5f5f5;
+.vk-data-table-view .table-row-cell:even {
+    -fx-background-color: #ffffff;
 }
 
-.vk-table-view-full .table-row-cell:selected .table-cell {
+.vk-data-table-view .table-row-cell:odd {
+    -fx-background-color: #e8f4f8;
+}
+
+.vk-data-table-view .table-cell {
+    -fx-border-color: transparent #e0e0e0 #e0e0e0 transparent;
+    -fx-border-width: 0 1 1 0;
+}
+
+.vk-data-table-view .table-cell {
+    -fx-border-color: transparent #e0e0e0 #e0e0e0 transparent;
+    -fx-border-width: 0 1 1 0;
+}
+
+.vk-data-table-view .column-header {
+    -fx-border-color: transparent #e0e0e0 #e0e0e0 transparent;
+    -fx-border-width: 0 1 1 0;
+}
+
+/**
+ * vk-list-table-view
+ */
+.vk-list-table-view .table-row-cell:selected .table-cell {
     -fx-background-color: #007AFF;
     -fx-text-fill: white;
 }
 
-.vk-table-view-lite .table-row-cell:selected .table-cell {
-    -fx-background-color: #007AFF;
-    -fx-text-fill: white;
-}
-
-.vk-table-view-lite .table-row-cell:odd {
+.vk-list-table-view .table-row-cell:odd {
     -fx-background-color: white;
 }
 
-.vk-table-view-lite .table-row-cell:even {
+.vk-list-table-view .table-row-cell:even {
     -fx-background-color: white;
 }

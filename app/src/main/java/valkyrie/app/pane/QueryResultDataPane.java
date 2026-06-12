@@ -18,6 +18,7 @@ import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.widgets.*;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
+import valkyrie.app.widgets.table.VkDataTableView;
 import valkyrie.app.widgets.table.VkTableView;
 import valkyrie.app.widgets.table.cell.VkTextFieldTableCell;
 import valkyrie.app.workbench.ModifyCell;
@@ -46,7 +47,7 @@ public class QueryResultDataPane extends BorderPane
 
         private final TabPane tabPane = new TabPane();
         private final Tab viewTab = new Tab();
-        private final VkTableView<GridRow> tableView = new VkTableView<>();
+        private final VkTableView<GridRow> tableView = new VkDataTableView<>();
         private final VkToolBar toolBar = new VkToolBar();
         private final VBox vContainer;
         private final Tab attachedToTab;
