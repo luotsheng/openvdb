@@ -7,8 +7,6 @@ import net.sf.jsqlparser.statement.create.table.CreateTable;
 import valkyrie.driver.api.Column;
 import valkyrie.driver.api.Dialect;
 import valkyrie.driver.api.exception.ParserException;
-import valkyrie.utils.exception.Causes;
-import valkyrie.utils.exception.SystemRuntimeException;
 
 import java.util.List;
 import java.util.Map;
@@ -21,7 +19,7 @@ import static valkyrie.utils.string.StrStaticImports.*;
  * @author Luo Tiansheng
  * @since 2026/4/7
  */
-public class SQLUtils
+public class SQLParser
 {
         /**
          * 从 DDL 中解析字段权威类型和默认值
