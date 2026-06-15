@@ -6,7 +6,7 @@ import lombok.Getter;
  * @author Luo Tiansheng
  * @since 2026/6/5
  */
-@SuppressWarnings("LombokGetterMayBeUsed")
+@Getter
 public enum DBNodeKind
 {
         CATALOG("database1"),
@@ -15,7 +15,7 @@ public enum DBNodeKind
         QUERY("sql"),
         ;
 
-        private final @Getter String icon;
+        private final String icon;
 
         DBNodeKind(String icon) { this.icon = icon; }
 
