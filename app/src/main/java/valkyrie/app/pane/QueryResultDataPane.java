@@ -1,5 +1,6 @@
 package valkyrie.app.pane;
 
+import com.fasterxml.jackson.databind.SerializationFeature;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
@@ -25,6 +26,7 @@ import valkyrie.app.widgets.table.VkDataTableView;
 import valkyrie.app.widgets.table.VkTableView;
 import valkyrie.app.widgets.table.cell.VkTextFieldTableCell;
 import valkyrie.app.workbench.ModifyCell;
+import valkyrie.core.utils.JSONUtils;
 import valkyrie.driver.api.Column;
 import valkyrie.driver.api.GridRow;
 import valkyrie.driver.api.QueryResult;
@@ -35,7 +37,7 @@ import valkyrie.utils.poi.WorkBook;
 import valkyrie.utils.time.DateFormatter;
 
 import java.io.File;
-import java.util.List;
+import java.util.*;
 
 import static valkyrie.utils.string.StrStaticImports.*;
 
@@ -291,12 +293,20 @@ public class QueryResultDataPane extends BorderPane
                 copyAsUpdate.setOnAction(event -> copyAsSql("UPDATE"));
                 MenuItem normalCopyItem = new MenuItem("复制为 EXCEL 格式");
                 normalCopyItem.setOnAction(event -> copyTableViewSelectedCell());
+                MenuItem jsonCopyItem = new MenuItem("复制为 JSON 格式");
+                jsonCopyItem.setOnAction(event -> copyTableViewAsJSON(SerializationFeature.INDENT_OUTPUT));
+                MenuItem jsonlCopyItem = new MenuItem("复制为 JSON 压缩格式");
+                jsonlCopyItem.setOnAction(event -> copyTableViewAsJSON());
 
                 copyItem.getItems().addAll(
                         copyAsInsert,
                         copyAsUpdate,
                         new SeparatorMenuItem(),
-                        normalCopyItem);
+                        normalCopyItem,
+                        new SeparatorMenuItem(),
+                        jsonCopyItem,
+                        jsonlCopyItem
+                );
 
                 MenuItem selectAllItem = new MenuItem("全选");
                 selectAllItem.setOnAction(event -> tableView.getSelectionModel().selectAll());
@@ -429,6 +439,28 @@ public class QueryResultDataPane extends BorderPane
                 }
 
                 Application.copyToClipboard(sql.toString());
+        }
+
+        private void copyTableViewAsJSON(SerializationFeature ...features)
+        {
+                ObservableList<GridRow> rows = tableView.getSelectionModel().getSelectedItems();
+
+                if (rows == null || rows.isEmpty())
+                        return;
+
+                List<Map<String, Object>> ret = new ArrayList<>();
+                List<Column> columns = queryResult.getColumns();
+
+                for (GridRow row : rows) {
+                        Map<String, Object> jsonMap = new LinkedHashMap<>();
+                        for (int k = 0; k < row.size(); k++) {
+                                Column column = columns.get(k);
+                                jsonMap.put(column.getLabel(), row.get(k));
+                        }
+                        ret.add(jsonMap);
+                }
+
+                Application.copyToClipboard(JSONUtils.toJSONString(ret, features));
         }
 
         public void selectResultSetFirst()
