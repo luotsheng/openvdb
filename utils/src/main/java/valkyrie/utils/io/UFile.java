@@ -323,6 +323,12 @@ public class UFile extends java.io.File {
         return StrStaticImports.strcut(getName(), 0, name.lastIndexOf("."));
     }
 
+    @Override
+    public String getPath()
+    {
+        return super.getPath().replaceAll("\\\\", "/");
+    }
+
     /**
      * 比较两个文件的扩展类型是否一致。如果扩展名一致的话则返回 `true`。文件
      * 的扩展名需要带 '.'，如：.pdf
