@@ -289,7 +289,7 @@ public class QueryResultDataPane extends BorderPane
                 copyAsInsert.setOnAction(event -> copyAsSql("INSERT"));
                 MenuItem copyAsUpdate = new MenuItem("复制为 UPDATE 语句");
                 copyAsUpdate.setOnAction(event -> copyAsSql("UPDATE"));
-                MenuItem normalCopyItem = new MenuItem("复制为 Excel 行");
+                MenuItem normalCopyItem = new MenuItem("复制为 EXCEL 格式");
                 normalCopyItem.setOnAction(event -> copyTableViewSelectedCell());
 
                 copyItem.getItems().addAll(
