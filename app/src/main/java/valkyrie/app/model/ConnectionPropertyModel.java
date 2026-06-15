@@ -4,7 +4,7 @@ import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.beans.property.StringProperty;
-import valkyrie.core.model.ConnectionProfile;
+import valkyrie.core.model.DiskSavedConnection;
 import valkyrie.driver.api.ConnectionConfig;
 import valkyrie.driver.api.DbType;
 
@@ -47,7 +47,7 @@ public class ConnectionPropertyModel
                 setupListener();
         }
 
-        public ConnectionPropertyModel(ConnectionProfile profile)
+        public ConnectionPropertyModel(DiskSavedConnection profile)
         {
                 this.name.set(profile.getName());
                 this.type.set(profile.getType());

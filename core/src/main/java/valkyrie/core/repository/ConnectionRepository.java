@@ -2,7 +2,7 @@ package valkyrie.core.repository;
 
 import valkyrie.core.Users;
 import valkyrie.core.exception.CoreException;
-import valkyrie.core.model.ConnectionProfile;
+import valkyrie.core.model.DiskSavedConnection;
 import valkyrie.core.utils.FileUtils;
 import valkyrie.core.utils.JSONUtils;
 import valkyrie.utils.Captor;
@@ -24,21 +24,23 @@ import java.util.*;
  */
 public class ConnectionRepository
 {
+        private static final String META_INFO = ".META-INF";
+        
         @SuppressWarnings("ResultOfMethodCallIgnored")
         public static void saveConnection(String name, String content)
         {
                 UFile dir = new UFile(Users.connectionDir, name);
-                UFile vdbc = new UFile(dir, ".vdbc");
+                UFile meta = new UFile(dir, META_INFO);
 
-                if (vdbc.exists())
+                if (meta.exists())
                         throw new CoreException(name + "已存在！");
 
                 dir.mkdirs();
 
-                if (!vdbc.exists())
-                        Captor.call(vdbc::createNewFile);
+                if (!meta.exists())
+                        Captor.call(meta::createNewFile);
 
-                try (FileOutputStream fos = new FileOutputStream(vdbc)) {
+                try (FileOutputStream fos = new FileOutputStream(meta)) {
                         fos.write(content.getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
                         /* 删除文件夹 */
@@ -57,8 +59,8 @@ public class ConnectionRepository
                         oldDir.renameTo(newDir);
                 }
 
-                UFile vdbc = new UFile(newDir, ".vdbc");
-                vdbc.forceDelete();
+                UFile meta = new UFile(newDir, META_INFO);
+                meta.forceDelete();
 
                 saveConnection(newName, content);
         }
@@ -68,33 +70,33 @@ public class ConnectionRepository
                 new UFile(Users.connectionDir, name).forceDelete();
         }
 
-        public static List<ConnectionProfile> loadConnections()
+        public static List<DiskSavedConnection> loadConnections()
         {
                 UFile[] files = Users.connectionDir.listFiles();
-                List<ConnectionProfile> ret = new ArrayList<>();
+                List<DiskSavedConnection> ret = new ArrayList<>();
 
                 if (files == null)
                         return ret;
 
                 for (UFile file : files) {
-                        UFile vdbc = new UFile(file, ".vdbc");
+                        UFile meta = new UFile(file, META_INFO);
 
                         if (FileUtils.isDeepEmptyDirectory(file)) {
                                 file.forceDelete();
                                 continue;
                         }
 
-                        try (FileInputStream fis = new FileInputStream(vdbc)) {
+                        try (FileInputStream fis = new FileInputStream(meta)) {
                                 byte[] bytes = fis.readAllBytes();
                                 String content = new String(bytes, StandardCharsets.UTF_8);
-                                ret.add(JSONUtils.toJavaObject(content, ConnectionProfile.class));
+                                ret.add(JSONUtils.toJavaObject(content, DiskSavedConnection.class));
                         } catch (Exception e) {
                                 throw new CoreException(e);
                         }
                 }
 
                 Collator collator = Collator.getInstance(Locale.CHINA);
-                ret.sort(Comparator.comparing(ConnectionProfile::getName, collator));
+                ret.sort(Comparator.comparing(DiskSavedConnection::getName, collator));
 
                 return ret;
         }

@@ -22,7 +22,7 @@ import valkyrie.app.menu.ConnectionMenuBuilder;
 import valkyrie.app.model.ConnectionPropertyModel;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkTextField;
-import valkyrie.core.model.ConnectionProfile;
+import valkyrie.core.model.DiskSavedConnection;
 import valkyrie.core.repository.ConnectionRepository;
 
 import java.text.Collator;
@@ -236,7 +236,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
         private void refreshConnectionNode()
         {
                 List<UIConnectionNode> removeList = new ArrayList<>();
-                List<ConnectionProfile> profiles = ConnectionRepository.loadConnections();
+                List<DiskSavedConnection> profiles = ConnectionRepository.loadConnections();
 
                 connections.forEach((k, v) -> {
                         boolean isMatch = profiles.stream()
@@ -255,7 +255,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
                         }
                 }
 
-                for (ConnectionProfile profile : profiles) {
+                for (DiskSavedConnection profile : profiles) {
                         if (connections.containsKey(profile.getName()))
                                 continue;
 

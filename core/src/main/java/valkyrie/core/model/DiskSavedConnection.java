@@ -9,7 +9,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class ConnectionProfile
+public class DiskSavedConnection
 {
         private String name;
         private String type;
