@@ -14,23 +14,18 @@ import java.util.List;
  */
 public class JSONUtils
 {
-        private static final ObjectMapper objectMapper = new ObjectMapper();
-
         /**
          * 转 JSON 字符串
          */
         public static String toJSONString(Object object, SerializationFeature...features)
         {
                 try {
+                        ObjectMapper objectMapper = new ObjectMapper();
+
                         for (SerializationFeature feature : features)
                                 objectMapper.enable(feature);
 
-                        String ret = objectMapper.writeValueAsString(object);
-
-                        for (SerializationFeature feature : features)
-                                objectMapper.disable(feature);
-
-                        return ret;
+                        return objectMapper.writeValueAsString(object);
                 } catch (JsonProcessingException e) {
                         throw new RuntimeException(e);
                 }
@@ -44,6 +39,8 @@ public class JSONUtils
         public static <T> List<T> toJavaList(String jsonArray, Class<T> aClass)
         {
                 try {
+                        ObjectMapper objectMapper = new ObjectMapper();
+                        
                         CollectionType collectionType = objectMapper.getTypeFactory()
                                 .constructCollectionType(List.class, aClass);
 
