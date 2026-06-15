@@ -11,6 +11,7 @@ import valkyrie.utils.io.UFile;
 public class Users
 {
         public static final String userHome = System.getProperty("user.home");
-        public static final UFile baseDir = new UFile(userHome, ".vdb");
+        public static final String META_INF = ".META-INF";
+        public static final UFile baseDir = new UFile(userHome, ".valkyries");
         public static final UFile connectionDir = new UFile(baseDir, "C");
 }

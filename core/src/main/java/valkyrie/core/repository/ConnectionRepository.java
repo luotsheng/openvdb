@@ -24,13 +24,11 @@ import java.util.*;
  */
 public class ConnectionRepository
 {
-        private static final String META_INFO = ".META-INF";
-        
         @SuppressWarnings("ResultOfMethodCallIgnored")
         public static void saveConnection(String name, String content)
         {
                 UFile dir = new UFile(Users.connectionDir, name);
-                UFile meta = new UFile(dir, META_INFO);
+                UFile meta = new UFile(dir, Users.META_INF);
 
                 if (meta.exists())
                         throw new CoreException(name + "已存在！");
@@ -59,7 +57,7 @@ public class ConnectionRepository
                         oldDir.renameTo(newDir);
                 }
 
-                UFile meta = new UFile(newDir, META_INFO);
+                UFile meta = new UFile(newDir, Users.META_INF);
                 meta.forceDelete();
 
                 saveConnection(newName, content);
@@ -79,7 +77,7 @@ public class ConnectionRepository
                         return ret;
 
                 for (UFile file : files) {
-                        UFile meta = new UFile(file, META_INFO);
+                        UFile meta = new UFile(file, Users.META_INF);
 
                         if (FileUtils.isDeepEmptyDirectory(file)) {
                                 file.forceDelete();
