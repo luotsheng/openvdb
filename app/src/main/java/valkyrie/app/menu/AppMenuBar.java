@@ -4,6 +4,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import valkyrie.app.Publisher;
 import valkyrie.utils.system.OS;
 
 /**
@@ -24,7 +25,8 @@ public class AppMenuBar extends MenuBar
                 // 文件菜单
                 Menu fileMenu = new Menu("文件");
 
-                MenuItem newScriptEditorItem = new MenuItem("新建查询");
+                MenuItem newQueryItem = new MenuItem("新建查询");
+                newQueryItem.setOnAction(e -> Publisher.openQueryEditor());
 
                 MenuItem importItem = new MenuItem("导入");
                 MenuItem exportItem = new MenuItem("导出");
@@ -32,7 +34,7 @@ public class AppMenuBar extends MenuBar
                 MenuItem exitItem = new MenuItem("退出");
                 fileMenu.getItems().addAll(
                         ConnectionMenuBuilder.buildMenu(),
-                        newScriptEditorItem,
+                        newQueryItem,
                         new SeparatorMenuItem(),
                         importItem,
                         exportItem,
