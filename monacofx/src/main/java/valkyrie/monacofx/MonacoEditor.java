@@ -283,4 +283,10 @@ public class MonacoEditor extends StackPane
                         .replace("\n", "\\n")
                         + "'";
         }
+
+        @Override
+        protected void finalize() throws Throwable
+        {
+                System.out.println("MonacoEditor finalize: " + this);
+        }
 }
