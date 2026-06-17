@@ -81,32 +81,13 @@ public class MonacoEditor extends StackPane
 
         public void dispose()
         {
-                waitAndRun(() -> engine.executeScript("""
-                        try {
-                                const model =
-                                        editor.getModel();
-                                        
-                                if (model)
-                                        model.dispose();
-                                        
-                                editor.dispose();
-                        } catch (e) {
-                                console.log(e);
-                        }
-                        """));
-
                 engine.getLoadWorker().cancel();
-                engine.loadContent("");
+                engine.load("about:blank");
 
-                engine.executeScript("""
-                        document.body.innerHTML = '';
-                        window.close();
-                        """);
+                StackPane parent = (StackPane) webView.getParent();
 
-                JSObject window = (JSObject) engine.executeScript("window");
-                window.setMember("hook", null);
-
-                System.gc();
+                if (parent != null)
+                        parent.getChildren().remove(webView);
         }
 
         /**
