@@ -46,6 +46,8 @@ public class VkTabPane extends TabPane implements ObservableList<Tab>
                 EventHandler<Event> onCloseRequest = tab.getOnCloseRequest();
                 if (onCloseRequest != null)
                         onCloseRequest.handle(new Event(tab, tab, Tab.TAB_CLOSE_REQUEST_EVENT));
+
+                Event.fireEvent(tab, new Event(Tab.TAB_CLOSE_REQUEST_EVENT));
         }
 
         public void addAndSelect(Tab tab)

@@ -104,6 +104,10 @@ public class QueryEditor extends SplitPane implements EventListener
                 this.tab = tab;
                 this.queryFile = file;
 
+                tab.addEventFilter(Tab.TAB_CLOSE_REQUEST_EVENT, e -> {
+                        editor.dispose();
+                });
+
                 tab.setContent(this);
 
                 toolBar = createToolBar();
