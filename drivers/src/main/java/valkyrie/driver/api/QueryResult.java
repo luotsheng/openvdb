@@ -298,6 +298,8 @@ public class QueryResult
                         if (!pks.isEmpty())
                                 whereColumns = pks;
 
+                        Expression whereExpression = null;
+
                         for (Column col : whereColumns) {
 
                                 var r = rows.get(entry.getKey());
@@ -308,9 +310,17 @@ public class QueryResult
                                 w.setLeftExpression(c);
                                 w.setRightExpression(v);
 
-                                update.setWhere(w);
+                                // 组合 WHERE 条件
+                                if (whereExpression == null) {
+                                        whereExpression = w;
+                                } else {
+                                        whereExpression = new AndExpression(whereExpression, w);
+                                }
 
                         }
+
+                        if (whereExpression != null)
+                                update.setWhere(whereExpression);
 
                         /* 如果没有主键只修改一条 */
                         if (pks.isEmpty()) {
