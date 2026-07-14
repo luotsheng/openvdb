@@ -23,6 +23,8 @@ import net.sf.jsqlparser.util.TablesNamesFinder;
 import java.util.HashSet;
 import java.util.Set;
 
+import static valkyrie.utils.string.StrStaticImports.lowercase;
+
 /**
  * @author Luo Tiansheng
  * @since 2026/4/02
@@ -123,7 +125,14 @@ public class SQLParsedStatement
                         case Execute ignored -> SQLCommandType.EXECUTE;
 
                         /* 默认查询 */
-                        default -> SQLCommandType.EXECUTE_QUERY;
+                        default -> {
+                                String sql = lowercase(statement);
+
+                                if (sql.startsWith("create"))
+                                        yield SQLCommandType.EXECUTE;
+
+                                yield SQLCommandType.EXECUTE_QUERY;
+                        }
                 };
         }
 
