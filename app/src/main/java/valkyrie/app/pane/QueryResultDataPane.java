@@ -437,22 +437,37 @@ public class QueryResultDataPane extends BorderPane
                         int ROW = i;
                         filtered.setPredicate(cell -> cell.getRow() == ROW);
 
+                        int[] count = { 0 };
                         filtered.forEach(cell -> {
+                                int col = dataColumnIndex(cell.getColumn());
+
+                                if (col < 0)
+                                        return;
+
                                 List<String> tableGridRow = (List<String>) cell.getTableView()
                                         .getItems().get(ROW);
-                                String text = tableGridRow.get(cell.getColumn());
+
+                                if (col >= tableGridRow.size())
+                                        return;
+
+                                String text = tableGridRow.get(col);
 
                                 if (strnempty(text))
                                         builder.append(text);
 
                                 builder.append("\t");
+                                count[0]++;
                         });
+
+                        if (count[0] == 0)
+                                continue;
 
                         builder.deleteCharAt(builder.length() - 1);
                         builder.append("\n");
                 }
 
-                builder.deleteCharAt(builder.length() - 1);
+                if (builder.length() > 0)
+                        builder.deleteCharAt(builder.length() - 1);
 
                 Application.copyToClipboard(builder.toString());
         }
@@ -466,8 +481,15 @@ public class QueryResultDataPane extends BorderPane
 
                 int minRow = cells.stream().map(TablePosition::getRow).min(Integer::compareTo).orElse(0);
                 int maxRow = cells.stream().map(TablePosition::getRow).max(Integer::compareTo).orElse(0);
-                int minCol = cells.stream().map(TablePosition::getColumn).min(Integer::compareTo).orElse(0);
-                int maxCol = cells.stream().map(TablePosition::getColumn).max(Integer::compareTo).orElse(0);
+                int tableMinCol = cells.stream().map(TablePosition::getColumn).min(Integer::compareTo).orElse(0);
+                int tableMaxCol = cells.stream().map(TablePosition::getColumn).max(Integer::compareTo).orElse(0);
+
+                int[] range = dataColumnRange(tableMinCol, tableMaxCol);
+                int minCol = range[0];
+                int maxCol = range[1];
+
+                if (minCol > maxCol || queryResult == null)
+                        return;
 
                 String tableName = Optional.ifBlank(this.tableName, "?");
 
@@ -558,7 +580,7 @@ public class QueryResultDataPane extends BorderPane
                 if (cell.isUnmodified())
                         return;
 
-                queryResult.addUpdateRow(cell.getColumnIndex(), cell.getRowIndex(), cell.getNewValue());
+                queryResult.addUpdateRow(dataColumnIndex(cell.getColumnIndex()), cell.getRowIndex(), cell.getNewValue());
         }
 
         public void reload(String tableName, QueryResult queryResult)
@@ -571,6 +593,9 @@ public class QueryResultDataPane extends BorderPane
                 }
 
                 tableView.getColumns().clear();
+
+                /* 首列行选择列（类似 Navicat：点击/拖拽选择整行） */
+                tableView.addRowSelectorColumn();
 
                 if (!tabPane.getTabs().contains(viewTab))
                         tabPane.getTabs().addFirst(viewTab);
@@ -639,6 +664,28 @@ public class QueryResultDataPane extends BorderPane
                 int FW = Math.max(CM * V, 64);
 
                 return Math.min(Math.max(CW, FW), MAX); /* px */
+        }
+
+        /**
+         * 首列是行选择列，表格列位置需要 -1 才是真实数据列索引。
+         */
+        private int dataColumnIndex(int tableColumnIndex)
+        {
+                return tableColumnIndex - 1;
+        }
+
+        /**
+         * 将选中单元格的列位置区间换算为真实数据列区间（跳过首列行选择列）。
+         */
+        private int[] dataColumnRange(int tableMinCol, int tableMaxCol)
+        {
+                int min = Math.max(0, dataColumnIndex(tableMinCol));
+                int max = dataColumnIndex(tableMaxCol);
+
+                if (queryResult != null)
+                        max = Math.min(max, queryResult.getColumns().size() - 1);
+
+                return new int[] { min, max };
         }
 
 }

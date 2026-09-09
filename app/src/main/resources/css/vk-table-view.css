@@ -16,6 +16,15 @@
 /**
  * vk-data-table-view
  */
+/* 行选择列：悬停提示可点击，选中态复用下方选中色，形成按压反馈 */
+.vk-data-table-view .row-selector-cell {
+    -fx-cursor: hand;
+}
+
+.vk-data-table-view .row-selector-cell:hover {
+    -fx-background-color: rgba(0, 122, 255, 0.12);
+}
+
 .vk-data-table-view .table-cell:selected {
     -fx-background-color: #C9E2FF;
 }

@@ -40,14 +40,15 @@ public class Assets
         {
                 String[] split = name.split("@");
 
-                ImageView imageView = new ImageView();
-                String scale = split.length > 1 ? split[1] : "1x";
-
-                double size = parseScale(scale);
+                double size = parseScale(split.length > 1 ? split[1] : "1x");
 
                 Image image = originImages.get(split[0]);
-                Image scaledImage = new Image(image.getUrl(), size, size, true, true);
-                imageView.setImage(scaledImage);
+                ImageView imageView = new ImageView(image);
+                imageView.setFitWidth(size);
+                imageView.setFitHeight(size);
+                imageView.setPreserveRatio(true);
+                imageView.setSmooth(false);
+                imageView.setCache(true);
 
                 return imageView;
         }

@@ -3,6 +3,7 @@ package valkyrie.app.widgets.table;
 import javafx.animation.FadeTransition;
 import javafx.scene.Node;
 import javafx.scene.control.*;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.util.Duration;
 
@@ -13,11 +14,20 @@ import javafx.util.Duration;
 public class VkTableView<S> extends TableView<S>
 {
         private TablePosition<?, ?> start;
+        private int rowAnchor = -1;
+        private boolean rowDragSelecting = false;
+        private boolean rowSelectorEnabled = false;
 
         public VkTableView()
         {
                 getStyleClass().add("vk-table-view");
                 setFixedCellSize(26);
+
+                /* 右键仅用于呼出上下文菜单，不应改变/清除当前选中 */
+                addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {
+                        if (event.getButton() == MouseButton.SECONDARY)
+                                event.consume();
+                });
         }
 
         public void enableCellEdit()
@@ -36,13 +46,37 @@ public class VkTableView<S> extends TableView<S>
                 enableCellEdit();
 
                 setOnMousePressed(event -> {
-                        start = getTablePosition(event);
+                        if (event.getButton() != MouseButton.PRIMARY)
+                                return;
+
+                        var pressed = getTablePosition(event);
+
+                        if (pressed == null)
+                                return;
+
+                        /* 从行选择列开始按压 → 整行选择模式 */
+                        if (rowSelectorEnabled && pressed.getColumn() == 0) {
+                                rowDragSelecting = true;
+                                rowAnchor = pressed.getRow();
+                                selectRows(rowAnchor, rowAnchor);
+                                return;
+                        }
+
+                        start = pressed;
                 });
 
                 setOnMouseDragged(event -> {
                         var cur = getTablePosition(event);
 
-                        if (start != null && cur != null) {
+                        if (cur == null)
+                                return;
+
+                        if (rowDragSelecting) {
+                                selectRows(rowAnchor, cur.getRow());
+                                return;
+                        }
+
+                        if (start != null) {
                                 getSelectionModel().clearSelection();
                                 getSelectionModel().selectRange(
                                         start.getRow(), (TableColumn) start.getTableColumn(),
@@ -50,6 +84,72 @@ public class VkTableView<S> extends TableView<S>
                                 );
                         }
                 });
+
+                setOnMouseReleased(event -> rowDragSelecting = false);
+        }
+
+        private static final String ROW_SELECTOR_PRESSED_STYLE = "-fx-background-color: #9CC7FF;";
+
+        /**
+         * 在数据表首列前插入一个空白的“行选择列”（类似 Navicat）：
+         * 点击该列选中整行，纵向拖拽可连续选择多整行；点击时有按钮式按压反馈。
+         */
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        public TableColumn<S, Void> addRowSelectorColumn()
+        {
+                TableColumn<S, Void> rowSelector = new TableColumn<>();
+
+                rowSelector.setPrefWidth(20);
+                rowSelector.setMinWidth(20);
+                rowSelector.setMaxWidth(20);
+                rowSelector.setSortable(false);
+                rowSelector.setResizable(false);
+                rowSelector.setReorderable(false);
+                rowSelector.setEditable(false);
+
+                rowSelector.setCellFactory(c -> new TableCell<>()
+                {
+                        {
+                                getStyleClass().add("row-selector-cell");
+
+                                /* 按下加深、抬起/离开还原，形成类似按钮的按压效果 */
+                                setOnMousePressed(event -> setStyle(ROW_SELECTOR_PRESSED_STYLE));
+                                setOnMouseReleased(event -> setStyle(""));
+                                setOnMouseExited(event -> setStyle(""));
+                        }
+
+                        @Override
+                        protected void updateItem(Void item, boolean empty)
+                        {
+                                super.updateItem(item, empty);
+                                setText(null);
+                                setGraphic(null);
+                        }
+                });
+
+                getColumns().add(0, rowSelector);
+                rowSelectorEnabled = true;
+
+                return rowSelector;
+        }
+
+        /**
+         * 整行选择：框选全部可见列（含首列行选择列，让点击处同样有选中反馈）。
+         */
+        @SuppressWarnings({"rawtypes", "unchecked"})
+        private void selectRows(int row0, int row1)
+        {
+                if (getColumns().isEmpty())
+                        return;
+
+                int minRow = Math.min(row0, row1);
+                int maxRow = Math.max(row0, row1);
+
+                TableColumn firstColumn = getColumns().get(0);
+                TableColumn lastColumn = getColumns().get(getColumns().size() - 1);
+
+                getSelectionModel().clearSelection();
+                getSelectionModel().selectRange(minRow, firstColumn, maxRow, lastColumn);
         }
 
         @SuppressWarnings({"rawtypes", "unchecked"})
