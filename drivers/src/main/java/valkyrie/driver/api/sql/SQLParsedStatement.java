@@ -24,6 +24,7 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static valkyrie.utils.string.StrStaticImports.lowercase;
+import static valkyrie.utils.string.StrStaticImports.strhas;
 
 /**
  * @author Luo Tiansheng
@@ -124,16 +125,45 @@ public class SQLParsedStatement
                         case SetStatement ignored -> SQLCommandType.EXECUTE;
                         case Execute ignored -> SQLCommandType.EXECUTE;
 
-                        /* 默认查询 */
-                        default -> {
-                                String sql = lowercase(statement);
-
-                                if (sql.startsWith("create"))
-                                        yield SQLCommandType.EXECUTE;
-
-                                yield SQLCommandType.EXECUTE_QUERY;
-                        }
+                        /* 无法精确归类时按文本首关键字粗判，避免把非查询语句误判为 EXECUTE_QUERY */
+                        default -> classify(String.valueOf(statement));
                 };
+        }
+
+        /**
+         * jsqlparser 无法解析（降级为纯文本）时的命令类型粗判。
+         * <ul>
+         *     <li>能返回结果集的查询类语句（select/show/desc/pragma 等）→ {@code EXECUTE_QUERY}</li>
+         *     <li>{@code SELECT ... INTO}（写入用户变量或文件，不返回结果集）→ {@code EXECUTE}</li>
+         *     <li>其余（DDL/DCL/TCL/MySQL 特有管理语句等）→ {@code EXECUTE}，统一走
+         *     {@code Statement.execute()}，避免对非查询语句调用 {@code executeQuery} 抛错</li>
+         * </ul>
+         */
+        static SQLCommandType classify(String sql)
+        {
+                String lower = lowercase(sql).trim();
+
+                /* SELECT ... INTO 用户变量 / OUTFILE / DUMPFILE 不产生结果集 */
+                if (lower.startsWith("select") && strhas(lower, " into "))
+                        return SQLCommandType.EXECUTE;
+
+                if (isQueryLike(lower))
+                        return SQLCommandType.EXECUTE_QUERY;
+
+                return SQLCommandType.EXECUTE;
+        }
+
+        private static boolean isQueryLike(String lower)
+        {
+                return lower.startsWith("select")
+                        || lower.startsWith("show")
+                        || lower.startsWith("desc")
+                        || lower.startsWith("describe")
+                        || lower.startsWith("explain")
+                        || lower.startsWith("pragma")
+                        || lower.startsWith("with")
+                        || lower.startsWith("values")
+                        || lower.startsWith("table");
         }
 
         @Override

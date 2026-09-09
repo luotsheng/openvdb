@@ -811,9 +811,18 @@ public abstract class Driver implements SQLExecutor
                                                         if (ps == lastPS) {
                                                                 callback.executeQuery(currentExecuteSQL, false);
                                                                 long startTime = System.currentTimeMillis();
-                                                                ResultSet rs = statement.executeQuery(currentExecuteSQL);
-                                                                queryResult = new QueryResult(session, this, sql);
-                                                                ResultSets.toDataGrid(connection, ps, rs, dialect, queryResult);
+                                                                boolean hasResultSet = statement.execute(currentExecuteSQL);
+
+                                                                /*
+                                                                 * 查询类语句统一走 execute()：能返回结果集才构建结果网格；
+                                                                 * 不返回结果集（如 SELECT ... INTO 用户变量）也不会抛
+                                                                 * "cannot issue statements that do not produce result sets"。
+                                                                 */
+                                                                if (hasResultSet) {
+                                                                        ResultSet rs = statement.getResultSet();
+                                                                        queryResult = new QueryResult(session, this, sql);
+                                                                        ResultSets.toDataGrid(connection, ps, rs, dialect, queryResult);
+                                                                }
                                                                 long endTime = System.currentTimeMillis();
                                                                 callback.cost(endTime - startTime);
                                                         } else {
