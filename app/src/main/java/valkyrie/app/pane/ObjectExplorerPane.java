@@ -28,7 +28,7 @@ import valkyrie.core.repository.ConnectionRepository;
 import java.text.Collator;
 import java.util.*;
 
-import static valkyrie.utils.string.StrStaticImports.strimatch;
+import static valkyrie.utils.string.StrStaticImports.lowercase;
 
 /**
  * 导航面板
@@ -47,6 +47,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
         private final VkTextField search = new VkTextField();
         private final PauseTransition searchDelay = new PauseTransition(Duration.millis(100));
         private final Map<String, UIConnectionNode> connections = new HashMap<>();
+        private final Map<TreeItem<?>, UIExplorerNode> filterSource = new HashMap<>();
 
         public ObjectExplorerPane()
         {
@@ -92,20 +93,9 @@ public class ObjectExplorerPane extends VBox implements EventListener
 
                 search.addEventFilter(KeyEvent.KEY_PRESSED, this::onKeyEvent);
 
-                search.textProperty().addListener((observable, oldVal, newVal) -> {
-                        searchDelay.setOnFinished(event -> {
-                                if (newVal == null || newVal.isBlank()) {
-                                        treeView.setRoot(root);
-                                        return;
-                                }
+                searchDelay.setOnFinished(event -> applySearch());
 
-                                TreeItem<String> filteredRoot = filterTree(root, newVal);
-
-                                filteredRoot.setExpanded(true);
-                                treeView.setRoot(filteredRoot);
-                        });
-                        searchDelay.playFromStart();
-                });
+                search.textProperty().addListener((observable, oldVal, newVal) -> searchDelay.playFromStart());
         }
 
         private void onKeyEvent(KeyEvent e)
@@ -114,21 +104,67 @@ public class ObjectExplorerPane extends VBox implements EventListener
                         search.clear();
         }
 
-        private TreeItem<String> filterTree(TreeItem<String> root, String keyword)
-        {TreeItem<String> result = new TreeItem<>(root.getValue(), root.getGraphic());
+        /**
+         * 应用当前搜索条件：命中节点按名称做“忽略大小写的子串匹配”（不做正则解析），
+         * 过滤树中的节点为原节点的映射副本，保证结果仍可选择、双击打开与弹出右键菜单。
+         */
+        private void applySearch()
+        {
+                String text = search.getText();
 
-                for (TreeItem<String> child : root.getChildren()) {
+                filterSource.clear();
+
+                if (text == null || text.isBlank()) {
+                        root.setExpanded(true);
+                        treeView.setRoot(root);
+                        return;
+                }
+
+                String keyword = lowercase(text).trim();
+
+                TreeItem<String> filteredRoot = filterTree(root, keyword);
+
+                filteredRoot.setExpanded(true);
+                treeView.setRoot(filteredRoot);
+        }
+
+        private TreeItem<String> filterTree(TreeItem<String> parent, String keyword)
+        {
+                TreeItem<String> result = new TreeItem<>(parent.getValue(), parent.getGraphic());
+
+                for (TreeItem<String> child : parent.getChildren()) {
                         TreeItem<String> filteredChild = filterTree(child, keyword);
 
-                        boolean matched = strimatch(child.getValue(), keyword);
+                        boolean matched = matchLabel(child, keyword);
 
                         if (matched || !filteredChild.getChildren().isEmpty()) {
+                                if (child instanceof UIExplorerNode explorerNode)
+                                        filterSource.put(filteredChild, explorerNode);
+
                                 result.setExpanded(true);
                                 result.getChildren().add(filteredChild);
                         }
                 }
 
                 return result;
+        }
+
+        private static boolean matchLabel(TreeItem<String> item, String keyword)
+        {
+                String value = item.getValue();
+
+                return value != null && lowercase(value).contains(keyword);
+        }
+
+        /**
+         * 过滤树里的节点是普通副本，点击/双击/右键时先还原为真实的 UIExplorerNode 再派发。
+         */
+        private UIExplorerNode unwrap(TreeItem<?> item)
+        {
+                if (item instanceof UIExplorerNode explorerNode)
+                        return explorerNode;
+
+                return filterSource.get(item);
         }
 
         private TreeView<String> createTreeView()
@@ -179,9 +215,10 @@ public class ObjectExplorerPane extends VBox implements EventListener
                                         return;
                                 }
 
-                                if (item instanceof UIExplorerNode explorerNode) {
+                                UIExplorerNode explorerNode = unwrap(item);
+
+                                if (explorerNode != null)
                                         explorerNode.showContextMenu(x, y);
-                                }
                         }
                 });
         }
@@ -191,7 +228,10 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 treeView.getSelectionModel().selectedIndexProperty()
                         .addListener((observable, oldVal, newVal) -> {
                                 TreeItem<String> treeItem = treeView.getTreeItem(newVal.intValue());
-                                if (treeItem instanceof UIExplorerNode node) {
+
+                                UIExplorerNode node = unwrap(treeItem);
+
+                                if (node != null) {
                                         node.onSelectedEvent(node);
                                         GlobalDynamicNodeContext.onSelectedEvent(node);
                                 }
@@ -210,7 +250,9 @@ public class ObjectExplorerPane extends VBox implements EventListener
                                 if (node instanceof TreeCell<?> cell) {
                                         TreeItem<?> item = cell.getTreeItem();
 
-                                        if (!(item instanceof UIExplorerNode vdbNode))
+                                        UIExplorerNode vdbNode = unwrap(item);
+
+                                        if (vdbNode == null)
                                                 return;
 
                                         vdbNode.onMouseDoubleClickEvent();
@@ -246,7 +288,7 @@ public class ObjectExplorerPane extends VBox implements EventListener
                                 removeList.add(v);
                 });
 
-                ObservableList<TreeItem<String>> children = treeView.getRoot().getChildren();
+                ObservableList<TreeItem<String>> children = root.getChildren();
 
                 if (!removeList.isEmpty()) {
                         for (UIConnectionNode connection : removeList) {
@@ -271,6 +313,8 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 Collator collator = Collator.getInstance(Locale.CHINA);
                 children.sort(Comparator.comparing(
                         node -> ((UIConnectionNode) node).getLabel(), collator));
+
+                applySearch();
         }
 
 }

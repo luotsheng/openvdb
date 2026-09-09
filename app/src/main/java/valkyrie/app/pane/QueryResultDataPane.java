@@ -1,12 +1,14 @@
 package valkyrie.app.pane;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.collections.transformation.FilteredList;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.input.ContextMenuEvent;
@@ -14,11 +16,13 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.*;
 import javafx.stage.FileChooser;
+import javafx.util.Duration;
 import lombok.Setter;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkSeparatorItem;
+import valkyrie.app.widgets.VkTextField;
 import valkyrie.app.widgets.VkToolBar;
 import valkyrie.app.widgets.VkToolButton;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
@@ -69,6 +73,11 @@ public class QueryResultDataPane extends BorderPane
 
         private final Node progressIndicator = Assets.newProgressIndicator();
 
+        private final VkTextField search = new VkTextField();
+        private final PauseTransition searchDelay = new PauseTransition(Duration.millis(100));
+        private final ObservableList<GridRow> gridRows = FXCollections.observableArrayList();
+        private final FilteredList<GridRow> filteredRows = new FilteredList<>(gridRows, row -> true);
+
         private QueryResult queryResult;
 
         public interface ReloadProgressListener {
@@ -103,6 +112,12 @@ public class QueryResultDataPane extends BorderPane
                 Region spacer = new Region();
                 HBox.setHgrow(spacer, Priority.ALWAYS);
 
+                search.setPromptText("搜索...");
+                search.setPrefWidth(220);
+
+                HBox searchBox = new HBox(5, Assets.use("search"), search);
+                searchBox.setAlignment(Pos.CENTER_LEFT);
+
                 toolBar.getItems().addAll(
                         plus, minus,
                         new VkSeparatorItem(),
@@ -110,6 +125,7 @@ public class QueryResultDataPane extends BorderPane
                         new VkSeparatorItem(),
                         reload,
                         spacer,
+                        searchBox,
                         export);
 
                 vContainer = new VBox(tableView);
@@ -134,6 +150,58 @@ public class QueryResultDataPane extends BorderPane
 
                 updateCheckCross();
                 setupToolButtonAction();
+                setupSearch();
+        }
+
+        /**
+         * 搜索接线：按任意单元格内容过滤（忽略大小写、纯子串匹配）。
+         * 搜索生效期间切换为只读，避免过滤后的行号与真实数据行错位导致误编辑/误删除。
+         */
+        private void setupSearch()
+        {
+                searchDelay.setOnFinished(event -> applySearchState());
+
+                search.textProperty().addListener((obs, oldVal, newVal) -> searchDelay.playFromStart());
+        }
+
+        private void applySearchState()
+        {
+                String text = search.getText();
+                boolean searching = text != null && !text.isBlank();
+
+                if (searching) {
+                        String keyword = lowercase(text).trim();
+                        filteredRows.setPredicate(row -> row != null && row.stream()
+                                .anyMatch(cell -> contains(cell, keyword)));
+                } else {
+                        filteredRows.setPredicate(row -> true);
+                }
+
+                refreshEditingState(searching);
+        }
+
+        private void refreshEditingState(boolean searching)
+        {
+                if (queryResult == null)
+                        return;
+
+                if (searching) {
+                        /* 过滤状态下只读，防止行号错位 */
+                        tableView.setEditable(false);
+                        plus.setDisable(true);
+                        minus.setDisable(true);
+                        submit.setDisable(true);
+                        cross.setDisable(true);
+                        return;
+                }
+
+                setToolButtonStatus(queryResult.isAddable(), queryResult.isEditable());
+                updateCheckCross();
+        }
+
+        private static boolean contains(String cell, String keyword)
+        {
+                return cell != null && lowercase(cell).contains(keyword);
         }
 
         private void setToolButtonStatus(boolean addable, boolean editable)
@@ -180,7 +248,7 @@ public class QueryResultDataPane extends BorderPane
         private void onPlus()
         {
                 queryResult.addEmptyRow();
-                tableView.getItems().setAll(queryResult.getRows());
+                gridRows.setAll(queryResult.getRows());
                 tableView.refresh();
                 tableView.playFlash();
         }
@@ -404,12 +472,12 @@ public class QueryResultDataPane extends BorderPane
                 String tableName = Optional.ifBlank(this.tableName, "?");
 
                 List<Column> columns = queryResult.getColumns();
-                List<GridRow> rows = queryResult.getRows();
+                ObservableList<GridRow> visibleRows = tableView.getItems();
 
                 StringBuilder sql = new StringBuilder();
                 if ("INSERT".equals(type)) {
                         for (int r = minRow; r <= maxRow; r++) {
-                                GridRow row = rows.get(r);
+                                GridRow row = visibleRows.get(r);
                                 sql.append("INSERT INTO ").append(tableName).append(" (");
                                 for (int c = minCol; c <= maxCol; c++) {
                                         sql.append(columns.get(c).getLabel());
@@ -424,7 +492,7 @@ public class QueryResultDataPane extends BorderPane
                         }
                 } else if ("UPDATE".equals(type)) {
                         for (int r = minRow; r <= maxRow; r++) {
-                                GridRow row = rows.get(r);
+                                GridRow row = visibleRows.get(r);
                                 sql.append("UPDATE ").append(tableName).append(" SET ");
                                 for (int c = minCol; c <= maxCol; c++) {
                                         sql.append(columns.get(c).getLabel()).append(" = '").append(row.get(c)).append("'");
@@ -503,7 +571,6 @@ public class QueryResultDataPane extends BorderPane
                 }
 
                 tableView.getColumns().clear();
-                tableView.getItems().clear();
 
                 if (!tabPane.getTabs().contains(viewTab))
                         tabPane.getTabs().addFirst(viewTab);
@@ -539,9 +606,11 @@ public class QueryResultDataPane extends BorderPane
                         tableView.getColumns().add(col);
                 }
 
-                tableView.setItems(
-                        FXCollections.observableArrayList(queryResult.getRows())
-                );
+                gridRows.setAll(queryResult.getRows());
+                tableView.setItems(filteredRows);
+                tableView.refresh();
+
+                applySearchState();
 
                 tableView.playFlash();
         }

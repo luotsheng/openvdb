@@ -1,16 +1,24 @@
 package valkyrie.app.pane;
 
+import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.collections.transformation.FilteredList;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.util.Duration;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.pane.designer.TableColumnDesignerPane;
 import valkyrie.app.pane.designer.TableIndexDesignerPane;
 import valkyrie.app.widgets.VkSeparatorItem;
+import valkyrie.app.widgets.VkTextField;
 import valkyrie.app.widgets.VkToolBar;
 import valkyrie.app.widgets.VkToolButton;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
@@ -25,6 +33,8 @@ import valkyrie.driver.mysql.MySQL;
 
 import java.util.Collection;
 import java.util.List;
+
+import static valkyrie.utils.string.StrStaticImports.lowercase;
 
 /**
  * @author Luo Tiansheng
@@ -55,6 +65,13 @@ public class TableDesignerPane extends BorderPane
         private List<Column> columnMetaDatas;
         private List<Index> indexes;
 
+        private final VkTextField search = new VkTextField();
+        private final PauseTransition searchDelay = new PauseTransition(Duration.millis(100));
+        private final ObservableList<Column> structureSource = FXCollections.observableArrayList();
+        private final FilteredList<Column> filteredStructure = new FilteredList<>(structureSource, c -> true);
+        private final ObservableList<Index> indexSource = FXCollections.observableArrayList();
+        private final FilteredList<Index> filteredIndex = new FilteredList<>(indexSource, i -> true);
+
         private final Designer<Column> tableStructureDesigner;
         private final Designer<Index> indexColumnDesigner;
 
@@ -77,6 +94,7 @@ public class TableDesignerPane extends BorderPane
 
                 setupStructureView();
                 setupIndexView();
+                setupSearch();
 
                 applyReload();
 
@@ -122,14 +140,65 @@ public class TableDesignerPane extends BorderPane
                 minusButton.setOnAction(e -> onMinus());
                 reloadButton.setOnAction(e -> applyReload());
 
+                Region spacer = new Region();
+                HBox.setHgrow(spacer, Priority.ALWAYS);
+
+                search.setPromptText("搜索...");
+                search.setPrefWidth(220);
+
+                HBox searchBox = new HBox(5, Assets.use("search"), search);
+                searchBox.setAlignment(Pos.CENTER_LEFT);
+
                 toolBar.getItems().addAll(
                         saveButton,
                         new VkSeparatorItem(),
                         plusButton,
                         minusButton,
                         new VkSeparatorItem(),
-                        reloadButton
+                        reloadButton,
+                        spacer,
+                        searchBox
                 );
+        }
+
+        /**
+         * 搜索接线：同时过滤表结构/索引两个列表（按名称、类型、注释等关键字，忽略大小写）。
+         * 搜索期间禁用“新增行/删除行”，避免行号与真实数据错位。
+         */
+        private void setupSearch()
+        {
+                searchDelay.setOnFinished(event -> applySearch());
+
+                search.textProperty().addListener((obs, oldVal, newVal) -> searchDelay.playFromStart());
+        }
+
+        private void applySearch()
+        {
+                String text = search.getText();
+                boolean searching = text != null && !text.isBlank();
+
+                if (searching) {
+                        String keyword = lowercase(text).trim();
+                        filteredStructure.setPredicate(c -> match(c.getName(), keyword)
+                                || match(c.getType(), keyword)
+                                || match(c.getDefaultValue(), keyword)
+                                || match(c.getComment(), keyword));
+
+                        filteredIndex.setPredicate(i -> match(i.getName(), keyword)
+                                || match(i.getColumnsText(), keyword)
+                                || match(i.getType(), keyword));
+                } else {
+                        filteredStructure.setPredicate(c -> true);
+                        filteredIndex.setPredicate(i -> true);
+                }
+
+                plusButton.setDisable(searching);
+                minusButton.setDisable(searching);
+        }
+
+        private static boolean match(String text, String keyword)
+        {
+                return text != null && lowercase(text).contains(keyword);
         }
 
         private void onSave()
@@ -148,14 +217,14 @@ public class TableDesignerPane extends BorderPane
                         case TableColumnDesignerPane inst -> {
                                 Column columnMetaData = new Column();
                                 inst.onPlus(columnMetaData);
-                                structureView.getItems().add(columnMetaData);
+                                structureSource.add(columnMetaData);
                                 structureView.refresh();
                         }
 
                         case TableIndexDesignerPane inst -> {
                                 Index indexMetaData = new Index();
                                 inst.onPlus(indexMetaData);
-                                indexView.getItems().add(indexMetaData);
+                                indexSource.add(indexMetaData);
                                 indexView.refresh();
                         }
 
@@ -238,8 +307,8 @@ public class TableDesignerPane extends BorderPane
                 indexColumnDesigner.onReload(indexes);
 
                 Platform.runLater(() -> {
-                        structureView.getItems().setAll(FXCollections.observableArrayList(columnMetaDatas));
-                        indexView.getItems().setAll(FXCollections.observableArrayList(indexes));
+                        structureSource.setAll(columnMetaDatas);
+                        indexSource.setAll(indexes);
 
                         structureView.refresh();
                         structureView.playFlash();
@@ -251,6 +320,7 @@ public class TableDesignerPane extends BorderPane
 
         private void setupStructureView()
         {
+                structureView.setItems(filteredStructure);
                 structureView.setEditable(true);
                 structureView.getSelectionModel().setCellSelectionEnabled(true);
                 structureView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
@@ -298,6 +368,7 @@ public class TableDesignerPane extends BorderPane
 
         private void setupIndexView()
         {
+                indexView.setItems(filteredIndex);
                 indexView.enableCellEdit();
 
                 VkTableColumnFactory<Index> factory = new VkTableColumnFactory<>();

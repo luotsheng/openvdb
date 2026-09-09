@@ -34,6 +34,7 @@ import java.util.Date;
 import java.util.List;
 
 import static valkyrie.utils.string.StrStaticImports.fmt;
+import static valkyrie.utils.string.StrStaticImports.lowercase;
 
 /**
  * @author Luo Tiansheng
@@ -55,6 +56,7 @@ public class QueryListPane extends BorderPane implements EventListener
         private TableColumn<QueryFile, Long> sizeColumn;
 
         private final VkTextField search = new VkTextField();
+        private final ObservableList<QueryFile> source = FXCollections.observableArrayList();
         private final ObservableList<QueryFile> observable = FXCollections.observableArrayList();
         private final PauseTransition searchDelay = new PauseTransition(Duration.millis(100));
 
@@ -69,6 +71,7 @@ public class QueryListPane extends BorderPane implements EventListener
 
                 // setup
                 setupToolBar();
+                setupSearch();
                 initializeColumn();
                 setupCellFactory();
                 setupTableView();
@@ -106,6 +109,37 @@ public class QueryListPane extends BorderPane implements EventListener
                 EventBus.subscribe(this,
                         RefreshQueryNodeEvent.class,
                         UpdateQueryFileEvent.class);
+        }
+
+        /**
+         * 搜索接线：按脚本名/创建用户过滤（忽略大小写、纯子串匹配，避免把输入当正则）。
+         */
+        private void setupSearch()
+        {
+                searchDelay.setOnFinished(event -> applyFilter());
+
+                search.textProperty().addListener((obs, oldVal, newVal) -> searchDelay.playFromStart());
+        }
+
+        private void applyFilter()
+        {
+                String keyword = search.getText();
+
+                if (keyword == null || keyword.isBlank()) {
+                        observable.setAll(source);
+                } else {
+                        String kw = lowercase(keyword).trim();
+                        observable.setAll(source.stream()
+                                .filter(f -> contains(f.getName(), kw) || contains(f.getOwner(), kw))
+                                .toList());
+                }
+
+                tableView.refresh();
+        }
+
+        private static boolean contains(String text, String keyword)
+        {
+                return text != null && lowercase(text).contains(keyword);
         }
 
         private void setupTableView()
@@ -242,8 +276,8 @@ public class QueryListPane extends BorderPane implements EventListener
                         .sum();
 
                 sizeColumn.setText(fmt("磁盘 (%s)", formatStorageSize(totalSize)));
-                observable.setAll(queryFiles);
-                tableView.refresh();
+                source.setAll(queryFiles);
+                applyFilter();
         }
 
         @Override
