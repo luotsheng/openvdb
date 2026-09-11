@@ -426,11 +426,36 @@ public class QueryResultDataPane extends BorderPane
                 MenuItem refreshItem = new MenuItem("刷新");
                 refreshItem.setOnAction(event -> reloadAndBlinkTable(true));
 
+                MenuItem submitItem = new MenuItem("提交修改");
+                submitItem.setOnAction(event -> applySubmit());
+                MenuItem plusItem = new MenuItem("新增行");
+                plusItem.setOnAction(event -> onPlus());
+                MenuItem minusItem = new MenuItem("删除选中行");
+                minusItem.setOnAction(event -> onMinus());
+                MenuItem exportItem = new MenuItem("导出");
+                exportItem.setOnAction(event -> applyExport());
+
                 contextMenu.getItems().addAll(
+                        submitItem,
+                        plusItem,
+                        minusItem,
+                        new SeparatorMenuItem(),
                         copyItem,
                         selectAllItem,
                         new SeparatorMenuItem(),
+                        exportItem,
                         refreshItem);
+
+                /* 根据当前结果集是否可编辑/可提交，动态启用菜单项 */
+                contextMenu.setOnShowing(event -> {
+                        boolean hasResult = queryResult != null;
+                        boolean addable = hasResult && queryResult.isAddable();
+                        boolean editable = hasResult && queryResult.isEditable();
+
+                        submitItem.setDisable(!hasResult || !queryResult.isUpdatable());
+                        plusItem.setDisable(!addable);
+                        minusItem.setDisable(!addable && !editable);
+                });
 
                 tableView.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
                         tableView.setContextMenu(contextMenu);

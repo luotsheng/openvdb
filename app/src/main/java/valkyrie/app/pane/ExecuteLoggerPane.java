@@ -4,6 +4,7 @@ import javafx.animation.PauseTransition;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
@@ -127,13 +128,23 @@ public class ExecuteLoggerPane extends BorderPane
         {
                 VkContextMenu contextMenu = new VkContextMenu();
 
-                MenuItem copyAllItem = new MenuItem("复制");
-                copyAllItem.setOnAction(event -> copySelectedText());
+                MenuItem copyItem = new MenuItem("复制");
+                copyItem.setOnAction(event -> copySelectedText());
+
+                MenuItem copyAllItem = new MenuItem("复制全部");
+                copyAllItem.setOnAction(event -> Application.copyToClipboard(codeArea.getText()));
+
+                MenuItem selectAllItem = new MenuItem("全选");
+                selectAllItem.setOnAction(event -> codeArea.selectAll());
+
                 MenuItem clearAllItem = new MenuItem("清空");
                 clearAllItem.setOnAction(event -> clearAll());
 
                 contextMenu.getItems().addAll(
+                        copyItem,
                         copyAllItem,
+                        selectAllItem,
+                        new SeparatorMenuItem(),
                         clearAllItem
                 );
 

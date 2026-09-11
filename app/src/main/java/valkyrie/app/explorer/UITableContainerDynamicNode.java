@@ -3,6 +3,7 @@ package valkyrie.app.explorer;
 import javafx.application.Platform;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import valkyrie.app.Publisher;
 import valkyrie.app.event.RefreshTableNodeEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.pane.TableListPane;
@@ -51,7 +52,19 @@ public class UITableContainerDynamicNode extends UIDynamicNode
         public VkContextMenu configureContextMenu()
         {
                 VkContextMenu contextMenu = new VkContextMenu();
-                contextMenu.getItems().addAll(openOrCloseMenuItem);
+
+                MenuItem refreshItem = new MenuItem("刷新列表");
+                refreshItem.setOnAction(e -> refresh());
+
+                MenuItem newQueryItem = new MenuItem("新建查询");
+                newQueryItem.setOnAction(e -> Publisher.openQueryEditor());
+
+                contextMenu.getItems().addAll(
+                        openOrCloseMenuItem,
+                        refreshItem,
+                        newQueryItem
+                );
+
                 return contextMenu;
         }
 

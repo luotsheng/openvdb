@@ -11,6 +11,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
 import valkyrie.app.assets.Assets;
+import valkyrie.app.Publisher;
 import valkyrie.app.event.RefreshConnectionEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
@@ -180,14 +181,17 @@ public class ObjectExplorerPane extends VBox implements EventListener
                 VkContextMenu rootContextMenu = new VkContextMenu();
 
                 Menu newConnectionMenu = ConnectionMenuBuilder.buildMenu();
+                MenuItem newQueryItem = new MenuItem("新建查询");
                 MenuItem refreshAllItem = new MenuItem("刷新连接");
 
                 rootContextMenu.getItems().addAll(
                         newConnectionMenu,
+                        newQueryItem,
                         new SeparatorMenuItem(),
                         refreshAllItem);
 
                 /* 设置事件 */
+                newQueryItem.setOnAction(event -> Publisher.openQueryEditor());
                 refreshAllItem.setOnAction(event -> refreshConnectionNode());
 
                 return rootContextMenu;

@@ -17,6 +17,7 @@ import javafx.util.Duration;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.pane.designer.TableColumnDesignerPane;
 import valkyrie.app.pane.designer.TableIndexDesignerPane;
+import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkSeparatorItem;
 import valkyrie.app.widgets.VkTextField;
 import valkyrie.app.widgets.VkToolBar;
@@ -364,6 +365,21 @@ public class TableDesignerPane extends BorderPane
                         defaultValue,
                         comment
                 );
+
+                setupDesignerContextMenu(structureView);
+        }
+
+        /**
+         * 表结构/索引表格的右键菜单
+         */
+        private void setupDesignerContextMenu(VkTableView<?> view)
+        {
+                VkContextMenu contextMenu = new VkContextMenu();
+                contextMenu.addItem("新增行", this::onPlus);
+                contextMenu.addItem("删除行", this::onMinus);
+                contextMenu.addSeparator();
+                contextMenu.addItem("刷新", this::applyReload);
+                view.setContextMenu(contextMenu);
         }
 
         private void setupIndexView()
@@ -396,5 +412,7 @@ public class TableDesignerPane extends BorderPane
                         visible.setPrefWidth(120);
                         indexView.getColumns().addLast(visible);
                 }
+
+                setupDesignerContextMenu(indexView);
         }
 }

@@ -119,9 +119,11 @@ public class MonacoEditor extends StackPane
                 engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
                         if (newState == Worker.State.SUCCEEDED)
                                 installHook();
+                        else if (newState == Worker.State.FAILED)
+                                LOG.error("Monaco 页面加载失败", engine.getLoadWorker().getException());
                 });
 
-                /* 进入场景后再加载 Monaco，避免打开标签页时同步等待 WebView 初始化 */
+                /* 进入场景后再加载 Monaco，确保 WebView 已有正确尺寸 */
                 sceneProperty().addListener((obs, oldScene, newScene) -> {
                         if (newScene != null)
                                 startLoad();
@@ -408,6 +410,15 @@ public class MonacoEditor extends StackPane
         public void clear()
         {
                 runWhenReady(() -> engine.executeScript("editor.getModel().setValue('')"));
+        }
+
+        /**
+         * 触发 Monaco 内置命令（如 selectAll / commentLine / transformToUppercase）
+         */
+        public void trigger(String actionId)
+        {
+                runWhenReady(() -> engine.executeScript(
+                        "editor.trigger('vk-context-menu', '" + actionId + "', {})"));
         }
 
         public void setValue(String text)

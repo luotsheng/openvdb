@@ -68,9 +68,14 @@ public class Workbench extends VBox implements EventListener
 
         private void setupTabPane()
         {
-                /* 切换标签页时刷新状态栏连接上下文 */
+                /* 切换标签页时：激活选中页、冻结其它页布局，并刷新状态栏连接上下文 */
                 tabPane.getSelectionModel().selectedItemProperty()
                         .addListener((obs, oldTab, newTab) -> {
+                                setTabActive(newTab, true);
+
+                                if (oldTab != null && oldTab != newTab)
+                                        setTabActive(oldTab, false);
+
                                 if (newTab != null && newTab.getContent() instanceof QueryEditor queryEditor)
                                         queryEditor.publishStatus();
                                 else
@@ -104,6 +109,20 @@ public class Workbench extends VBox implements EventListener
                         closeLeft,
                         closeRight,
                         closeOther);
+        }
+
+        /**
+         * 激活/冻结标签页内容。
+         * <p>
+         * 非选中页内容设为 unmanaged，使其不参与布局（避免多个 WebView / 表格一起 resize），
+         * 但节点仍留在场景图中，切回时不会出现 WebView 空白。
+         */
+        private void setTabActive(Tab tab, boolean active)
+        {
+                if (tab == null || tab.getContent() == null)
+                        return;
+
+                tab.getContent().setManaged(active);
         }
 
         private void setupHomeTab()

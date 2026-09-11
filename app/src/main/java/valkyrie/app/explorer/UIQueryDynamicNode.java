@@ -3,6 +3,7 @@ package valkyrie.app.explorer;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TreeItem;
+import valkyrie.app.Application;
 import valkyrie.app.Publisher;
 import valkyrie.app.dialog.ConfirmationDialog;
 import valkyrie.app.dialog.queryFile.QueryFileRenameDialog;
@@ -70,6 +71,15 @@ public class UIQueryDynamicNode extends UIDynamicNode
                 MenuItem renameQueryItem = new MenuItem("重命名");
                 renameQueryItem.setOnAction(e -> checkAndRename());
 
+                MenuItem copyNameItem = new MenuItem("复制查询名");
+                copyNameItem.setOnAction(e -> Application.copyToClipboard(getQueryFile().getName()));
+
+                MenuItem copyPathItem = new MenuItem("复制路径");
+                copyPathItem.setOnAction(e -> Application.copyToClipboard(getQueryFile().getAbsolutePath()));
+
+                MenuItem revealItem = new MenuItem("在文件夹中显示");
+                revealItem.setOnAction(e -> Application.revealInFileManager(getQueryFile()));
+
                 MenuItem deleteQueryItem = new MenuItem("删除脚本");
                 deleteQueryItem.setOnAction(e -> deleteQuery());
 
@@ -78,6 +88,10 @@ public class UIQueryDynamicNode extends UIDynamicNode
                         new SeparatorMenuItem(),
                         newQueryEditorItem,
                         renameQueryItem,
+                        new SeparatorMenuItem(),
+                        copyNameItem,
+                        copyPathItem,
+                        revealItem,
                         new SeparatorMenuItem(),
                         deleteQueryItem
                 );

@@ -3,10 +3,13 @@ package valkyrie.app.explorer;
 import javafx.application.Platform;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import lombok.Getter;
 import lombok.Setter;
+import valkyrie.app.Application;
+import valkyrie.app.Publisher;
 import valkyrie.app.dialog.connection.CreateOrEditConnectionDialog;
 import valkyrie.app.event.ConnectedSuccessEvent;
 import valkyrie.app.event.bus.EventBus;
@@ -57,13 +60,29 @@ public class UIConnectionNode extends UIExplorerNode
         {
                 VkContextMenu contextMenu = new VkContextMenu();
 
+                MenuItem newQueryItem = new MenuItem("新建查询");
+                newQueryItem.setOnAction(e -> Publisher.openQueryEditor());
+
+                MenuItem refreshItem = new MenuItem("刷新");
+                refreshItem.setOnAction(e -> refresh());
+
+                MenuItem copyNameItem = new MenuItem("复制连接名");
+                copyNameItem.setOnAction(e -> Application.copyToClipboard(getLabel()));
+
                 MenuItem editMenuItem = new MenuItem("编辑连接");
                 editMenuItem.setOnAction(e -> edit());
+
                 MenuItem deleteMenuItem = new MenuItem("删除连接");
                 deleteMenuItem.setOnAction(e -> delete());
 
                 contextMenu.getItems().addAll(
                         connectOrDisconnectMenuItem,
+                        newQueryItem,
+                        new SeparatorMenuItem(),
+                        refreshItem,
+                        new SeparatorMenuItem(),
+                        copyNameItem,
+                        new SeparatorMenuItem(),
                         editMenuItem,
                         deleteMenuItem
                 );
@@ -154,5 +173,24 @@ public class UIConnectionNode extends UIExplorerNode
                 IOUtils.closeQuietly(driver.getDataSource());
 
                 connectFlag = false;
+        }
+
+        /**
+         * 刷新连接下的对象层级（不关闭已打开的工作区标签）
+         */
+        public void refresh()
+        {
+                if (!connectFlag || driver == null)
+                        return;
+
+                useProgressIndicator(() -> {
+                        List<DBNode> nodeHierarchy = driver.getNodeHierarchy();
+
+                        Platform.runLater(() -> {
+                                getChildren().clear();
+                                loadDynamicChildren(nodeHierarchy);
+                                setExpanded(true);
+                        });
+                });
         }
 }

@@ -52,6 +52,23 @@ public final class Application extends javafx.application.Application {
                 return Clipboard.getSystemClipboard().getString();
         }
 
+        /**
+         * 在系统文件管理器中打开指定文件所在目录
+         */
+        public static void revealInFileManager(java.io.File file)
+        {
+                if (file == null)
+                        return;
+
+                try {
+                        java.io.File target = file.isDirectory() ? file : file.getParentFile();
+                        if (target != null)
+                                Desktop.getDesktop().open(target);
+                } catch (Exception e) {
+                        LOG.error("打开文件夹失败: {}", file, e);
+                }
+        }
+
         public static Stage createModalStage() {
                 if (primaryStage == null)
                         throw new IllegalStateException("primaryStage not initialized, you called too early");

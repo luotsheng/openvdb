@@ -6,6 +6,9 @@ import javafx.animation.ScaleTransition;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.stage.Window;
 import javafx.util.Duration;
 import valkyrie.app.Application;
@@ -18,6 +21,29 @@ import valkyrie.app.theme.Stylesheets;
 @SuppressWarnings("SameParameterValue")
 public class VkContextMenu extends ContextMenu
 {
+        /**
+         * 追加一个菜单项并绑定动作
+         */
+        public MenuItem addItem(String text, Runnable action)
+        {
+                MenuItem item = new MenuItem(text);
+                item.setOnAction(event -> action.run());
+                getItems().add(item);
+                return item;
+        }
+
+        public Menu addMenu(String text)
+        {
+                Menu menu = new Menu(text);
+                getItems().add(menu);
+                return menu;
+        }
+
+        public void addSeparator()
+        {
+                getItems().add(new SeparatorMenuItem());
+        }
+
         public void show(double x, double y)
         {
                 this.show(Application.primaryStage, x, y);

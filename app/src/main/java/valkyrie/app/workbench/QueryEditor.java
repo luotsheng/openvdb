@@ -431,6 +431,27 @@ public class QueryEditor extends SplitPane implements EventListener
                         new KeyCodeCombination(KeyCode.V, KeyCodeCombination.SHORTCUT_DOWN)
                 );
 
+                MenuItem cutItem = new MenuItem("剪切");
+                cutItem.setOnAction(event -> editor.trigger("editor.action.clipboardCutAction"));
+                cutItem.setAccelerator(
+                        new KeyCodeCombination(KeyCode.X, KeyCodeCombination.SHORTCUT_DOWN)
+                );
+
+                MenuItem selectAllItem = new MenuItem("全选");
+                selectAllItem.setOnAction(event -> editor.trigger("editor.action.selectAll"));
+                selectAllItem.setAccelerator(
+                        new KeyCodeCombination(KeyCode.A, KeyCodeCombination.SHORTCUT_DOWN)
+                );
+
+                MenuItem commentItem = new MenuItem("注释/取消注释");
+                commentItem.setOnAction(event -> editor.trigger("editor.action.commentLine"));
+
+                MenuItem upperCaseItem = new MenuItem("转大写");
+                upperCaseItem.setOnAction(event -> editor.trigger("editor.action.transformToUppercase"));
+
+                MenuItem lowerCaseItem = new MenuItem("转小写");
+                lowerCaseItem.setOnAction(event -> editor.trigger("editor.action.transformToLowercase"));
+
                 editor.setShowContextMenuRequestEvent(ignored -> {
                         /* 有选中并且没有任务运行时才启用菜单 */
                         String selectedValue = editor.getSelectedValue();
@@ -444,7 +465,13 @@ public class QueryEditor extends SplitPane implements EventListener
                         beautifySelectedSQLItem,
                         new SeparatorMenuItem(),
                         copyItem,
-                        pasteItem
+                        cutItem,
+                        pasteItem,
+                        selectAllItem,
+                        new SeparatorMenuItem(),
+                        commentItem,
+                        upperCaseItem,
+                        lowerCaseItem
                 );
 
                 return contextMenu;
