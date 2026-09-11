@@ -27,7 +27,7 @@
 }
 
 .menu-item:disabled > .label {
-    -fx-text-fill: rgba(255, 255, 255, 0.3);
+    -fx-text-fill: #9a9aa0;
 }
 
 .menu-item .accelerator-text,
@@ -40,6 +40,12 @@
     -fx-text-fill: #ffffff;
 }
 
+/* 禁用项悬停时快捷键提示保持灰色，避免被聚焦态白字覆盖后“消失” */
+.menu-item:disabled .accelerator-text,
+.menu-item:disabled > .right-container > .label {
+    -fx-text-fill: #9a9aa0;
+}
+
 .menu-item > .arrow-button > .arrow {
     -fx-background-color: #f2f2f7;
 }
@@ -49,7 +55,7 @@
 }
 
 .menu-item:disabled > .arrow-button > .arrow {
-    -fx-background-color: rgba(255, 255, 255, 0.3);
+    -fx-background-color: #9a9aa0;
 }
 
 .context-menu .separator:horizontal .line {

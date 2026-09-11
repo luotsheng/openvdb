@@ -40,7 +40,7 @@
 }
 
 .menu-item:disabled > .label {
-    -fx-text-fill: #b8b8b8;
+    -fx-text-fill: #6b6b6b;
 }
 
 /* 危险操作（如删除）：常态红字，悬停/聚焦时随选中态转为白字 */
@@ -62,6 +62,12 @@
     -fx-text-fill: #ffffff;
 }
 
+/* 禁用项悬停时快捷键提示保持灰色，避免被聚焦态白字覆盖后“消失” */
+.menu-item:disabled .accelerator-text,
+.menu-item:disabled > .right-container > .label {
+    -fx-text-fill: #6b6b6b;
+}
+
 /* 子菜单箭头 */
 .menu-item > .arrow-button > .arrow {
     -fx-background-color: #202124;
@@ -72,7 +78,7 @@
 }
 
 .menu-item:disabled > .arrow-button > .arrow {
-    -fx-background-color: #b8b8b8;
+    -fx-background-color: #6b6b6b;
 }
 
 .context-menu .separator:horizontal {
