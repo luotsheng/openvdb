@@ -1,18 +1,15 @@
 /*
  * 右键菜单：尺寸与高亮按 macOS 原生模拟；
- * 底色采用接近不透明的“亚克力”质感（淡渐变 + 高不透明度 + 细边框 + 柔和投影），
- * 避免毛玻璃过于透明导致文字可读性下降。
+ * 浅色模式底色用纯白，贴近系统原生菜单观感（细边框 + 柔和投影）。
  */
 .context-menu {
-    -fx-background-color: linear-gradient(to bottom,
-        rgba(252, 252, 254, 0.97),
-        rgba(240, 240, 245, 0.95));
+    -fx-background-color: #ffffff;
     -fx-background-radius: 8;
     -fx-border-radius: 8;
     -fx-border-width: 0.5;
-    -fx-border-color: rgba(0, 0, 0, 0.12);
+    -fx-border-color: rgba(0, 0, 0, 0.10);
     -fx-padding: 4 0;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.26), 16, 0.0, 0, 6);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 14, 0.0, 0, 5);
 }
 
 .menu-item {

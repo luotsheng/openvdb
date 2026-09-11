@@ -118,6 +118,42 @@ public class MySQLDriver extends Driver
         }
 
         @Override
+        public Map<String, List<Column>> getTableColumns(Session session)
+        {
+                /*
+                 * MySQL 走 JDBC 元数据拿不到稳定的列注释，改为直接查 INFORMATION_SCHEMA，
+                 * 一次取回所有表的列名、类型与注释，供 SQL 智能提示使用。
+                 */
+                Map<String, List<Column>> result = new LinkedHashMap<>();
+
+                QueryResult queryResult = execute(session, """
+                        SELECT
+                          TABLE_NAME,
+                          COLUMN_NAME,
+                          COLUMN_TYPE,
+                          COLUMN_COMMENT
+                        FROM
+                          INFORMATION_SCHEMA.COLUMNS
+                        WHERE
+                          TABLE_SCHEMA = DATABASE()
+                        ORDER BY
+                          TABLE_NAME,
+                          ORDINAL_POSITION;
+                        """);
+
+                for (GridRow row : queryResult.getRows()) {
+                        Column column = new Column();
+                        column.setName(row.get(1));
+                        column.setType(row.get(2));
+                        column.setComment(row.get(3));
+
+                        result.computeIfAbsent(row.get(0), k -> new ArrayList<>()).add(column);
+                }
+
+                return result;
+        }
+
+        @Override
         public List<Table> getTables(Session session)
         {
                 List<Table> tables = Lists.newArrayList();

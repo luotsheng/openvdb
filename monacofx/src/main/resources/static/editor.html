@@ -10,6 +10,13 @@
             margin: 0;
             overflow: hidden;
         }
+
+        /* 按住 Shortcut 键悬停在表名上时的超链接样式 */
+        .vk-table-link {
+            color: #007aff !important;
+            text-decoration: underline;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -52,7 +59,7 @@
                 value: '',
                 language: 'sql',
                 fontSize: 16,
-                automaticLayout: true,
+                automaticLayout: false,
                 roundedSelection: false,
                 mouseWheelScrollSensitivity: 0.03,
                 scrollBeyondLastLine: false,
@@ -69,6 +76,30 @@
                 }
             }
         );
+
+        /*
+         * 代替 automaticLayout：拖动分割线时 resize 事件非常密集，
+         * 用 requestAnimationFrame 把多次 resize 合并成每帧一次 layout，
+         * 避免同步 layout 造成的拖动卡顿。
+         */
+        let editorLayoutScheduled = false;
+
+        const scheduleEditorLayout = () => {
+            if (editorLayoutScheduled)
+                return;
+
+            editorLayoutScheduled = true;
+
+            requestAnimationFrame(() => {
+                editorLayoutScheduled = false;
+                editor.layout();
+            });
+        };
+
+        new ResizeObserver(scheduleEditorLayout)
+            .observe(document.getElementById('container'));
+
+        window.addEventListener('resize', scheduleEditorLayout);
 
         monaco.languages.registerCompletionItemProvider('sql', {
             triggerCharacters: [' ', '.'],
@@ -166,6 +197,104 @@
                     selected
                 );
             }, 50);
+        });
+
+        // 按住 Cmd/Ctrl 悬停时，表名显示为超链接样式并展示表注释
+        let linkDecorations = [];
+        let lastLinkWord = null;
+        let lastLinkIsTable = false;
+
+        const clearTableLink = () => {
+            if (linkDecorations.length) {
+                editor.deltaDecorations(linkDecorations, []);
+                linkDecorations = [];
+            }
+        };
+
+        const hideTableTooltip = () => {
+            lastLinkWord = null;
+            if (window.hook && window.hook.hideTableTooltip)
+                window.hook.hideTableTooltip();
+        };
+
+        editor.onMouseMove((e) => {
+            const browserEvent = e.event && e.event.browserEvent;
+            const modifier = browserEvent && (browserEvent.metaKey || browserEvent.ctrlKey);
+            const position = e.target && e.target.position;
+
+            if (!modifier || !position) {
+                clearTableLink();
+                hideTableTooltip();
+                return;
+            }
+
+            const model = editor.getModel();
+            const word = model.getWordAtPosition(position);
+
+            if (!word || !word.word) {
+                clearTableLink();
+                hideTableTooltip();
+                return;
+            }
+
+            // 仅在标识符变化时询问 Java，避免频繁跨桥调用
+            if (word.word !== lastLinkWord) {
+                lastLinkWord = word.word;
+                lastLinkIsTable = window.hook && window.hook.hoverTable
+                    ? window.hook.hoverTable(
+                        word.word, browserEvent.clientX, browserEvent.clientY)
+                    : false;
+            }
+
+            if (!lastLinkIsTable) {
+                clearTableLink();
+                return;
+            }
+
+            linkDecorations = editor.deltaDecorations(linkDecorations, [{
+                range: new monaco.Range(
+                    position.lineNumber, word.startColumn,
+                    position.lineNumber, word.endColumn
+                ),
+                options: { inlineClassName: 'vk-table-link' }
+            }]);
+        });
+
+        // 松开 Cmd/Ctrl、失焦或移出编辑器时收起链接与提示
+        document.addEventListener('keyup', (e) => {
+            if (!e.metaKey && !e.ctrlKey) {
+                clearTableLink();
+                hideTableTooltip();
+            }
+        });
+
+        window.addEventListener('blur', () => {
+            clearTableLink();
+            hideTableTooltip();
+        });
+
+        editor.onMouseLeave(() => {
+            clearTableLink();
+            hideTableTooltip();
+        });
+
+        // 按住 Cmd/Ctrl 点击标识符 → 交给 Java 判断是否为表名并跳转到设计表
+        editor.onMouseDown((e) => {
+            const browserEvent = e.event && e.event.browserEvent;
+            const modifier = browserEvent && (browserEvent.metaKey || browserEvent.ctrlKey);
+            const position = e.target && e.target.position;
+
+            if (!modifier || !position)
+                return;
+
+            const model = editor.getModel();
+            const word = model.getWordAtPosition(position);
+
+            if (!word || !word.word)
+                return;
+
+            if (window.hook && window.hook.openTable)
+                window.hook.openTable(word.word);
         });
 
         /**
@@ -361,6 +490,18 @@
         });
 
         editor.layout();
+
+        // 通知 Java 端编辑器已就绪（带有限次重试，等待 hook 安装完成）
+        let readyTries = 0;
+        (function notifyReady() {
+            if (window.hook && window.hook.onEditorReady) {
+                window.hook.onEditorReady();
+                return;
+            }
+            if (++readyTries > 100)
+                return;
+            setTimeout(notifyReady, 30);
+        })();
     });
 </script>
 </body>

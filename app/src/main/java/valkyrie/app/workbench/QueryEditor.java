@@ -18,9 +18,15 @@ import valkyrie.app.event.UpdateQueryFileEvent;
 import valkyrie.app.event.bus.Event;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.event.bus.EventListener;
+import valkyrie.app.event.workbench.OpenTableDesignerPaneEvent;
 import valkyrie.app.event.workbench.RegisterTabManagerEvent;
+import valkyrie.app.explorer.UICatalogDynamicNode;
+import valkyrie.app.explorer.UIExplorerNode;
 import valkyrie.app.explorer.UIQueryContainerDynamicNode;
 import valkyrie.app.explorer.UIQueryDynamicNode;
+import valkyrie.app.explorer.UISchemaDynamicNode;
+import valkyrie.app.explorer.UITableContainerDynamicNode;
+import valkyrie.app.explorer.UITableDynamicNode;
 import valkyrie.app.pane.ExecuteLoggerPane;
 import valkyrie.app.pane.QueryResultDataPane;
 import valkyrie.app.utils.TabIdFactory;
@@ -37,6 +43,7 @@ import valkyrie.driver.api.ProductMetaData;
 import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.SQLExecuteCallback;
 import valkyrie.driver.api.Session;
+import valkyrie.driver.api.Table;
 import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.driver.suggestion.SuggestionEngine;
@@ -183,6 +190,13 @@ public class QueryEditor extends SplitPane implements EventListener
                         return engine == null ? List.of() : engine.resolve(sql, offset);
                 });
 
+                editor.setOnOpenTableLink(this::openTableDesigner);
+
+                editor.setTableCommentProvider(name -> {
+                        SuggestionEngine engine = suggestionEngine;
+                        return engine == null ? null : engine.tableComment(name);
+                });
+
                 // Context Menu
                 ContextMenu contextMenu = createContextMenu(editor);
                 editor.bindContextMenu(contextMenu);
@@ -194,6 +208,106 @@ public class QueryEditor extends SplitPane implements EventListener
         {
                 return tab.getTabPane() != null
                         && tab.getTabPane().getSelectionModel().getSelectedItem() == tab;
+        }
+
+        /**
+         * 处理编辑器内按住 Shortcut 键点击标识符：仅当它是当前会话下的表时，
+         * 跳转并打开该表的设计器。
+         */
+        private void openTableDesigner(String name)
+        {
+                String tableName = stripQuotes(name);
+
+                if (tableName == null || tableName.isBlank())
+                        return;
+
+                SuggestionEngine engine = suggestionEngine;
+
+                if (engine == null || !engine.hasTable(tableName))
+                        return;
+
+                /* 优先复用资源树中已加载的表节点，保证 tabId 与从树打开的完全一致 */
+                UITableDynamicNode node = findTableNode(tableName);
+
+                if (node != null) {
+                        node.openDesignTablePane();
+                        return;
+                }
+
+                Driver driver = pathSelector.getDriver();
+
+                if (driver == null)
+                        return;
+
+                EventBus.publish(new OpenTableDesignerPaneEvent(
+                        pathSelector.getSession(),
+                        driver,
+                        new Table(tableName),
+                        pathLabel(),
+                        connectionLabel()));
+        }
+
+        private UITableDynamicNode findTableNode(String tableName)
+        {
+                UIExplorerNode pathNode = pathSelector.getSelectedSchema();
+
+                if (pathNode == null)
+                        pathNode = pathSelector.getSelectedCatalog();
+
+                if (pathNode == null)
+                        return null;
+
+                for (TreeItem<String> child : pathNode.getChildren()) {
+                        if (!(child instanceof UITableContainerDynamicNode container))
+                                continue;
+
+                        for (TreeItem<String> table : container.getChildren()) {
+                                if (table instanceof UITableDynamicNode node
+                                        && node.getTable().getName().equalsIgnoreCase(tableName))
+                                        return node;
+                        }
+                }
+
+                return null;
+        }
+
+        private String pathLabel()
+        {
+                UISchemaDynamicNode schema = pathSelector.getSelectedSchema();
+
+                if (schema != null)
+                        return schema.getLabel();
+
+                UICatalogDynamicNode catalog = pathSelector.getSelectedCatalog();
+
+                return catalog == null ? "" : catalog.getLabel();
+        }
+
+        private String connectionLabel()
+        {
+                var connection = pathSelector.getSelectedConnection();
+                return connection == null ? "" : connection.getLabel();
+        }
+
+        private static String stripQuotes(String value)
+        {
+                if (value == null)
+                        return null;
+
+                String text = value.trim();
+
+                if (text.length() < 2)
+                        return text;
+
+                char first = text.charAt(0);
+                char last = text.charAt(text.length() - 1);
+
+                if ((first == '`' && last == '`')
+                        || (first == '"' && last == '"')
+                        || (first == '[' && last == ']'))
+                        return text.substring(1, text.length() - 1);
+
+                return text;
         }
 
         private void initializeMonacoEditorValue(QueryFile queryFile)
@@ -273,11 +387,15 @@ public class QueryEditor extends SplitPane implements EventListener
                 if (driver == null || (session.catalog() == null && session.schema() == null))
                         return;
 
+                Platform.runLater(() -> VkStatusBar.getInstance().setTask("正在加载提示引擎…"));
+
                 singleThreadExecutor.execute(() -> {
                         try {
                                 suggestionEngine = SuggestionEngine.of(driver, session);
                         } catch (Exception e) {
                                 LOG.warn("构建 SQL 提示数据失败", e);
+                        } finally {
+                                Platform.runLater(VkStatusBar.getInstance()::clearTask);
                         }
                 });
         }

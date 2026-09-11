@@ -4,11 +4,15 @@
     -fx-background-radius: 6;
 }
 
+/*
+ * 用半透明中性灰做反馈色：工具栏背景本身就是 -color-bg-subtle，
+ * 若按压色也用同一变量会与背景同色，导致没有点击反馈。
+ */
 .vk-icon-button:hover {
-    -fx-background-color: -color-bg-inset;
+    -fx-background-color: rgba(120, 120, 128, 0.16);
 }
 
 .vk-icon-button:pressed {
-    -fx-background-color: -color-bg-subtle;
+    -fx-background-color: rgba(120, 120, 128, 0.30);
     -fx-border-width: 0;
 }

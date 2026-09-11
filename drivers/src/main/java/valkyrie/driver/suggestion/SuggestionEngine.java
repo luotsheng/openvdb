@@ -83,8 +83,7 @@ public class SuggestionEngine
 
                                 for (Column column : columns)
                                         fields.add(Suggestion.ofField(
-                                                column.getName(),
-                                                column.getType() == null ? "" : column.getType()));
+                                                column.getName(), columnDetail(column)));
 
                                 columnsByTable.put(table.toLowerCase(), fields);
                         });
@@ -96,6 +95,41 @@ public class SuggestionEngine
                 keywords.forEach(s -> reserved.add(s.getLabel().toUpperCase()));
 
                 return new SuggestionEngine(keywords, tables, columnsByTable, reserved);
+        }
+
+        /**
+         * 判断给定名称是否为当前会话下的表（用于编辑器表名跳转）
+         */
+        public boolean hasTable(String name)
+        {
+                return tableComment(name) != null;
+        }
+
+        /**
+         * 返回表注释；{@code null} 表示不是当前会话下的表，空串表示表存在但无注释。
+         * 供编辑器 Shortcut 悬停时展示。
+         */
+        public String tableComment(String name)
+        {
+                if (name == null || name.isBlank())
+                        return null;
+
+                String target = unquote(name.trim());
+
+                for (Suggestion table : tables) {
+                        if (table.getLabel().equalsIgnoreCase(target))
+                                return table.getDetail() == null ? "" : table.getDetail();
+                }
+
+                return null;
+        }
+
+        private static String columnDetail(Column column)
+        {
+                if (column.getComment() != null && !column.getComment().isBlank())
+                        return column.getComment();
+
+                return column.getType() == null ? "" : column.getType();
         }
 
         /**

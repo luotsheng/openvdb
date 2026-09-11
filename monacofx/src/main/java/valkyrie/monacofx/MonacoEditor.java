@@ -2,9 +2,10 @@ package valkyrie.monacofx;
 
 import com.alibaba.fastjson.JSONObject;
 import javafx.animation.PauseTransition;
-import javafx.application.Platform;
+import javafx.concurrent.Worker;
 import javafx.event.EventHandler;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Tooltip;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyEvent;
@@ -39,6 +40,13 @@ public class MonacoEditor extends StackPane
         private final PauseTransition pauseTransition = new PauseTransition(Duration.millis(500));
         private ContextMenu contextMenu = null;
 
+        /**
+         * 编辑器是否已加载完成；未完成时把操作排队，避免在 FX 线程轮询 JS
+         */
+        private boolean ready = false;
+        private boolean loading = false;
+        private final java.util.List<Runnable> pendingTasks = new java.util.ArrayList<>();
+
         @Setter
         private ShowContextMenuRequestEvent showContextMenuRequestEvent = null;
 
@@ -50,6 +58,17 @@ public class MonacoEditor extends StackPane
 
         @Setter
         private SuggestionProvider suggestionProvider = null;
+
+        @Setter
+        private OnOpenTableLink onOpenTableLink = null;
+
+        /**
+         * 返回表注释：{@code null} 表示不是表；空串表示表存在但无注释
+         */
+        @Setter
+        private java.util.function.Function<String, String> tableCommentProvider = null;
+
+        private final Tooltip tableTooltip = new Tooltip();
 
         public interface ShowContextMenuRequestEvent {
                 void onRequest(ContextMenu contextMenu);
@@ -70,11 +89,17 @@ public class MonacoEditor extends StackPane
                 Collection<?> suggest(String sql, int offset);
         }
 
+        /**
+         * 按住 Shortcut 键点击标识符时触发（用于表名跳转等）
+         */
+        public interface OnOpenTableLink {
+                void onOpen(String name);
+        }
+
         @SuppressWarnings("DataFlowIssue")
         public MonacoEditor()
         {
                 webView.setContextMenuEnabled(false);
-                engine.load(getClass().getResource("/static/editor.html").toExternalForm());
                 getChildren().add(webView);
 
                 webView.setOnMousePressed(event -> {
@@ -90,14 +115,37 @@ public class MonacoEditor extends StackPane
                                 onDidChangeModelContent.onChange();
                 });
 
-                setHook();
+                /* 页面加载完成后安装 JS 钩子 */
+                engine.getLoadWorker().stateProperty().addListener((obs, oldState, newState) -> {
+                        if (newState == Worker.State.SUCCEEDED)
+                                installHook();
+                });
+
+                /* 进入场景后再加载 Monaco，避免打开标签页时同步等待 WebView 初始化 */
+                sceneProperty().addListener((obs, oldScene, newScene) -> {
+                        if (newScene != null)
+                                startLoad();
+                });
 
                 webView.prefWidthProperty().bind(this.widthProperty());
                 webView.prefHeightProperty().bind(this.heightProperty());
         }
 
+        private void startLoad()
+        {
+                if (loading)
+                        return;
+
+                loading = true;
+                engine.load(getClass().getResource("/static/editor.html").toExternalForm());
+        }
+
         public void dispose()
         {
+                ready = false;
+                loading = false;
+                pendingTasks.clear();
+
                 engine.getLoadWorker().cancel();
                 engine.load("about:blank");
 
@@ -175,6 +223,69 @@ public class MonacoEditor extends StackPane
                         }
                 }
 
+                /**
+                 * 按住 Shortcut 键点击标识符
+                 */
+                public void openTable(Object name)
+                {
+                        if (editor.onOpenTableLink != null)
+                                editor.onOpenTableLink.onOpen(String.valueOf(name));
+                }
+
+                /**
+                 * 判断标识符是否为可跳转的表名（用于悬停高亮）
+                 */
+                public boolean isTable(Object name)
+                {
+                        return editor.tableCommentProvider != null
+                                && editor.tableCommentProvider.apply(String.valueOf(name)) != null;
+                }
+
+                /**
+                 * Shortcut 悬停表名：展示表注释，返回是否为表
+                 */
+                public boolean hoverTable(Object name, Object x, Object y)
+                {
+                        if (editor.tableCommentProvider == null)
+                                return false;
+
+                        String word = String.valueOf(name);
+                        String comment = editor.tableCommentProvider.apply(word);
+
+                        if (comment == null) {
+                                editor.hideTableTooltip();
+                                return false;
+                        }
+
+                        editor.showTableTooltip(word, comment, toDouble(x), toDouble(y));
+                        return true;
+                }
+
+                public void hideTableTooltip()
+                {
+                        editor.hideTableTooltip();
+                }
+
+                private static double toDouble(Object value)
+                {
+                        if (value instanceof Number number)
+                                return number.doubleValue();
+
+                        try {
+                                return Double.parseDouble(String.valueOf(value));
+                        } catch (Exception e) {
+                                return 0;
+                        }
+                }
+
+                /**
+                 * 编辑器创建完成（由 JS 回调），执行排队的操作
+                 */
+                public void onEditorReady()
+                {
+                        editor.onEditorReady();
+                }
+
                 private static int toInt(Object value)
                 {
                         if (value instanceof Number number)
@@ -188,9 +299,9 @@ public class MonacoEditor extends StackPane
                 }
         }
 
-        private void setHook()
+        private void installHook()
         {
-                waitAndRun(() -> {
+                try {
                         JSObject window = (JSObject) engine.executeScript("window");
                         window.setMember("hook", hook);
                         engine.executeScript(
@@ -204,7 +315,37 @@ public class MonacoEditor extends StackPane
                                    };
                                    """
                         );
-                });
+                } catch (Exception e) {
+                        LOG.error("Install Monaco hook failed", e);
+                }
+        }
+
+        private void onEditorReady()
+        {
+                ready = true;
+
+                java.util.List<Runnable> tasks = new java.util.ArrayList<>(pendingTasks);
+                pendingTasks.clear();
+
+                tasks.forEach(Runnable::run);
+        }
+
+        private void showTableTooltip(String name, String comment, double x, double y)
+        {
+                tableTooltip.setText(comment == null || comment.isBlank() ? name : name + "  —  " + comment);
+
+                javafx.geometry.Point2D point = webView.localToScreen(x, y);
+
+                if (point == null)
+                        return;
+
+                tableTooltip.show(webView, point.getX() + 12, point.getY() + 14);
+        }
+
+        private void hideTableTooltip()
+        {
+                if (tableTooltip.isShowing())
+                        tableTooltip.hide();
         }
 
         public void bindContextMenu(ContextMenu contextMenu)
@@ -236,18 +377,23 @@ public class MonacoEditor extends StackPane
          */
         public void registerSuggestions(Collection<?> suggestions)
         {
-                waitAndRun(() -> {
-                        engine.executeScript("window.addSuggestions(" + JSONObject.toJSONString(suggestions) + ")");
-                });
+                runWhenReady(() -> engine.executeScript(
+                        "window.addSuggestions(" + JSONObject.toJSONString(suggestions) + ")"));
         }
 
         public String getValue()
         {
+                if (!ready)
+                        return "";
+
                 return (String) engine.executeScript("editor.getValue()");
         }
 
         public String getSelectedValue()
         {
+                if (!ready)
+                        return "";
+
                 return (String) engine.executeScript(
                         "window.editor.getModel().getValueInRange(editor.getSelection())"
                 );
@@ -255,39 +401,34 @@ public class MonacoEditor extends StackPane
 
         public void replaceSelection(String text)
         {
-                waitAndRun(() -> {
-                        engine.executeScript(
-                                "editor.executeEdits('', [{ range: editor.getSelection(), text: " + toJsString(text) + " }])"
-                        );
-                });
+                runWhenReady(() -> engine.executeScript(
+                        "editor.executeEdits('', [{ range: editor.getSelection(), text: " + toJsString(text) + " }])"));
         }
 
         public void clear()
         {
-                waitAndRun(() -> engine.executeScript("editor.getModel().setValue('')"));
+                runWhenReady(() -> engine.executeScript("editor.getModel().setValue('')"));
         }
 
         public void setValue(String text)
         {
-                waitAndRun(() -> {
-                        engine.executeScript("""
-                                setTimeout(() => {
-                                    const model = editor.getModel();
-                                
-                                    editor.executeEdits('', [{
-                                        range: model.getFullModelRange(),
-                                        text: %s
-                                    }]);
-                                
-                                    editor.layout();
-                                
-                                    requestAnimationFrame(() => {
-                                        editor.layout();
-                                        editor.focus();
-                                    });
-                                }, 0);
-                                """.formatted(toJsString(text)));
-                });
+                runWhenReady(() -> engine.executeScript("""
+                        setTimeout(() => {
+                            const model = editor.getModel();
+                        
+                            editor.executeEdits('', [{
+                                range: model.getFullModelRange(),
+                                text: %s
+                            }]);
+                        
+                            editor.layout();
+                        
+                            requestAnimationFrame(() => {
+                                editor.layout();
+                                editor.focus();
+                            });
+                        }, 0);
+                        """.formatted(toJsString(text))));
         }
 
         public void setWebViewOnKeyPressedEvent(
@@ -295,19 +436,15 @@ public class MonacoEditor extends StackPane
                 webView.setOnKeyPressed(value);
         }
 
-        private void waitAndRun(Runnable task)
+        /**
+         * 编辑器就绪前先排队，就绪后立即执行，避免在 FX 线程轮询 JS
+         */
+        private void runWhenReady(Runnable task)
         {
-                Platform.runLater(() -> {
-                        Object ready = engine.executeScript(
-                                "window.editor && window.editor.getModel && window.editor.getModel() !== null"
-                        );
-
-                        if (Boolean.TRUE.equals(ready)) {
-                                task.run();
-                        } else {
-                                waitAndRun(task);
-                        }
-                });
+                if (ready)
+                        task.run();
+                else
+                        pendingTasks.add(task);
         }
 
         private static String toJsString(String str)
