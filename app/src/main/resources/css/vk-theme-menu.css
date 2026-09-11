@@ -1,58 +1,78 @@
 /*
- * 右键菜单：尺寸与高亮按 macOS 原生模拟；
- * 浅色模式底色用纯白，贴近系统原生菜单观感（细边框 + 柔和投影）。
+ * 右键菜单：按 mockup 样式等比例缩小（约 0.65 倍），适配桌面端观感。
+ * 半透明底色营造轻微亚克力玻璃感。
+ * 说明：JavaFX 的 -fx-effect 只支持单个投影，这里取主投影近似 CSS 的双重阴影。
  */
 .context-menu {
-    -fx-background-color: #ffffff;
-    -fx-background-radius: 8;
-    -fx-border-radius: 8;
+    -fx-background-color: linear-gradient(to bottom,
+        rgba(255, 255, 255, 0.82),
+        rgba(244, 245, 248, 0.74));
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
     -fx-border-width: 0.5;
-    -fx-border-color: rgba(0, 0, 0, 0.10);
-    -fx-padding: 4 0;
-    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.22), 14, 0.0, 0, 5);
+    -fx-border-color: #c7c7c7;
+    -fx-padding: 6 8;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.16), 23, 0.0, 0, 12);
 }
 
 .menu-item {
     -fx-background-color: transparent;
-    -fx-padding: 3 12 3 12;
-    -fx-background-radius: 5;
-    -fx-background-insets: 0 5;
+    -fx-padding: 5 10;
+    -fx-background-radius: 6;
+    -fx-background-insets: 0;
     -fx-font-size: 13px;
 }
 
 .menu-item > .label {
-    -fx-text-fill: -color-fg-default;
+    -fx-text-fill: #202124;
 }
 
 .menu-item:focused {
-    -fx-background-color: -color-accent-emphasis;
+    -fx-background-color: rgb(88, 163, 255);
 }
 
 .menu-item:focused > .label {
-    -fx-text-fill: -color-fg-emphasis;
+    -fx-text-fill: #202124;
 }
 
-/* 危险操作（如删除）：常态红字，悬停/聚焦时保持白字 */
+.menu-item:disabled > .label {
+    -fx-text-fill: #b8b8b8;
+}
+
+.menu-item:disabled:focused {
+    -fx-background-color: transparent;
+}
+
+/* 危险操作（如删除）：常态红字，悬停/聚焦时保持红字 */
 .menu-item.danger-menu-item > .label {
     -fx-text-fill: -color-danger-fg;
 }
 
 .menu-item.danger-menu-item:focused > .label {
-    -fx-text-fill: -color-fg-emphasis;
+    -fx-text-fill: -color-danger-fg;
 }
 
 .menu-item .accelerator-text,
 .menu-item > .right-container > .label {
-    -fx-text-fill: -color-fg-muted;
+    -fx-text-fill: #80868b;
 }
 
 .menu-item:focused .accelerator-text,
 .menu-item:focused > .right-container > .label {
-    -fx-text-fill: -color-fg-emphasis;
+    -fx-text-fill: #202124;
+}
+
+/* 子菜单箭头 */
+.menu-item > .arrow-button > .arrow {
+    -fx-background-color: #202124;
+}
+
+.context-menu .separator:horizontal {
+    -fx-padding: 2 0;
 }
 
 .context-menu .separator:horizontal .line {
-    -fx-border-color: -color-border-muted;
+    -fx-border-color: #d8d8d8 transparent transparent transparent;
     -fx-border-width: 0.5;
-    -fx-border-insets: 0 10;
+    -fx-border-insets: 0;
 }
