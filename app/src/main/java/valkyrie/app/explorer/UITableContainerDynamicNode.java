@@ -25,7 +25,7 @@ public class UITableContainerDynamicNode extends UIDynamicNode
 {
         private final MenuItem openOrCloseMenuItem = new MenuItem("展开列表");
 
-        private final Map<String, UITableDynamicNode> tableDynamicNodes = Maps.newHashMap();
+        private final Map<String, UITableDynamicNode> tableDynamicNodes = new java.util.concurrent.ConcurrentHashMap<>();
 
         public UITableContainerDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {

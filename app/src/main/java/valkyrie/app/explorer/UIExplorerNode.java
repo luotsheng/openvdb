@@ -86,9 +86,21 @@ public abstract class UIExplorerNode extends TreeItem<String>
                 for (DBNode dbNode : dbNodes)
                         dynamicNodes.add(UIDynamicNode.create(this, dbNode));
 
-                getChildren().addAll(dynamicNodes);
+                /* 子节点挂载属于 UI 变更，若当前在后台线程则切回 FX 线程 */
+                runOnFxThread(() -> getChildren().addAll(dynamicNodes));
 
                 return dynamicNodes;
+        }
+
+        /**
+         * 在 JavaFX 线程执行；已在 FX 线程则直接执行，保证同步语义
+         */
+        protected static void runOnFxThread(Runnable action)
+        {
+                if (Platform.isFxApplicationThread())
+                        action.run();
+                else
+                        Platform.runLater(action);
         }
 
         protected void useProgressIndicator(Runnable action)

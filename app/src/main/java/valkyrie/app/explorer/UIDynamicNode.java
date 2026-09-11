@@ -21,7 +21,7 @@ public class UIDynamicNode extends UIExplorerNode
 {
         private final UIExplorerNode parent;
         protected final DBNode dbNode;
-        protected boolean initializeChildrenFlag = false;
+        protected volatile boolean initializeChildrenFlag = false;
 
         protected UIDynamicNode(UIExplorerNode parent, DBNode dbNode)
         {
@@ -62,15 +62,12 @@ public class UIDynamicNode extends UIExplorerNode
                                 return;
 
                         /*
-                         * 节点的创建会直接修改 TreeItem 的子节点（UI），
-                         * 必须切回 JavaFX 线程执行，否则会偶发
-                         * "Not on FX application thread" 异常。
+                         * 在后台线程构造子节点（可能附带数据库查询，加载圈会一直显示），
+                         * 子节点挂载到 TreeItem 时由 loadDynamicChildren 自动切回 FX 线程。
                          */
-                        Platform.runLater(() -> {
-                                loadDynamicChildren(children);
-                                initializeChildrenFlag = true;
-                                onInitializedEvent();
-                        });
+                        loadDynamicChildren(children);
+                        initializeChildrenFlag = true;
+                        onInitializedEvent();
                 });
         }
 

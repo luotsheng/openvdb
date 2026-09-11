@@ -86,14 +86,13 @@ public class UIQueryContainerDynamicNode extends UIDynamicNode
                 var queryFiles = QueryFileRepository.loadScriptFiles(new File(getPath()).getParent());
                 List<UIQueryDynamicNode> nodes = Lists.newArrayList();
 
-                getChildren().clear();
+                for (QueryFile queryFile : queryFiles)
+                        nodes.add(new UIQueryDynamicNode(this, queryFile));
 
-                for (QueryFile queryFile : queryFiles) {
-                        UIQueryDynamicNode queryDynamicNode = new UIQueryDynamicNode(this, queryFile);
-                        nodes.add(queryDynamicNode);
-                }
-
-                getChildren().addAll(nodes);
+                runOnFxThread(() -> {
+                        getChildren().clear();
+                        getChildren().addAll(nodes);
+                });
 
                 initializeChildrenFlag = true;
                 EventBus.publish(new RefreshQueryNodeEvent(this));
