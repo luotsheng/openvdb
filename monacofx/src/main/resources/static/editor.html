@@ -28,6 +28,15 @@
         .monaco-scrollbar .slider.active {
             background-color: rgba(0, 122, 255, 0.70) !important;
         }
+
+        /* 强制中文使用系统中文无衬线字体，避免回退到日文/韩文字形 */
+        .monaco-editor,
+        .monaco-editor .view-lines,
+        .monaco-editor .view-line,
+        .monaco-editor .suggest-widget,
+        .monaco-editor .monaco-list {
+            font-family: "Menlo", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", monospace !important;
+        }
     </style>
 </head>
 <body>
@@ -70,6 +79,7 @@
                 value: '',
                 language: 'sql',
                 fontSize: 16,
+                fontFamily: "Menlo, Monaco, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', monospace",
                 automaticLayout: false,
                 roundedSelection: false,
                 mouseWheelScrollSensitivity: 0.03,
