@@ -88,7 +88,7 @@ public class VkTableView<S> extends TableView<S>
                 setOnMouseReleased(event -> rowDragSelecting = false);
         }
 
-        private static final String ROW_SELECTOR_PRESSED_STYLE = "-fx-background-color: #9CC7FF;";
+        private static final String ROW_SELECTOR_PRESSED_CLASS = "row-selector-pressed";
 
         /**
          * 在数据表首列前插入一个空白的“行选择列”（类似 Navicat）：
@@ -113,9 +113,9 @@ public class VkTableView<S> extends TableView<S>
                                 getStyleClass().add("row-selector-cell");
 
                                 /* 按下加深、抬起/离开还原，形成类似按钮的按压效果 */
-                                setOnMousePressed(event -> setStyle(ROW_SELECTOR_PRESSED_STYLE));
-                                setOnMouseReleased(event -> setStyle(""));
-                                setOnMouseExited(event -> setStyle(""));
+                                setOnMousePressed(event -> getStyleClass().add(ROW_SELECTOR_PRESSED_CLASS));
+                                setOnMouseReleased(event -> getStyleClass().remove(ROW_SELECTOR_PRESSED_CLASS));
+                                setOnMouseExited(event -> getStyleClass().remove(ROW_SELECTOR_PRESSED_CLASS));
                         }
 
                         @Override

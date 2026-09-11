@@ -4,10 +4,12 @@ import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.ScaleTransition;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.control.ContextMenu;
 import javafx.stage.Window;
 import javafx.util.Duration;
 import valkyrie.app.Application;
+import valkyrie.app.theme.Stylesheets;
 
 /**
  * @author Luo Tiansheng
@@ -24,13 +26,27 @@ public class VkContextMenu extends ContextMenu
         public void show(Window ownerWindow, double anchorX, double anchorY)
         {
                 super.show(ownerWindow, anchorX, anchorY);
+                applyStyles();
                 playAnimation();
         }
 
         public void show(Node anchor, double anchorX, double anchorY)
         {
                 super.show(anchor, anchorX, anchorY);
+                applyStyles();
                 playAnimation();
+        }
+
+        /**
+         * 弹出菜单是独立的弹出窗口，默认不会带上主场景的应用样式，
+         * 这里在显示后手动挂载，保证毛玻璃效果与主题一致。
+         */
+        private void applyStyles()
+        {
+                Scene scene = getScene();
+
+                if (scene != null)
+                        scene.getStylesheets().setAll(Stylesheets.current());
         }
 
         private void playAnimation()

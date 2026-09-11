@@ -1,39 +1,52 @@
+/*
+ * 右键菜单：尺寸与高亮按 macOS 原生模拟；
+ * 底色采用接近不透明的“亚克力”质感（淡渐变 + 高不透明度 + 细边框 + 柔和投影），
+ * 避免毛玻璃过于透明导致文字可读性下降。
+ */
 .context-menu {
-    -fx-background-color: rgb(252, 252, 253);
-    -fx-background-radius: 12;
-    -fx-border-radius: 12;
-    -fx-border-width: 1;
-    -fx-border-color: rgb(225, 227, 230);
-    -fx-padding: 5 0;
+    -fx-background-color: linear-gradient(to bottom,
+        rgba(252, 252, 254, 0.97),
+        rgba(240, 240, 245, 0.95));
+    -fx-background-radius: 8;
+    -fx-border-radius: 8;
+    -fx-border-width: 0.5;
+    -fx-border-color: rgba(0, 0, 0, 0.12);
+    -fx-padding: 4 0;
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.26), 16, 0.0, 0, 6);
 }
 
 .menu-item {
     -fx-background-color: transparent;
-    -fx-padding: 6 16;
-    -fx-background-radius: 8;
-    -fx-background-insets: 2 6;
-    -fx-font-size: 13.5;
-    -fx-text-fill: #1c1c1e;
+    -fx-padding: 3 12 3 12;
+    -fx-background-radius: 5;
+    -fx-background-insets: 0 5;
+    -fx-font-size: 13px;
 }
 
-.menu-item:hover, .menu-item:focused {
-    -fx-background-color: #007aff;
+.menu-item > .label {
+    -fx-text-fill: -color-fg-default;
 }
 
-.menu-item:hover .label, .menu-item:focused .label {
-    -fx-text-fill: white;
+.menu-item:focused {
+    -fx-background-color: -color-accent-emphasis;
 }
 
-.menu-item .accelerator-text {
-    -fx-text-fill: #7c7c82;
+.menu-item:focused > .label {
+    -fx-text-fill: -color-fg-emphasis;
 }
 
-.menu-item:hover .accelerator-text {
-    -fx-text-fill: white;
+.menu-item .accelerator-text,
+.menu-item > .right-container > .label {
+    -fx-text-fill: -color-fg-muted;
 }
 
-.separator .line {
-    -fx-border-color: #d4d4d8;
+.menu-item:focused .accelerator-text,
+.menu-item:focused > .right-container > .label {
+    -fx-text-fill: -color-fg-emphasis;
+}
+
+.context-menu .separator:horizontal .line {
+    -fx-border-color: -color-border-muted;
     -fx-border-width: 0.5;
     -fx-border-insets: 0 10;
 }

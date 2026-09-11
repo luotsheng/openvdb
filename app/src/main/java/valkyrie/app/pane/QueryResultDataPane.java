@@ -268,7 +268,14 @@ public class QueryResultDataPane extends BorderPane
                 new Thread(() -> {
                         try {
                                 queryResult.remove(List.copyOf(indices));
-                                reloadAndBlinkTable(false);
+                                queryResult.reload();
+
+                                Platform.runLater(() -> {
+                                        reload(tableName, queryResult);
+                                        tableView.playFlash();
+                                });
+                        } catch (Throwable e) {
+                                alert(e);
                         } finally {
                                 removeProgressIndicator();
                         }
@@ -342,15 +349,26 @@ public class QueryResultDataPane extends BorderPane
                         try {
                                 queryResult.reload();
                                 Platform.runLater(() -> reload(tableName, queryResult));
+                        } catch (Throwable e) {
+                                alert(e);
                         } finally {
-                                tableView.playFlash();
+                                Platform.runLater(() -> {
+                                        tableView.playFlash();
+                                        reload.setDisable(false);
+                                });
 
                                 if (enableProgressIndicator)
                                         removeProgressIndicator();
-
-                                reload.setDisable(false);
                         }
                 }).start();
+        }
+
+        /**
+         * 后台线程中安全地弹出异常提示
+         */
+        private static void alert(Throwable e)
+        {
+                Platform.runLater(() -> VkDialogHelper.alert(e));
         }
 
         private void applyExport()

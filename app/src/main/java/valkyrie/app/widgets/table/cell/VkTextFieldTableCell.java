@@ -25,6 +25,8 @@ public class VkTextFieldTableCell<S> extends TextFieldTableCell<S, String>
 
         private boolean isCommit = false;
 
+        private static final String NULL_VALUE_CLASS = "vk-null-value";
+
         /**
          * 开始编辑前记录旧值
          */
@@ -70,24 +72,26 @@ public class VkTextFieldTableCell<S> extends TextFieldTableCell<S, String>
 
                 if (empty) {
                         setText(null);
-                        setStyle("");
+                        getStyleClass().remove(NULL_VALUE_CLASS);
                         return;
                 }
 
                 if (item == null) {
                         setText("(NULL)");
-                        setStyle("-fx-text-fill: gray;");
+                        if (!getStyleClass().contains(NULL_VALUE_CLASS))
+                                getStyleClass().add(NULL_VALUE_CLASS);
                         return;
                 }
 
                 if (item.isEmpty()) {
-                        setText("(EMPY)");
-                        setStyle("-fx-text-fill: gray;");
+                        setText("(EMPTY)");
+                        if (!getStyleClass().contains(NULL_VALUE_CLASS))
+                                getStyleClass().add(NULL_VALUE_CLASS);
                         return;
                 }
 
                 setText(item);
-                setStyle("");
+                getStyleClass().remove(NULL_VALUE_CLASS);
         }
 
         @Override

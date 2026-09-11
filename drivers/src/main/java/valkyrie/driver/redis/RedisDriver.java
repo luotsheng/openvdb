@@ -160,6 +160,13 @@ public class RedisDriver extends Driver
         }
 
         @Override
+        public java.util.Map<String, List<Column>> getTableColumns(Session session)
+        {
+                /* Redis 非关系型，无表列概念 */
+                return new java.util.HashMap<>();
+        }
+
+        @Override
         public List<Table> getTables(Session session)
         {
                 return Lists.newArrayList();

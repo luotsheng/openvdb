@@ -1,6 +1,5 @@
 package valkyrie.app;
 
-import atlantafx.base.theme.CupertinoLight;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.input.Clipboard;
@@ -11,16 +10,14 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.layout.MainLayout;
+import valkyrie.app.theme.Stylesheets;
+import valkyrie.app.theme.ThemeManager;
 import valkyrie.utils.Optional;
-import valkyrie.utils.io.UFile;
 import valkyrie.utils.system.OS;
 
 import java.awt.*;
 import java.net.URI;
-import java.net.URL;
 import java.util.Objects;
-
-import static valkyrie.utils.string.StrStaticImports.strrstr;
 
 /**
  * @author Luo Tiansheng
@@ -77,32 +74,19 @@ public final class Application extends javafx.application.Application {
                 primaryStage = stage;
                 setDockIcon(stage);
 
-                setUserAgentStylesheet(new CupertinoLight().getUserAgentStylesheet());
+                ThemeManager.initialize();
+
                 Scene scene = new Scene(new MainLayout(), 1200, 800);
-                addStylesheets(scene);
+                Stylesheets.apply(scene);
+                ThemeManager.addListener(() -> {
+                        if (primaryStage != null && primaryStage.getScene() != null)
+                                Stylesheets.apply(primaryStage.getScene());
+                });
                 stage.setTitle(TITLE);
                 stage.setScene(scene);
                 stage.setMaximized(true);
 
                 stage.show();
-        }
-
-        private void addStylesheets(Scene scene) {
-                URI uri = getResourceURI("css");
-                UFile cssDir = new UFile(uri);
-
-                for (UFile cssFile : Objects.requireNonNull(cssDir.listFiles())) {
-                        String path = cssFile.getPath();
-                        int rIndex = strrstr(path, "/", 2);
-                        path = path.substring(rIndex);
-
-                        URL url = getClass().getResource(path);
-                        if (url != null) {
-                                scene.getStylesheets().add(url.toExternalForm());
-                        } else {
-                                LOG.warn("Stylesheet not found: {}", path);
-                        }
-                }
         }
 
         private void setDockIcon(Stage stage) {

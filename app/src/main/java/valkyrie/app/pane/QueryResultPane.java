@@ -77,7 +77,7 @@ public class QueryResultPane extends BorderPane
                                 rs.setAddable(true);
                                 Platform.runLater(() -> resultViewPane.reload(table.getName(), rs));
                         } catch (Exception e) {
-                                VkDialogHelper.alert(e);
+                                Platform.runLater(() -> VkDialogHelper.alert(e));
                         } finally {
                                 Platform.runLater(this::removeLoadingIndicator);
                         }

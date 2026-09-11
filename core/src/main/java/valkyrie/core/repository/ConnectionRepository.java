@@ -1,10 +1,14 @@
 package valkyrie.core.repository;
 
+import com.alibaba.fastjson2.JSONObject;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import valkyrie.core.Users;
 import valkyrie.core.exception.CoreException;
 import valkyrie.core.model.DiskSavedConnection;
 import valkyrie.core.utils.FileUtils;
 import valkyrie.core.utils.JSONUtils;
+import valkyrie.core.utils.SecretCipher;
 import valkyrie.utils.Captor;
 import valkyrie.utils.io.UFile;
 
@@ -24,6 +28,8 @@ import java.util.*;
  */
 public class ConnectionRepository
 {
+        private static final Logger LOG = LoggerFactory.getLogger(ConnectionRepository.class);
+
         @SuppressWarnings("ResultOfMethodCallIgnored")
         public static void saveConnection(String name, String content)
         {
@@ -39,7 +45,7 @@ public class ConnectionRepository
                         Captor.call(meta::createNewFile);
 
                 try (FileOutputStream fos = new FileOutputStream(meta)) {
-                        fos.write(content.getBytes(StandardCharsets.UTF_8));
+                        fos.write(encryptPassword(content).getBytes(StandardCharsets.UTF_8));
                 } catch (IOException e) {
                         /* 删除文件夹 */
                         dir.forceDelete();
@@ -87,7 +93,12 @@ public class ConnectionRepository
                         try (FileInputStream fis = new FileInputStream(meta)) {
                                 byte[] bytes = fis.readAllBytes();
                                 String content = new String(bytes, StandardCharsets.UTF_8);
-                                ret.add(JSONUtils.toJavaObject(content, DiskSavedConnection.class));
+
+                                DiskSavedConnection connection =
+                                        JSONUtils.toJavaObject(content, DiskSavedConnection.class);
+                                connection.setPassword(decryptPassword(connection.getPassword()));
+
+                                ret.add(connection);
                         } catch (Exception e) {
                                 throw new CoreException(e);
                         }
@@ -97,6 +108,38 @@ public class ConnectionRepository
                 ret.sort(Comparator.comparing(DiskSavedConnection::getName, collator));
 
                 return ret;
+        }
+
+        /**
+         * 将 JSON 中的 password 字段加密后再落盘（已是密文则保持不变）
+         */
+        private static String encryptPassword(String content)
+        {
+                if (content == null || content.isEmpty())
+                        return content;
+
+                try {
+                        JSONObject json = JSONObject.parseObject(content);
+                        String password = json.getString("password");
+
+                        if (password != null && !password.isEmpty() && !SecretCipher.isEncrypted(password))
+                                json.put("password", SecretCipher.encrypt(password));
+
+                        return json.toJSONString();
+                } catch (Exception e) {
+                        LOG.warn("加密连接密码失败，将按原样保存", e);
+                        return content;
+                }
+        }
+
+        private static String decryptPassword(String password)
+        {
+                try {
+                        return SecretCipher.decrypt(password);
+                } catch (Exception e) {
+                        LOG.error("解密连接密码失败，需要重新输入密码", e);
+                        return null;
+                }
         }
 
 }

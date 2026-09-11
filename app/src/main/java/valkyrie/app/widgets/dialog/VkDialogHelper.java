@@ -17,6 +17,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
+import valkyrie.app.theme.Stylesheets;
 import valkyrie.utils.exception.Causes;
 import valkyrie.utils.exception.SystemRuntimeException;
 
@@ -119,6 +120,7 @@ public class VkDialogHelper
 
                 Dimension dimension = new Dimension(message);
                 Scene scene = new Scene(root, dimension.width, dimension.height);
+                Stylesheets.apply(scene);
 
                 stage.setResizable(false);
                 stage.setScene(scene);

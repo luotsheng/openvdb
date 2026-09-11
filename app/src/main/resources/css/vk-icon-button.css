@@ -1,9 +1,14 @@
 .vk-icon-button {
     -fx-background-color: transparent;
     -fx-background-insets: 0;
+    -fx-background-radius: 6;
+}
+
+.vk-icon-button:hover {
+    -fx-background-color: -color-bg-inset;
 }
 
 .vk-icon-button:pressed {
-    -fx-background-color: rgba(0, 0, 0, 0.1);
+    -fx-background-color: -color-bg-subtle;
     -fx-border-width: 0;
 }

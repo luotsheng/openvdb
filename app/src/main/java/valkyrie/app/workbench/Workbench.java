@@ -14,6 +14,7 @@ import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.event.workbench.*;
 import valkyrie.app.exception.ApplicationException;
 import valkyrie.app.widgets.VkContextMenu;
+import valkyrie.app.widgets.VkStatusBar;
 import valkyrie.app.widgets.VkTabPane;
 import valkyrie.app.widgets.dialog.VkDialogHelper;
 import valkyrie.utils.collection.Lists;
@@ -49,7 +50,6 @@ public class Workbench extends VBox implements EventListener
         {
                 navigationTab.setGraphic(Assets.use("list"));
 
-                setStyle("-fx-background-color: #ffffff;");
                 getChildren().add(tabPane);
                 VBox.setVgrow(tabPane, Priority.ALWAYS);
 
@@ -68,6 +68,15 @@ public class Workbench extends VBox implements EventListener
 
         private void setupTabPane()
         {
+                /* 切换标签页时刷新状态栏连接上下文 */
+                tabPane.getSelectionModel().selectedItemProperty()
+                        .addListener((obs, oldTab, newTab) -> {
+                                if (newTab != null && newTab.getContent() instanceof QueryEditor queryEditor)
+                                        queryEditor.publishStatus();
+                                else
+                                        VkStatusBar.getInstance().clearContext();
+                        });
+
                 tabPane.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
                         Node node = (Node) event.getTarget();
 

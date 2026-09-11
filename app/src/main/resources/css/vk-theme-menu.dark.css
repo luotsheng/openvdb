@@ -1,0 +1,11 @@
+/**
+ * 深色模式下的右键菜单“亚克力”底色覆盖。
+ * 高不透明度渐变，而非过于透明的毛玻璃。
+ */
+.context-menu {
+    -fx-background-color: linear-gradient(to bottom,
+        rgba(54, 54, 58, 0.96),
+        rgba(38, 38, 42, 0.94));
+    -fx-border-color: rgba(255, 255, 255, 0.12);
+    -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.50), 18, 0.0, 0, 7);
+}

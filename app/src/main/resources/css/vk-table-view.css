@@ -21,38 +21,43 @@
     -fx-cursor: hand;
 }
 
-.vk-data-table-view .row-selector-cell:hover {
-    -fx-background-color: rgba(0, 122, 255, 0.12);
+.vk-data-table-view .row-selector-cell:hover,
+.vk-data-table-view .row-selector-cell.row-selector-pressed {
+    -fx-background-color: -color-accent-muted;
 }
 
 .vk-data-table-view .table-cell:selected {
-    -fx-background-color: #C9E2FF;
+    -fx-background-color: -color-accent-muted;
+}
+
+.vk-data-table-view .table-cell.vk-null-value {
+    -fx-text-fill: -color-fg-subtle;
 }
 
 .vk-data-table-view .table-cell .text-field:focused {
-    -fx-background-color: white;
+    -fx-background-color: -color-bg-default;
 }
 
 .vk-data-table-view .table-row-cell:even {
-    -fx-background-color: #ffffff;
+    -fx-background-color: -color-bg-default;
 }
 
 .vk-data-table-view .table-row-cell:odd {
-    -fx-background-color: #e8f4f8;
+    -fx-background-color: -color-bg-subtle;
 }
 
-.vk-data-table-view .table-cell {
-    -fx-border-color: transparent #e0e0e0 #e0e0e0 transparent;
-    -fx-border-width: 0 1 1 0;
+/*
+ * 单元格选择模式下只有当前单元格会高亮，整行缺少反馈。
+ * 通过行工厂给包含选中单元格的行加上 selected-row 类，铺一层浅色底，
+ * 方便定位当前所在行；当前单元格再用更深的颜色叠在其上。
+ */
+.vk-data-table-view .table-row-cell.selected-row {
+    -fx-background-color: -color-accent-subtle;
 }
 
-.vk-data-table-view .table-cell {
-    -fx-border-color: transparent #e0e0e0 #e0e0e0 transparent;
-    -fx-border-width: 0 1 1 0;
-}
-
+.vk-data-table-view .table-cell,
 .vk-data-table-view .column-header {
-    -fx-border-color: transparent #e0e0e0 #e0e0e0 transparent;
+    -fx-border-color: transparent -color-border-subtle -color-border-subtle transparent;
     -fx-border-width: 0 1 1 0;
 }
 
@@ -60,14 +65,11 @@
  * vk-list-table-view
  */
 .vk-list-table-view .table-row-cell:selected .table-cell {
-    -fx-background-color: #007AFF;
-    -fx-text-fill: white;
+    -fx-background-color: -color-accent-emphasis;
+    -fx-text-fill: -color-fg-emphasis;
 }
 
-.vk-list-table-view .table-row-cell:odd {
-    -fx-background-color: white;
-}
-
+.vk-list-table-view .table-row-cell:odd,
 .vk-list-table-view .table-row-cell:even {
-    -fx-background-color: white;
+    -fx-background-color: -color-bg-default;
 }

@@ -27,17 +27,19 @@ import valkyrie.app.utils.TabIdFactory;
 import valkyrie.app.utils.Threads;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkSeparatorItem;
+import valkyrie.app.widgets.VkStatusBar;
 import valkyrie.app.widgets.VkToolBar;
 import valkyrie.app.widgets.VkToolButton;
 import valkyrie.core.model.QueryFile;
 import valkyrie.core.repository.QueryFileRepository;
 import valkyrie.driver.api.Driver;
+import valkyrie.driver.api.ProductMetaData;
 import valkyrie.driver.api.QueryResult;
 import valkyrie.driver.api.SQLExecuteCallback;
 import valkyrie.driver.api.Session;
 import valkyrie.driver.api.node.DBNodePath;
 import valkyrie.driver.api.sql.SQL;
-import valkyrie.driver.suggestion.Suggestion;
+import valkyrie.driver.suggestion.SuggestionEngine;
 import valkyrie.monacofx.MonacoEditor;
 import valkyrie.utils.exception.Causes;
 import valkyrie.utils.io.IOUtils;
@@ -75,7 +77,7 @@ public class QueryEditor extends SplitPane implements EventListener
 
         // Selector
         private PathSelector pathSelector = new PathSelector(
-                this::updateEditorSuggestions
+                this::onPathSelectorUpdate
         );
 
         // Tool
@@ -87,6 +89,9 @@ public class QueryEditor extends SplitPane implements EventListener
         private Driver driver;
         private Session session;
         private long taskId = System.currentTimeMillis();
+
+        // SQL 智能提示上下文引擎（后台构建，FX 线程读取）
+        private volatile SuggestionEngine suggestionEngine;
 
         // Other
         private Node oldGraphic;
@@ -168,11 +173,27 @@ public class QueryEditor extends SplitPane implements EventListener
                                 Application.copyToClipboard(editor.getSelectedValue());
                 });
 
+                editor.setOnDidChangeCursorSelection((line, column, selected) -> {
+                        if (isActiveTab())
+                                VkStatusBar.getInstance().setCursor(line, column, selected);
+                });
+
+                editor.setSuggestionProvider((sql, offset) -> {
+                        SuggestionEngine engine = suggestionEngine;
+                        return engine == null ? List.of() : engine.resolve(sql, offset);
+                });
+
                 // Context Menu
                 ContextMenu contextMenu = createContextMenu(editor);
                 editor.bindContextMenu(contextMenu);
 
                 return editor;
+        }
+
+        private boolean isActiveTab()
+        {
+                return tab.getTabPane() != null
+                        && tab.getTabPane().getSelectionModel().getSelectedItem() == tab;
         }
 
         private void initializeMonacoEditorValue(QueryFile queryFile)
@@ -196,6 +217,54 @@ public class QueryEditor extends SplitPane implements EventListener
                 getItems().add(topBorderPane);
         }
 
+        private void onPathSelectorUpdate(Driver driver, Session session)
+        {
+                updateStatusContext(driver, session);
+                updateEditorSuggestions(driver, session);
+        }
+
+        /**
+         * 将当前编辑器的连接上下文推送到状态栏
+         */
+        public void publishStatus()
+        {
+                if (pathSelector == null)
+                        return;
+
+                updateStatusContext(pathSelector.getDriver(), pathSelector.getSession());
+        }
+
+        private void updateStatusContext(Driver driver, Session session)
+        {
+                VkStatusBar statusBar = VkStatusBar.getInstance();
+
+                if (driver == null) {
+                        statusBar.clearContext();
+                        return;
+                }
+
+                /*
+                 * PathSelector 的构造过程会在字段赋值完成前回调到这里，
+                 * 此时 pathSelector 仍为 null，需要容错，等后续选中变化时再补上。
+                 */
+                PathSelector selector = pathSelector;
+
+                if (selector != null) {
+                        var connection = selector.getSelectedConnection();
+                        statusBar.setConnection(
+                                connection == null ? null : connection.getLabel(),
+                                session.catalog(),
+                                session.schema());
+                }
+
+                ProductMetaData meta = driver.getProductMetaData();
+                String database = meta != null && meta.getProductName() != null
+                        ? meta.getProductName() + " " + meta.getVersion()
+                        : driver.getType().getAlias();
+
+                statusBar.setDatabase(database);
+        }
+
         /**
          * Driver 和 Session 可能为 NULL，需要校验
          */
@@ -205,12 +274,11 @@ public class QueryEditor extends SplitPane implements EventListener
                         return;
 
                 singleThreadExecutor.execute(() -> {
-                        List<Suggestion> suggestions = driver.getSuggestions(session);
-
-                        if (suggestions.isEmpty())
-                                return;
-
-                        editor.registerSuggestions(suggestions);
+                        try {
+                                suggestionEngine = SuggestionEngine.of(driver, session);
+                        } catch (Exception e) {
+                                LOG.warn("构建 SQL 提示数据失败", e);
+                        }
                 });
         }
 
@@ -304,8 +372,16 @@ public class QueryEditor extends SplitPane implements EventListener
 
         private void updateButtonForExecuting(boolean value)
         {
-                runToolButton.setDisable(value);
-                stopToolButton.setDisable(!value);
+                if (Platform.isFxApplicationThread()) {
+                        runToolButton.setDisable(value);
+                        stopToolButton.setDisable(!value);
+                        return;
+                }
+
+                Platform.runLater(() -> {
+                        runToolButton.setDisable(value);
+                        stopToolButton.setDisable(!value);
+                });
         }
 
         private void stopTask()
@@ -329,6 +405,7 @@ public class QueryEditor extends SplitPane implements EventListener
 
                 /* 更新按钮状态 */
                 updateButtonForExecuting(true);
+                VkStatusBar.getInstance().setTask("执行中…");
 
                 StringBuilder selectedText = new StringBuilder();
                 selectedText.append(editor.getSelectedValue());
@@ -340,6 +417,9 @@ public class QueryEditor extends SplitPane implements EventListener
                 Session session = pathSelector.getSession();
 
                 useProgressIndicator(() -> {
+                        int[] rows = { -1 };
+                        long[] cost = { -1 };
+
                         try {
                                 taskId = System.currentTimeMillis();
                                 SQL sql = new SQL(selectedText);
@@ -375,6 +455,8 @@ public class QueryEditor extends SplitPane implements EventListener
                                         @Override
                                         public void row(int value)
                                         {
+                                                rows[0] = value;
+
                                                 Platform.runLater(() -> {
                                                         sqlExecuteLoggerPane.appendRow(value);
                                                         showExecuteLoggerPane();
@@ -384,6 +466,8 @@ public class QueryEditor extends SplitPane implements EventListener
                                         @Override
                                         public void cost(long time)
                                         {
+                                                cost[0] = time;
+
                                                 Platform.runLater(() -> {
                                                         sqlExecuteLoggerPane.appendCost(time);
                                                         showExecuteLoggerPane();
@@ -395,21 +479,43 @@ public class QueryEditor extends SplitPane implements EventListener
                                         Platform.runLater(() -> {
                                                 queryResultDataPane.reload(sql.getSingleTableName(), queryResult);
                                                 showPane(QUERY_RESULT_SET_FIRST);
+                                                reportExecution("查询", queryResult.getRows().size(), cost[0]);
                                         });
                                 } else {
-                                        Platform.runLater(() -> showPane(QUERY_EXECUTE_LOGGER_FIRST));
+                                        Platform.runLater(() -> {
+                                                showPane(QUERY_EXECUTE_LOGGER_FIRST);
+                                                reportExecution(rows[0] >= 0 ? "影响" : "执行完成", rows[0], cost[0]);
+                                        });
                                 }
                         } catch (Throwable e) {
                                 Platform.runLater(() -> {
                                         LOG.error("run task error", e);
                                         sqlExecuteLoggerPane.appendError(Causes.message(e));
                                         showPane(QUERY_EXECUTE_LOGGER_FIRST);
+                                        VkStatusBar.getInstance().setExecution("执行失败");
                                 });
                                 throw e;
                         } finally {
                                 updateButtonForExecuting(false);
+                                Platform.runLater(VkStatusBar.getInstance()::clearTask);
                         }
                 });
+        }
+
+        /**
+         * 将最近一次执行结果推送到状态栏
+         */
+        private static void reportExecution(String action, int rowCount, long cost)
+        {
+                StringBuilder builder = new StringBuilder(action);
+
+                if (rowCount >= 0)
+                        builder.append(" ").append(rowCount).append(" 行");
+
+                if (cost >= 0)
+                        builder.append(" · ").append(cost).append(" ms");
+
+                VkStatusBar.getInstance().setExecution(builder.toString());
         }
 
         //////////////////////////////////////////////////////////////////////

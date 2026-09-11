@@ -3,8 +3,12 @@ package valkyrie.app.menu;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuBar;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioMenuItem;
 import javafx.scene.control.SeparatorMenuItem;
+import javafx.scene.control.ToggleGroup;
 import valkyrie.app.Publisher;
+import valkyrie.app.theme.ThemeManager;
+import valkyrie.app.theme.ThemeMode;
 import valkyrie.utils.system.OS;
 
 /**
@@ -50,6 +54,17 @@ public class AppMenuBar extends MenuBar
                 // 代码菜单
                 Menu codeMenu = new Menu("代码");
 
+                // 视图菜单
+                Menu viewMenu = new Menu("视图");
+                ToggleGroup themeGroup = new ToggleGroup();
+                for (ThemeMode mode : ThemeMode.values()) {
+                        RadioMenuItem themeItem = new RadioMenuItem(mode.label());
+                        themeItem.setToggleGroup(themeGroup);
+                        themeItem.setSelected(ThemeManager.mode() == mode);
+                        themeItem.setOnAction(e -> ThemeManager.setMode(mode));
+                        viewMenu.getItems().add(themeItem);
+                }
+
                 // 运行菜单
                 Menu runMenu = new Menu("运行");
 
@@ -62,6 +77,7 @@ public class AppMenuBar extends MenuBar
                         fileMenu,
                         editMenu,
                         codeMenu,
+                        viewMenu,
                         runMenu,
                         helpMenu
                 );

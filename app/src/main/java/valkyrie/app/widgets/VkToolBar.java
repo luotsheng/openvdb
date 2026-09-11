@@ -10,6 +10,6 @@ public class VkToolBar extends ToolBar
 {
         public VkToolBar()
         {
-                setStyle("-fx-background-color: white;");
+                getStyleClass().add("vk-tool-bar");
         }
 }

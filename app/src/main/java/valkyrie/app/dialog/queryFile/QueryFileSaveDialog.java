@@ -13,6 +13,7 @@ import javafx.stage.Stage;
 import valkyrie.app.explorer.UICatalogDynamicNode;
 import valkyrie.app.explorer.UIConnectionNode;
 import valkyrie.app.explorer.UISchemaDynamicNode;
+import valkyrie.app.theme.Stylesheets;
 import valkyrie.app.widgets.VkComboBox;
 import valkyrie.app.widgets.dialog.VkDialog;
 import valkyrie.app.widgets.dialog.VkDialogStages;
@@ -114,6 +115,7 @@ public class QueryFileSaveDialog extends VkDialog
 
                 QueryFileSaveDialog dialog = new QueryFileSaveDialog(stage, pathSelector);
                 Scene scene = new Scene(dialog, 600, 300);
+                Stylesheets.apply(scene);
                 stage.setScene(scene);
                 stage.showAndWait();
 

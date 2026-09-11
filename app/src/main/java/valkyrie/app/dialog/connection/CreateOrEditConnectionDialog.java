@@ -15,6 +15,7 @@ import javafx.stage.Stage;
 import valkyrie.app.event.RefreshConnectionEvent;
 import valkyrie.app.event.bus.EventBus;
 import valkyrie.app.model.ConnectionPropertyModel;
+import valkyrie.app.theme.Stylesheets;
 import valkyrie.core.repository.ConnectionRepository;
 import valkyrie.core.utils.JSONUtils;
 import valkyrie.driver.api.DbType;
@@ -122,6 +123,7 @@ public class CreateOrEditConnectionDialog extends Stage
                 VBox.setVgrow(tabPane, Priority.ALWAYS);
 
                 Scene scene = new Scene(vbox, WW, WH);
+                Stylesheets.apply(scene);
                 setScene(scene);
         }
 
@@ -133,10 +135,10 @@ public class CreateOrEditConnectionDialog extends Stage
                 var config = newProperty.toConnectionConfig();
                 try (VkDataSource ds = DriverFactory.createDataSource(config)) {
                         status.setText("Connected successfully...");
-                        status.setStyle("-fx-text-fill: #28a745;");
+                        status.setStyle("-fx-text-fill: -color-success-fg;");
                 } catch (Exception e) {
                         status.setText(Causes.message(e));
-                        status.setStyle("-fx-text-fill: #b8312b;");
+                        status.setStyle("-fx-text-fill: -color-danger-fg;");
                 }
         }
 

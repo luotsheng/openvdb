@@ -83,11 +83,30 @@
                     endColumn: word.endColumn
                 };
 
-                const suggestions = Array.from(window.Suggestions).map(item => {
+                let items = [];
+
+                // 上下文感知补全：由 Java 端根据光标位置解析 FROM/JOIN 的表与别名
+                try {
+                    if (window.hook && window.hook.getSuggestions) {
+                        const raw = window.hook.getSuggestions(
+                            model.getValue(),
+                            model.getOffsetAt(position)
+                        );
+                        items = JSON.parse(raw);
+                    }
+                } catch (e) {
+                    items = [];
+                }
+
+                // 兜底：使用推送的全量提示
+                if (!items || items.length === 0)
+                    items = Array.from(window.Suggestions || []);
+
+                const suggestions = items.map(item => {
                     let ret = {
                         label: item.label,
                         kind: getKind(item.kind),
-                        insertText: item.insertText,
+                        insertText: item.insertText != null ? item.insertText : item.label,
                         detail: item.detail,
                         range: range
                     };
@@ -124,6 +143,29 @@
                 return;
 
             window.hook.onDidChangeModelContent();
+        });
+
+        // 光标/选区变化上报（去抖，避免高频跨桥调用）
+        let cursorReportTimer = null;
+        editor.onDidChangeCursorSelection((event) => {
+            if (cursorReportTimer)
+                clearTimeout(cursorReportTimer);
+
+            cursorReportTimer = setTimeout(() => {
+                if (!window.hook)
+                    return;
+
+                const selection = event.selection;
+                const selected = selection.isEmpty()
+                    ? 0
+                    : editor.getModel().getValueLengthInRange(selection);
+
+                window.hook.onDidChangeCursorSelection(
+                    selection.positionLineNumber,
+                    selection.positionColumn,
+                    selected
+                );
+            }, 50);
         });
 
         /**

@@ -403,6 +403,42 @@ public abstract class Driver implements SQLExecutor
         }
 
         /**
+         * 获取当前会话下所有表的列信息。
+         * <p>
+         * 供 SQL 智能提示按表做上下文过滤使用，默认通过 JDBC
+         * {@link DatabaseMetaData#getColumns(String, String, String, String)} 一次性读取，
+         * 不支持元数据的驱动可覆写返回空集合。
+         *
+         * @param session 会话上下文
+         * @return 表名（保留数据库原始大小写）到列集合的映射
+         */
+        public Map<String, List<Column>> getTableColumns(Session session)
+        {
+                Map<String, List<Column>> result = new HashMap<>();
+
+                try (Connection connection = getConnection(session)) {
+                        DatabaseMetaData meta = connection.getMetaData();
+
+                        try (ResultSet rs = meta.getColumns(
+                                connection.getCatalog(), connection.getSchema(), "%", "%")) {
+                                while (rs.next()) {
+                                        Column column = new Column();
+                                        column.setName(rs.getString("COLUMN_NAME"));
+                                        column.setType(rs.getString("TYPE_NAME"));
+                                        column.setComment(rs.getString("REMARKS"));
+
+                                        result.computeIfAbsent(rs.getString("TABLE_NAME"),
+                                                k -> new ArrayList<>()).add(column);
+                                }
+                        }
+                } catch (Exception e) {
+                        throw new DriverException(e);
+                }
+
+                return result;
+        }
+
+        /**
          * 获取指定数据库表的所有索引信息。
          * <p>
          * 该方法通过 {@link java.sql.DatabaseMetaData#getIndexInfo(String, String, String, boolean, boolean)}

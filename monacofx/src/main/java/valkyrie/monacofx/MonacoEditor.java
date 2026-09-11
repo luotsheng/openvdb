@@ -45,12 +45,29 @@ public class MonacoEditor extends StackPane
         @Setter
         private OnDidChangeModelContent onDidChangeModelContent = null;
 
+        @Setter
+        private OnDidChangeCursorSelection onDidChangeCursorSelection = null;
+
+        @Setter
+        private SuggestionProvider suggestionProvider = null;
+
         public interface ShowContextMenuRequestEvent {
                 void onRequest(ContextMenu contextMenu);
         }
 
         public interface OnDidChangeModelContent {
                 void onChange();
+        }
+
+        public interface OnDidChangeCursorSelection {
+                void onChange(int line, int column, int selected);
+        }
+
+        /**
+         * 上下文感知补全提供者：入参为编辑器全文与光标偏移，返回可序列化的提示项集合
+         */
+        public interface SuggestionProvider {
+                Collection<?> suggest(String sql, int offset);
         }
 
         @SuppressWarnings("DataFlowIssue")
@@ -127,6 +144,47 @@ public class MonacoEditor extends StackPane
                 public void onDidChangeModelContent()
                 {
                         editor.pauseTransition.playFromStart();
+                }
+
+                /**
+                 * 光标/选区变化监听
+                 */
+                public void onDidChangeCursorSelection(Object line, Object column, Object selected)
+                {
+                        if (editor.onDidChangeCursorSelection == null)
+                                return;
+
+                        editor.onDidChangeCursorSelection.onChange(
+                                toInt(line), toInt(column), toInt(selected));
+                }
+
+                /**
+                 * 上下文补全：由 JS 在补全请求时同步调用，返回提示项 JSON
+                 */
+                public String getSuggestions(Object sql, Object offset)
+                {
+                        if (editor.suggestionProvider == null)
+                                return "[]";
+
+                        try {
+                                return JSONObject.toJSONString(
+                                        editor.suggestionProvider.suggest(String.valueOf(sql), toInt(offset)));
+                        } catch (Exception e) {
+                                LOG.error("Suggestion provider failed", e);
+                                return "[]";
+                        }
+                }
+
+                private static int toInt(Object value)
+                {
+                        if (value instanceof Number number)
+                                return number.intValue();
+
+                        try {
+                                return (int) Double.parseDouble(String.valueOf(value));
+                        } catch (Exception e) {
+                                return 0;
+                        }
                 }
         }
 

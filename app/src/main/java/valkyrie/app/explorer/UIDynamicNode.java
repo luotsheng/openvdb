@@ -1,5 +1,6 @@
 package valkyrie.app.explorer;
 
+import javafx.application.Platform;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
 import valkyrie.driver.api.Driver;
@@ -57,11 +58,19 @@ public class UIDynamicNode extends UIExplorerNode
                         if (dbNode.hasChildren())
                                 children.addAll(dbNode.getChildren());
 
-                        if (!children.isEmpty()) {
+                        if (children.isEmpty())
+                                return;
+
+                        /*
+                         * 节点的创建会直接修改 TreeItem 的子节点（UI），
+                         * 必须切回 JavaFX 线程执行，否则会偶发
+                         * "Not on FX application thread" 异常。
+                         */
+                        Platform.runLater(() -> {
                                 loadDynamicChildren(children);
                                 initializeChildrenFlag = true;
                                 onInitializedEvent();
-                        }
+                        });
                 });
         }
 

@@ -1,11 +1,16 @@
 .vk-status-bar {
-    -fx-background-color: #f5f5f5;
-    -fx-border-color: #d1d1d1;
+    -fx-background-color: -color-bg-subtle;
+    -fx-border-color: -color-border-default;
     -fx-border-width: 1px 0 0 0;
-    -fx-padding: 4 8 4 8;
+    -fx-padding: 2 4 2 4;
 }
 
-.vk-status-bar .label {
-    -fx-text-fill: #555555;
+.vk-status-bar .vk-status-part {
+    -fx-text-fill: -color-fg-muted;
     -fx-font-size: 12px;
+    -fx-padding: 0 10 0 10;
+}
+
+.vk-status-bar .vk-status-connection {
+    -fx-text-fill: -color-fg-default;
 }

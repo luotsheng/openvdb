@@ -10,6 +10,7 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.stage.Stage;
+import valkyrie.app.theme.Stylesheets;
 import valkyrie.app.widgets.dialog.VkDialog;
 import valkyrie.app.widgets.dialog.VkDialogStages;
 import valkyrie.core.model.QueryFile;
@@ -68,6 +69,7 @@ public class QueryFileRenameDialog extends VkDialog
                 QueryFileRenameDialog dialog = new QueryFileRenameDialog(stage, queryFile);
 
                 Scene scene = new Scene(dialog, 400, 150);
+                Stylesheets.apply(scene);
                 stage.setScene(scene);
                 stage.showAndWait();
 
