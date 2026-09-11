@@ -277,9 +277,33 @@ public class QueryResultDataPane extends BorderPane
 
         private void applySubmit()
         {
-                queryResult.update();
-                updateCheckCross();
-                reload(tableName, queryResult);
+                if (queryResult == null || !queryResult.isUpdatable())
+                        return;
+
+                /* 提交期间冻结编辑，避免后台生成/执行 UPDATE 时缓冲区被并发修改 */
+                submit.setDisable(true);
+                cross.setDisable(true);
+                tableView.setEditable(false);
+                setProgressIndicator();
+
+                new Thread(() -> {
+                        try {
+                                queryResult.update();
+
+                                Platform.runLater(() -> {
+                                        updateCheckCross();
+                                        reload(tableName, queryResult);
+                                });
+                        } catch (Throwable e) {
+                                Platform.runLater(() -> {
+                                        tableView.setEditable(true);
+                                        updateCheckCross();
+                                        VkDialogHelper.alert(e);
+                                });
+                        } finally {
+                                removeProgressIndicator();
+                        }
+                }).start();
         }
 
         private void applyCross()

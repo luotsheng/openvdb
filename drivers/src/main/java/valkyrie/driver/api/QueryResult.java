@@ -8,10 +8,12 @@ import net.sf.jsqlparser.expression.NullValue;
 import net.sf.jsqlparser.expression.StringValue;
 import net.sf.jsqlparser.expression.operators.conditional.AndExpression;
 import net.sf.jsqlparser.expression.operators.relational.EqualsTo;
+import net.sf.jsqlparser.expression.operators.relational.IsNullExpression;
 import net.sf.jsqlparser.schema.Table;
 import net.sf.jsqlparser.statement.delete.Delete;
 import net.sf.jsqlparser.statement.select.Limit;
 import net.sf.jsqlparser.statement.update.Update;
+import valkyrie.driver.api.exception.DriverException;
 import valkyrie.driver.api.sql.SQL;
 import valkyrie.utils.Optional;
 import valkyrie.utils.collection.Lists;
@@ -190,20 +192,32 @@ public class QueryResult
          */
         public void update()
         {
-                if (isUpdatable()) {
+                if (!isUpdatable())
+                        return;
 
-                        try {
+                SQL sql = toUpdateSQL();
 
-                                SQL sql = toUpdateSQL();
-                                driver.execute(session, sql);
+                int[] affected = { 0 };
 
-                        } finally {
-
-                                reload();
-                                updateRowBuffer.clear();
-
+                driver.execute(-1, session, sql, new SQLExecuteCallback()
+                {
+                        @Override
+                        public void row(int value)
+                        {
+                                affected[0] += value;
                         }
-                }
+                });
+
+                /*
+                 * 影响行数为 0 说明 WHERE 没有匹配到原始数据行（数据可能已被其他
+                 * 会话修改，或无主键表的定位条件不精确）。此时必须报错，而不是
+                 * 静默重载旧数据，否则用户会看到"提交了但数据没更新"。
+                 */
+                if (affected[0] <= 0)
+                        throw new DriverException("没有匹配到需要更新的数据行，修改可能未生效");
+
+                reload();
+                updateRowBuffer.clear();
         }
 
         private SQL toDeleteSQL(List<Integer> indices)
@@ -212,7 +226,7 @@ public class QueryResult
 
                 indices.forEach(index -> {
                         var delete = new Delete();
-                        List<EqualsTo> equals = new ArrayList<>();
+                        List<Expression> equals = new ArrayList<>();
 
                         var table = new Table(driver.getDialect().removeQuote(sql.getSingleTableName()));
                         delete.setTable(table);
@@ -224,12 +238,7 @@ public class QueryResult
 
                         whereColumns.forEach(col -> {
 
-                                var c = new net.sf.jsqlparser.schema.Column(col.getName());
-                                var v = new StringValue(rows.get(index).get(col.getIndex()));
-                                var w = new EqualsTo();
-
-                                w.setLeftExpression(c);
-                                w.setRightExpression(v);
+                                var w = equalsOrNull(col.getName(), rows.get(index).get(col.getIndex()));
 
                                 equals.add(w);
 
@@ -282,7 +291,7 @@ public class QueryResult
                                         Expression exp;
 
                                         if (v != null) {
-                                                exp = new StringValue(v);
+                                                exp = new StringValue(escape(v));
                                         } else {
                                                 exp = new NullValue();
                                         }
@@ -303,12 +312,7 @@ public class QueryResult
                         for (Column col : whereColumns) {
 
                                 var r = rows.get(entry.getKey());
-                                var c = new net.sf.jsqlparser.schema.Column(col.getName());
-                                var v = new StringValue(r.get(col.getIndex()));
-                                var w = new EqualsTo();
-
-                                w.setLeftExpression(c);
-                                w.setRightExpression(v);
+                                var w = equalsOrNull(col.getName(), r.get(col.getIndex()));
 
                                 // 组合 WHERE 条件
                                 if (whereExpression == null) {
@@ -338,6 +342,32 @@ public class QueryResult
                         builder.append(update.toString()).append(";");
 
                 return new SQL(builder.toString());
+        }
+
+        /**
+         * 构造 {@code column = value} 定位条件；原值为 NULL 时使用
+         * {@code column IS NULL}，避免生成恒不匹配的 {@code column = NULL}。
+         */
+        private static Expression equalsOrNull(String columnName, String value)
+        {
+                var column = new net.sf.jsqlparser.schema.Column(columnName);
+
+                if (value == null)
+                        return new IsNullExpression(column);
+
+                var equals = new EqualsTo();
+                equals.setLeftExpression(column);
+                equals.setRightExpression(new StringValue(escape(value)));
+
+                return equals;
+        }
+
+        /**
+         * 转义字符串字面量中的单引号，防止生成的 SQL 语法错误。
+         */
+        private static String escape(String value)
+        {
+                return value.replace("'", "''");
         }
 
         /**

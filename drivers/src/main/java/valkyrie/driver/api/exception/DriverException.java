@@ -23,4 +23,9 @@ public class DriverException extends RuntimeException
                 if (getCause() instanceof SQLException sql)
                         errorCode = sql.getErrorCode();
         }
+
+        public DriverException(String message)
+        {
+                super(message);
+        }
 }
