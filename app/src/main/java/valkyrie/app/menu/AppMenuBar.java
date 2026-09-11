@@ -37,7 +37,7 @@ public class AppMenuBar extends MenuBar
 
                 MenuItem exitItem = new MenuItem("退出");
                 fileMenu.getItems().addAll(
-                        ConnectionMenuBuilder.buildMenu(),
+                        ConnectionMenuBuilder.buildMenu(false),
                         newQueryItem,
                         new SeparatorMenuItem(),
                         importItem,

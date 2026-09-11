@@ -14,29 +14,25 @@ import valkyrie.driver.api.DbType;
 public class ConnectionMenuBuilder
 {
         public static Menu buildMenu() {
+                return buildMenu(true);
+        }
+
+        /**
+         * @param withIcon 是否给菜单项设置数据库图标。macOS 原生菜单栏里图标会被放大，
+         *                 顶部菜单应传 {@code false}。
+         */
+        public static Menu buildMenu(boolean withIcon) {
                 Menu newConnectionMenu = new Menu("新建连接");
 
-                MenuItem mysqlItem = new MenuItem(DbType.mysql.getAlias());
-                mysqlItem.setGraphic(Assets.use(DbType.mysql.getIcon()));
-                mysqlItem.setOnAction(e -> openConnectionDialog(DbType.mysql));
+                for (DbType dbType : DbType.values()) {
+                        MenuItem item = new MenuItem(dbType.getAlias());
 
-                MenuItem postgresqlItem = new MenuItem(DbType.postgresql.getAlias());
-                postgresqlItem.setGraphic(Assets.use(DbType.postgresql.getIcon()));
-                postgresqlItem.setOnAction(e -> openConnectionDialog(DbType.postgresql));
+                        if (withIcon)
+                                item.setGraphic(Assets.use(dbType.getIcon()));
 
-                MenuItem sqliteItem = new MenuItem(DbType.sqlite.getAlias());
-                sqliteItem.setGraphic(Assets.use(DbType.sqlite.getIcon()));
-                sqliteItem.setOnAction(e -> openConnectionDialog(DbType.sqlite));
-
-                MenuItem dmItem = new MenuItem(DbType.dm.getAlias());
-                dmItem.setGraphic(Assets.use(DbType.dm.getIcon()));
-                dmItem.setOnAction(e -> openConnectionDialog(DbType.dm));
-
-                MenuItem redisItem = new MenuItem(DbType.redis.getAlias());
-                redisItem.setGraphic(Assets.use(DbType.redis.getIcon()));
-                redisItem.setOnAction(e -> openConnectionDialog(DbType.redis));
-
-                newConnectionMenu.getItems().addAll(mysqlItem, postgresqlItem, sqliteItem, dmItem, redisItem);
+                        item.setOnAction(e -> openConnectionDialog(dbType));
+                        newConnectionMenu.getItems().add(item);
+                }
 
                 return newConnectionMenu;
         }

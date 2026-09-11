@@ -32,6 +32,15 @@
     -fx-text-fill: -color-fg-emphasis;
 }
 
+/* 危险操作（如删除）：常态红字，悬停/聚焦时保持白字 */
+.menu-item.danger-menu-item > .label {
+    -fx-text-fill: -color-danger-fg;
+}
+
+.menu-item.danger-menu-item:focused > .label {
+    -fx-text-fill: -color-fg-emphasis;
+}
+
 .menu-item .accelerator-text,
 .menu-item > .right-container > .label {
     -fx-text-fill: -color-fg-muted;

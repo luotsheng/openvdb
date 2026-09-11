@@ -78,6 +78,11 @@ public class QueryResultDataPane extends BorderPane
         private final ObservableList<GridRow> gridRows = FXCollections.observableArrayList();
         private final FilteredList<GridRow> filteredRows = new FilteredList<>(gridRows, row -> true);
 
+        /**
+         * 当前搜索关键字，供单元格高亮命中的文本
+         */
+        private String activeKeyword = "";
+
         private QueryResult queryResult;
 
         public interface ReloadProgressListener {
@@ -169,6 +174,8 @@ public class QueryResultDataPane extends BorderPane
                 String text = search.getText();
                 boolean searching = text != null && !text.isBlank();
 
+                activeKeyword = searching ? text.trim() : "";
+
                 if (searching) {
                         String keyword = lowercase(text).trim();
                         filteredRows.setPredicate(row -> row != null && row.stream()
@@ -177,6 +184,7 @@ public class QueryResultDataPane extends BorderPane
                         filteredRows.setPredicate(row -> true);
                 }
 
+                tableView.refresh();
                 refreshEditingState(searching);
         }
 
@@ -248,9 +256,53 @@ public class QueryResultDataPane extends BorderPane
         private void onPlus()
         {
                 queryResult.addEmptyRow();
-                gridRows.setAll(queryResult.getRows());
+                syncGridRows();
                 tableView.refresh();
                 tableView.playFlash();
+        }
+
+        /**
+         * 把结果行复制到显示列表中。
+         * <p>
+         * 显示用副本而非原对象，保证「设置为 NULL」等仅改显示的操不会污染
+         * {@code QueryResult.rows}（原值仍用于生成 UPDATE 的 WHERE 条件）。
+         */
+        private void syncGridRows()
+        {
+                List<GridRow> copies = new ArrayList<>(queryResult.getRows().size());
+
+                for (GridRow row : queryResult.getRows()) {
+                        GridRow copy = new GridRow();
+                        copy.addAll(row);
+                        copies.add(copy);
+                }
+
+                gridRows.setAll(copies);
+        }
+
+        /**
+         * 将选中的单元格设置为 NULL（写入待提交缓冲区并更新显示）
+         */
+        private void setSelectedCellsNull()
+        {
+                if (queryResult == null)
+                        return;
+
+                var selected = tableView.getSelectionModel().getSelectedCells();
+
+                for (TablePosition<?, ?> position : selected) {
+                        int row = position.getRow();
+                        int column = dataColumnIndex(position.getColumn());
+
+                        if (column < 0 || row < 0 || row >= gridRows.size())
+                                continue;
+
+                        gridRows.get(row).set(column, null);
+                        queryResult.addUpdateRow(column, row, null);
+                }
+
+                tableView.refresh();
+                updateCheckCross();
         }
 
         private void onMinus()
@@ -432,12 +484,16 @@ public class QueryResultDataPane extends BorderPane
                 plusItem.setOnAction(event -> onPlus());
                 MenuItem minusItem = new MenuItem("删除选中行");
                 minusItem.setOnAction(event -> onMinus());
+                minusItem.getStyleClass().add("danger-menu-item");
+                MenuItem setNullItem = new MenuItem("设置为 NULL");
+                setNullItem.setOnAction(event -> setSelectedCellsNull());
                 MenuItem exportItem = new MenuItem("导出");
                 exportItem.setOnAction(event -> applyExport());
 
                 contextMenu.getItems().addAll(
                         submitItem,
                         plusItem,
+                        setNullItem,
                         minusItem,
                         new SeparatorMenuItem(),
                         copyItem,
@@ -455,6 +511,7 @@ public class QueryResultDataPane extends BorderPane
                         submitItem.setDisable(!hasResult || !queryResult.isUpdatable());
                         plusItem.setDisable(!addable);
                         minusItem.setDisable(!addable && !editable);
+                        setNullItem.setDisable(!addable && !editable);
                 });
 
                 tableView.addEventFilter(ContextMenuEvent.CONTEXT_MENU_REQUESTED, event -> {
@@ -693,12 +750,12 @@ public class QueryResultDataPane extends BorderPane
                         col.setMaxWidth(1000);
                         col.setCellValueFactory(param -> new SimpleStringProperty(param.getValue().get(index)));
 
-                        col.setCellFactory(c -> new VkTextFieldTableCell<>(this::commit));
+                        col.setCellFactory(c -> new VkTextFieldTableCell<>(this::commit, () -> activeKeyword));
 
                         tableView.getColumns().add(col);
                 }
 
-                gridRows.setAll(queryResult.getRows());
+                syncGridRows();
                 tableView.setItems(filteredRows);
                 tableView.refresh();
 

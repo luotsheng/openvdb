@@ -22,6 +22,7 @@ import valkyrie.app.event.bus.EventListener;
 import valkyrie.app.event.workbench.OpenQueryEditorPaneEvent;
 import valkyrie.app.explorer.UIQueryContainerDynamicNode;
 import valkyrie.app.explorer.UIQueryDynamicNode;
+import valkyrie.app.widgets.SearchHighlight;
 import valkyrie.app.widgets.VkTextField;
 import valkyrie.app.widgets.VkToolBar;
 import valkyrie.app.widgets.VkToolButton;
@@ -246,9 +247,21 @@ public class QueryListPane extends BorderPane implements EventListener
                         {
                                 super.updateItem(item, empty);
 
-                                if (item != null) {
-                                        setText(item);
+                                if (empty || item == null) {
+                                        setText(null);
+                                        setGraphic(null);
+                                        return;
+                                }
+
+                                String keyword = search.getText();
+
+                                if (SearchHighlight.matches(item, keyword)) {
+                                        setText(null);
+                                        setGraphic(new HBox(4, Assets.use("sql"),
+                                                SearchHighlight.flow(item, keyword)));
+                                } else {
                                         setGraphic(Assets.use("sql"));
+                                        setText(item);
                                 }
                         }
                 });

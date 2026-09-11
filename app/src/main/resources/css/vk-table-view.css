@@ -9,6 +9,31 @@
     -fx-padding: 3 4 3 4;
 }
 
+/* 搜索命中的文本标记：黄底深字 */
+.search-seg {
+    -fx-padding: 0;
+    -fx-text-fill: -color-fg-default;
+}
+
+.search-hit {
+    -fx-background-color: #ffe066;
+    -fx-text-fill: #1c1c1e;
+    -fx-background-radius: 2;
+    -fx-padding: 0 1 0 1;
+}
+
+/*
+ * 列表整行选中时背景是深蓝、文字应为白色；自定义 Label 段落不会自动继承，
+ * 这里显式指定：普通段白字，命中段保持黄底深字（否则深字在深蓝上看不见）。
+ */
+.vk-list-table-view .table-row-cell:selected .search-seg {
+    -fx-text-fill: -color-fg-emphasis;
+}
+
+.vk-list-table-view .table-row-cell:selected .search-hit {
+    -fx-text-fill: #1c1c1e;
+}
+
 .table-row-cell {
     -fx-cell-size: 20px;
 }
