@@ -1,11 +1,8 @@
 /**
  * 深色模式下右键菜单配色，几何尺寸沿用浅色定义。
- * 半透明底色营造轻微亚克力玻璃感。
  */
 .context-menu {
-    -fx-background-color: linear-gradient(to bottom,
-        rgba(58, 58, 60, 0.80),
-        rgba(38, 38, 40, 0.74));
+    -fx-background-color: #2b2b2d;
     -fx-border-color: rgba(255, 255, 255, 0.14);
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.5), 23, 0.0, 0, 12);
 }
@@ -20,6 +17,13 @@
 
 .menu-item:focused > .label {
     -fx-text-fill: #ffffff;
+}
+
+/* 禁用项不可选中：悬停/聚焦时不显示高亮 */
+.menu-item:disabled,
+.menu-item:disabled:hover,
+.menu-item:disabled:focused {
+    -fx-background-color: transparent;
 }
 
 .menu-item:disabled > .label {
@@ -38,6 +42,14 @@
 
 .menu-item > .arrow-button > .arrow {
     -fx-background-color: #f2f2f7;
+}
+
+.menu-item:focused > .arrow-button > .arrow {
+    -fx-background-color: #ffffff;
+}
+
+.menu-item:disabled > .arrow-button > .arrow {
+    -fx-background-color: rgba(255, 255, 255, 0.3);
 }
 
 .context-menu .separator:horizontal .line {

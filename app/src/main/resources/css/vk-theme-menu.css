@@ -1,16 +1,13 @@
 /*
- * 右键菜单：按 mockup 样式等比例缩小（约 0.65 倍），适配桌面端观感。
- * 半透明底色营造轻微亚克力玻璃感。
+ * 右键菜单：圆角白底卡片风格。
  * 说明：JavaFX 的 -fx-effect 只支持单个投影，这里取主投影近似 CSS 的双重阴影。
  */
 .context-menu {
-    -fx-background-color: linear-gradient(to bottom,
-        rgba(255, 255, 255, 0.82),
-        rgba(244, 245, 248, 0.74));
+    -fx-background-color: #ffffff;
     -fx-background-radius: 14;
     -fx-border-radius: 14;
-    -fx-border-width: 0.5;
-    -fx-border-color: #c7c7c7;
+    -fx-border-width: 1;
+    -fx-border-color: #e0e0e0;
     -fx-padding: 6 8;
     -fx-effect: dropshadow(gaussian, rgba(0, 0, 0, 0.16), 23, 0.0, 0, 12);
 }
@@ -32,24 +29,27 @@
 }
 
 .menu-item:focused > .label {
-    -fx-text-fill: #202124;
+    -fx-text-fill: #ffffff;
+}
+
+/* 禁用项不可选中：悬停/聚焦时不显示高亮 */
+.menu-item:disabled,
+.menu-item:disabled:hover,
+.menu-item:disabled:focused {
+    -fx-background-color: transparent;
 }
 
 .menu-item:disabled > .label {
     -fx-text-fill: #b8b8b8;
 }
 
-.menu-item:disabled:focused {
-    -fx-background-color: transparent;
-}
-
-/* 危险操作（如删除）：常态红字，悬停/聚焦时保持红字 */
+/* 危险操作（如删除）：常态红字，悬停/聚焦时随选中态转为白字 */
 .menu-item.danger-menu-item > .label {
     -fx-text-fill: -color-danger-fg;
 }
 
 .menu-item.danger-menu-item:focused > .label {
-    -fx-text-fill: -color-danger-fg;
+    -fx-text-fill: #ffffff;
 }
 
 .menu-item .accelerator-text,
@@ -59,12 +59,20 @@
 
 .menu-item:focused .accelerator-text,
 .menu-item:focused > .right-container > .label {
-    -fx-text-fill: #202124;
+    -fx-text-fill: #ffffff;
 }
 
 /* 子菜单箭头 */
 .menu-item > .arrow-button > .arrow {
     -fx-background-color: #202124;
+}
+
+.menu-item:focused > .arrow-button > .arrow {
+    -fx-background-color: #ffffff;
+}
+
+.menu-item:disabled > .arrow-button > .arrow {
+    -fx-background-color: #b8b8b8;
 }
 
 .context-menu .separator:horizontal {
