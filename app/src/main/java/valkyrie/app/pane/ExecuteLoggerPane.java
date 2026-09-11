@@ -2,6 +2,7 @@ package valkyrie.app.pane;
 
 import javafx.animation.PauseTransition;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
@@ -16,6 +17,8 @@ import valkyrie.app.Application;
 import valkyrie.app.assets.Assets;
 import valkyrie.app.widgets.VkContextMenu;
 import valkyrie.app.widgets.VkTextField;
+import valkyrie.app.widgets.VkToolButton;
+import valkyrie.utils.time.DateFormatter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,10 +41,21 @@ public class ExecuteLoggerPane extends BorderPane
         private final List<Integer> matches = new ArrayList<>();
         private int matchIndex = -1;
 
+        /**
+         * 上一次追加是否为影响行数；用于把「行数 · 耗时」合并到同一行
+         */
+        private boolean pendingRow = false;
+
+        /**
+         * 当前语句块起始段落，用于失败时给整块加红色背景
+         */
+        private int blockStartParagraph = 0;
+
         public ExecuteLoggerPane()
         {
                 codeArea = new CodeArea();
                 codeArea.setEditable(false);
+                codeArea.getStyleClass().add("vk-code-area");
 
                 setupContextMenu();
 
@@ -51,11 +65,17 @@ public class ExecuteLoggerPane extends BorderPane
                 HBox searchBox = new HBox(5, Assets.use("search"), search, matchLabel);
                 searchBox.setAlignment(Pos.CENTER_LEFT);
 
+                Button clearButton = new VkToolButton("清空日志", "清空", "cross");
+                clearButton.setOnAction(event -> clearAll());
+
+                Button copyAllButton = new VkToolButton("复制全部", "复制", "export");
+                copyAllButton.setOnAction(event -> Application.copyToClipboard(codeArea.getText()));
+
                 Region spacer = new Region();
                 HBox.setHgrow(spacer, Priority.ALWAYS);
 
-                HBox top = new HBox(spacer, searchBox);
-                top.setAlignment(Pos.CENTER_RIGHT);
+                HBox top = new HBox(6, clearButton, copyAllButton, spacer, searchBox);
+                top.setAlignment(Pos.CENTER_LEFT);
 
                 setTop(top);
                 setCenter(new VirtualizedScrollPane<>(codeArea));
@@ -164,41 +184,78 @@ public class ExecuteLoggerPane extends BorderPane
 
         public void appendExecute(String text)
         {
-                appendText("> Execute");
-                appendText(text);
+                appendHeader("EXECUTE", "tag-execute");
+                appendLine(text, "sql");
         }
 
         public void appendExecuteQuery(String text)
         {
-                appendText("> Query");
-                appendText(text);
+                appendHeader("QUERY", "tag-query");
+                appendLine(text, "sql");
         }
 
         public void appendExecuteUpdate(String text)
         {
-                appendText("> Update");
-                appendText(text);
+                appendHeader("UPDATE", "tag-update");
+                appendLine(text, "sql");
         }
 
         public void appendRow(int value)
         {
-                appendText("Row: " + value);
+                pendingRow = true;
+                append("│ ", "bar");
+                append("↳ " + value + " rows", "row");
         }
 
         public void appendCost(long cost)
         {
-                appendText("Time: " + cost + "ms");
+                if (pendingRow) {
+                        append("    ·    " + cost + " ms\n\n", "cost");
+                        pendingRow = false;
+                } else {
+                        append("│ ", "bar");
+                        append("↳ " + cost + " ms\n\n", "cost");
+                }
         }
 
         public void appendError(String message)
         {
-                appendText("Error: " + message.replaceAll("\n", ""));
+                pendingRow = false;
+                append("│ ", "bar");
+                append("✗ " + message.replaceAll("\n", " ") + "\n\n", "error");
+                markBlockError();
         }
 
-        private void appendText(String text)
+        private void appendHeader(String tag, String styleClass)
         {
-                text = text.strip();
-                codeArea.appendText(text + "\n");
+                blockStartParagraph = codeArea.getCurrentParagraph();
+                append(DateFormatter.format("HH:mm:ss") + "   ", "cost");
+                append("▸ " + tag + "\n", styleClass);
+        }
+
+        private void appendLine(String text, String styleClass)
+        {
+                append("│ ", "bar");
+                append(text.strip() + "\n", styleClass);
+        }
+
+        /**
+         * 给当前语句块的所有段落加失败样式
+         */
+        private void markBlockError()
+        {
+                int end = codeArea.getCurrentParagraph();
+
+                for (int i = blockStartParagraph; i <= end; i++)
+                        codeArea.setParagraphStyle(i, List.of("stmt-error"));
+        }
+
+        /**
+         * 按样式类追加文本，并保持滚动到底部
+         */
+        private void append(String text, String styleClass)
+        {
+                codeArea.append(text, styleClass);
                 codeArea.moveTo(codeArea.getLength());
                 codeArea.requestFollowCaret();
 

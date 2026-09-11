@@ -1,38 +1,70 @@
+/**
+ * 执行日志（RichTextFX CodeArea）样式
+ */
 .vk-code-area {
-    -fx-font-family: "Monaco", "Menlo", "Consolas", "Courier New";
-    -fx-font-size: 24px;
+    -fx-font-family: "Menlo", "Monaco", "Consolas", "PingFang SC", "Courier New", monospace;
+    -fx-font-size: 13px;
+    -fx-background-color: -color-bg-default;
+    -fx-padding: 8 6 10 10;
 }
 
+.vk-code-area .text {
+    -fx-fill: -color-fg-default;
+}
+
+.vk-code-area .paragraph-box {
+    -fx-padding: 1 0 1 0;
+}
+
+/* 语句类型标签 */
+.vk-code-area .tag-execute {
+    -fx-fill: -color-accent-fg;
+    -fx-font-weight: bold;
+}
+
+.vk-code-area .tag-query {
+    -fx-fill: #12a5b8;
+    -fx-font-weight: bold;
+}
+
+.vk-code-area .tag-update {
+    -fx-fill: -color-warning-fg;
+    -fx-font-weight: bold;
+}
+
+/* SQL 正文与执行结果 */
+.vk-code-area .sql {
+    -fx-fill: -color-fg-default;
+}
+
+.vk-code-area .row {
+    -fx-fill: -color-success-fg;
+}
+
+.vk-code-area .cost {
+    -fx-fill: -color-fg-muted;
+}
+
+.vk-code-area .error {
+    -fx-fill: -color-danger-fg;
+    -fx-font-weight: bold;
+}
+
+/* 语句块左侧竖线 */
+.vk-code-area .bar {
+    -fx-fill: -color-border-default;
+}
+
+/* 失败语句整块背景 */
+.vk-code-area .stmt-error {
+    -fx-background-color: rgba(255, 59, 48, 0.10);
+}
+
+/* 选中与搜索高亮 */
 .vk-code-area .selection {
-    -fx-fill: #5eacff;
-    -fx-fill: rgba(125, 190, 255, 0.5);
+    -fx-fill: -color-accent-subtle;
 }
 
-.vk-code-area .keyword {
-    -fx-fill: #0066cc;
-}
-
-.vk-code-area .string {
-    -fx-fill: #09902c;
-}
-
-.vk-code-area .number {
-    -fx-fill: #17a9a9;
-}
-
-.vk-code-area .comment {
-    -fx-fill: #909090;
-    -fx-font-style: italic;
-}
-
-.vk-code-area .info {
-    -fx-fill: #17af12;
-}
-
-.vk-code-area .fail {
-    -fx-fill: #ff0b0b;
-}
-
-.vk-code-area .skip {
-    -fx-fill: #bd9f28;
+.vk-code-area .search-highlight {
+    -fx-fill: -color-warning-muted;
 }
