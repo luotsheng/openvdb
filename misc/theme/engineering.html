@@ -1,0 +1,1400 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="classic">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>VALKYRIE · 工业软件风界面</title>
+    <style>
+      /* ============================================================
+         VALKYRIE 工业软件风（Engineering Workspace）
+         关键词：高信息密度 / 方正 / 三维斜面 / 停靠面板 / 属性网格
+         两套色板：classic（经典灰，浅色）/ workshop（工程深色）
+         变量名与 electron/src/renderer/styles.css 的 :root 对齐。
+         ============================================================ */
+
+      :root,
+      [data-theme="classic"] {
+        color-scheme: light;
+
+        --bg: #cfccc7;
+        --chrome: #e7e4df;
+        --chrome-2: #d8d5cf;
+        --panel: #eeedea;
+        --field: #ffffff;
+        --hover: #dde4ee;
+        --sel: #2f66a4;
+        --sel-text: #ffffff;
+        --line: #a8a5a0;
+        --line-soft: #c8c5bf;
+        --grid-line: #d9d6d1;
+        --text: #17181a;
+        --muted: #6a6a66;
+        --accent: #2f6bb0;
+
+        --row-alt: #f3f2f0;
+        --row-selected: #cfe0f2;
+        --row-dirty: #fdeed3;
+        --green: #2f7a34;
+        --amber: #9a6410;
+        --red: #b0362a;
+        --violet: #63439a;
+        --cyan: #17697a;
+
+        --bevel-hi: #ffffff;
+        --bevel-lo: #8f8c87;
+        --head-plate: linear-gradient(180deg, #f4f2ef, #e2dfda);
+        --toolbar-plate: linear-gradient(180deg, #efede9, #ddd9d3);
+        --caption-plate: linear-gradient(180deg, #f2f0ec, #ddd9d3);
+        --caption-text: #24262a;
+        --shadow: 0 10px 28px rgba(40, 38, 34, 0.35);
+      }
+
+      [data-theme="workshop"] {
+        color-scheme: dark;
+
+        --bg: #1b1c1e;
+        --chrome: #2e2f32;
+        --chrome-2: #26272a;
+        --panel: #292a2d;
+        --field: #191a1c;
+        --hover: #35383c;
+        --sel: #2c577f;
+        --sel-text: #ffffff;
+        --line: #45474b;
+        --line-soft: #34363a;
+        --grid-line: #3a3c40;
+        --text: #dcdddf;
+        --muted: #909296;
+        --accent: #5aa0dc;
+
+        --row-alt: #232427;
+        --row-selected: #23384c;
+        --row-dirty: #3c3324;
+        --green: #62b366;
+        --amber: #d8a13c;
+        --red: #d9615a;
+        --violet: #a98bd6;
+        --cyan: #56b0c0;
+
+        --bevel-hi: #4b4d51;
+        --bevel-lo: #131416;
+        --head-plate: linear-gradient(180deg, #343639, #292a2d);
+        --toolbar-plate: linear-gradient(180deg, #343639, #282a2d);
+        --caption-plate: linear-gradient(180deg, #35373a, #2a2b2e);
+        --caption-text: #cfd1d4;
+        --shadow: 0 12px 30px rgba(0, 0, 0, 0.6);
+      }
+
+      :root {
+        --mono: Consolas, "Cascadia Mono", "Courier New", monospace;
+        font-family: "Segoe UI", Tahoma, "Microsoft YaHei", system-ui, sans-serif;
+        font-size: 12px;
+        line-height: 1.35;
+      }
+
+      * { box-sizing: border-box; }
+      html, body { margin: 0; }
+
+      body {
+        min-height: 100%;
+        padding: 28px 28px 56px;
+        background: #5c5a57;
+        color: #d9d7d3;
+        user-select: none;
+      }
+
+      .doc-head {
+        max-width: 1500px;
+        margin: 0 auto 14px;
+        display: flex;
+        align-items: flex-end;
+        gap: 12px;
+      }
+
+      .doc-head h1 {
+        margin: 0;
+        font-size: 17px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        color: #f2f1ef;
+      }
+
+      .doc-head p { margin: 3px 0 0; font-size: 12px; color: #b3b0ac; }
+
+      .switcher { margin-left: auto; display: flex; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35); }
+
+      .switcher button {
+        padding: 6px 14px;
+        border: 1px solid #3d3b38;
+        border-right: 0;
+        background: #2f2e2c;
+        color: #b8b5b1;
+        font: inherit;
+        cursor: pointer;
+      }
+
+      .switcher button:last-child { border-right: 1px solid #3d3b38; }
+      .switcher button:hover { background: #3a3835; color: #eee; }
+      .switcher button.is-on { background: #2f66a4; border-color: #2f66a4; color: #fff; font-weight: 600; }
+
+      /* ------------------------------ 主窗口 ------------------------------ */
+
+      .frame {
+        max-width: 1500px;
+        margin: 0 auto;
+        border: 1px solid #2b2a28;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+
+      .titlebar {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+        height: 28px;
+        padding-left: 7px;
+        background: linear-gradient(180deg, #3f6ba8, #27507f 55%, #22456e);
+        color: #fff;
+        font-size: 12px;
+      }
+
+      [data-theme="workshop"] .titlebar {
+        background: linear-gradient(180deg, #46586b, #2c3a49 55%, #26313d);
+      }
+
+      .titlebar .app-icon {
+        width: 15px;
+        height: 15px;
+        display: grid;
+        place-items: center;
+        background: #f0a020;
+        border: 1px solid rgba(0, 0, 0, 0.35);
+        color: #21242a;
+        font-size: 10px;
+        font-weight: 800;
+      }
+
+      .titlebar .title-text { text-shadow: 0 1px 1px rgba(0, 0, 0, 0.35); }
+      .titlebar .title-text b { font-weight: 600; }
+      .titlebar .title-text .dim { opacity: 0.8; }
+      .titlebar .spacer { flex: 1; }
+
+      .caption-btns { display: flex; align-self: stretch; }
+
+      .caption-btn {
+        width: 30px;
+        display: grid;
+        place-items: center;
+        border: 0;
+        border-left: 1px solid rgba(255, 255, 255, 0.14);
+        background: transparent;
+        color: #eaf0f7;
+        font-size: 11px;
+        cursor: pointer;
+      }
+
+      .caption-btn:hover { background: rgba(255, 255, 255, 0.18); }
+      .caption-btn.is-close:hover { background: #c33a2c; }
+
+      .menubar {
+        display: flex;
+        align-items: center;
+        height: 23px;
+        padding: 0 3px;
+        background: var(--chrome);
+        border-bottom: 1px solid var(--line-soft);
+      }
+
+      .menu {
+        padding: 2px 9px;
+        font-size: 12px;
+        color: var(--text);
+        cursor: default;
+      }
+
+      .menu:hover { background: var(--sel); color: var(--sel-text); }
+      .menu.is-open { background: var(--sel); color: var(--sel-text); }
+
+      /* 工具栏：小图标 + 分组分隔 + 下拉框 */
+
+      .toolbar {
+        display: flex;
+        align-items: center;
+        gap: 0;
+        height: 30px;
+        padding: 0 4px;
+        background: var(--toolbar-plate);
+        border-bottom: 1px solid var(--line);
+      }
+
+      .tb-group { display: flex; align-items: center; gap: 1px; padding: 0 3px; }
+
+      .tb-sep {
+        width: 0;
+        height: 20px;
+        margin: 0 3px;
+        box-shadow: -1px 0 0 var(--bevel-lo), 1px 0 0 var(--bevel-hi);
+      }
+
+      .tbtn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        height: 22px;
+        padding: 0 5px;
+        border: 1px solid transparent;
+        border-radius: 0;
+        background: transparent;
+        color: var(--text);
+        font: inherit;
+        font-size: 12px;
+        white-space: nowrap;
+        cursor: pointer;
+      }
+
+      .tbtn:hover {
+        border-color: var(--line);
+        box-shadow: inset 1px 1px 0 var(--bevel-hi), inset -1px -1px 0 var(--bevel-lo);
+        background: var(--hover);
+      }
+
+      .tbtn:active {
+        border-color: var(--line);
+        box-shadow: inset -1px -1px 0 var(--bevel-hi), inset 1px 1px 0 var(--bevel-lo);
+        background: var(--chrome-2);
+      }
+
+      .tbtn.is-on {
+        border-color: var(--line);
+        box-shadow: inset -1px -1px 0 var(--bevel-hi), inset 1px 1px 0 var(--bevel-lo);
+        background: var(--chrome-2);
+      }
+
+      .tbtn:disabled { color: var(--muted); opacity: 0.6; cursor: default; }
+      .tbtn:disabled:hover { border-color: transparent; box-shadow: none; background: transparent; }
+      .tbtn svg { width: 15px; height: 15px; flex: 0 0 auto; }
+      .tbtn.is-run svg { color: #2f7a34; }
+      .tbtn.is-stop svg { color: #b0362a; }
+      [data-theme="workshop"] .tbtn.is-run svg { color: #7cc47f; }
+      [data-theme="workshop"] .tbtn.is-stop svg { color: #e07a72; }
+
+      .toolbar .spacer { flex: 1; }
+
+      /* 经典下拉框 */
+      .combo {
+        display: inline-flex;
+        align-items: center;
+        height: 21px;
+        border: 1px solid var(--line);
+        box-shadow: inset 1px 1px 0 var(--bevel-lo), inset -1px -1px 0 var(--bevel-hi);
+        background: var(--field);
+      }
+
+      .combo .combo-text {
+        padding: 0 6px;
+        font-size: 12px;
+        color: var(--text);
+        min-width: 104px;
+      }
+
+      .combo .combo-arrow {
+        width: 17px;
+        align-self: stretch;
+        display: grid;
+        place-items: center;
+        border-left: 1px solid var(--line);
+        box-shadow: inset 1px 1px 0 var(--bevel-hi);
+        background: var(--toolbar-plate);
+        color: var(--text);
+        font-size: 8px;
+        cursor: pointer;
+      }
+
+      /* ------------------------------ 工作区 ------------------------------ */
+
+      .work {
+        display: flex;
+        height: 700px;
+        min-height: 0;
+        background: var(--bg);
+      }
+
+      .dock {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        padding: 3px;
+        background: var(--bg);
+      }
+
+      .dock-left { width: 258px; }
+      .dock-right { width: 296px; }
+
+      .splitter {
+        flex: 0 0 auto;
+        background: var(--bg);
+        position: relative;
+      }
+
+      .splitter.vertical { width: 4px; cursor: col-resize; }
+      .splitter.horizontal { height: 4px; cursor: row-resize; }
+
+      .splitter.vertical::after {
+        content: "";
+        position: absolute;
+        inset: 0 1px;
+        background-image: radial-gradient(circle, var(--line) 0.5px, transparent 0.5px);
+        background-size: 2px 5px;
+      }
+
+      .splitter.horizontal::after {
+        content: "";
+        position: absolute;
+        inset: 1px 0;
+        background-image: radial-gradient(circle, var(--line) 0.5px, transparent 0.5px);
+        background-size: 5px 2px;
+      }
+
+      /* 停靠面板 */
+      .panel {
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      .panel.grow { flex: 1; }
+
+      .caption {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        height: 21px;
+        padding: 0 3px 0 6px;
+        background: var(--caption-plate);
+        border-bottom: 1px solid var(--line);
+        color: var(--caption-text);
+        font-size: 11.5px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      .caption .grip {
+        width: 9px;
+        height: 9px;
+        box-shadow:
+          0 0 0 1px var(--bevel-lo) inset,
+          -1px -1px 0 var(--bevel-hi) inset;
+        opacity: 0.8;
+      }
+
+      .caption .cap-tools { margin-left: auto; display: flex; gap: 1px; }
+
+      .cap-btn {
+        width: 17px;
+        height: 17px;
+        display: grid;
+        place-items: center;
+        border: 1px solid transparent;
+        background: transparent;
+        color: var(--muted);
+        font-size: 10px;
+        line-height: 1;
+        cursor: pointer;
+      }
+
+      .cap-btn:hover {
+        border-color: var(--line);
+        background: var(--hover);
+        box-shadow: inset 1px 1px 0 var(--bevel-hi), inset -1px -1px 0 var(--bevel-lo);
+        color: var(--text);
+      }
+
+      .panel-body { flex: 1; min-height: 0; overflow: auto; }
+
+      /* 树 */
+      .tree { padding: 3px 0 8px; background: var(--panel); }
+
+      .node {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        height: 20px;
+        color: var(--text);
+        font-size: 12px;
+        cursor: default;
+        white-space: nowrap;
+      }
+
+      .node:hover { background: var(--hover); }
+      .node.is-active { background: var(--sel); color: var(--sel-text); }
+      .node.is-active .muted, .node.is-active .tag { color: var(--sel-text); opacity: 0.85; }
+
+      .expander {
+        width: 11px;
+        height: 11px;
+        flex: 0 0 auto;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--muted);
+        background: var(--field);
+        color: var(--text);
+        font-size: 9px;
+        line-height: 1;
+      }
+
+      .expander.leaf { border: 0; background: transparent; }
+
+      .node .ico { width: 13px; text-align: center; font-size: 11px; flex: 0 0 auto; }
+      .node .muted { color: var(--muted); font-size: 11px; }
+      .node .tag {
+        margin-left: auto;
+        margin-right: 6px;
+        font-family: var(--mono);
+        font-size: 10.5px;
+        color: var(--muted);
+      }
+
+      .lv1 { padding-left: 4px; }
+      .lv2 { padding-left: 18px; }
+      .lv3 { padding-left: 34px; }
+      .lv4 { padding-left: 50px; }
+
+      /* 会话监视 */
+
+      .monitor { padding: 4px 0 6px; }
+
+      .mon-row {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 21px;
+        padding: 0 7px;
+        font-size: 11.5px;
+        color: var(--text);
+      }
+
+      .mon-row:hover { background: var(--hover); }
+
+      .led {
+        width: 8px;
+        height: 8px;
+        flex: 0 0 auto;
+        border-radius: 50%;
+        border: 1px solid rgba(0, 0, 0, 0.45);
+        background:
+          radial-gradient(circle at 32% 28%, rgba(255, 255, 255, 0.85), transparent 45%),
+          var(--green);
+      }
+
+      .led.warn { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.85), transparent 45%), var(--amber); }
+      .led.bad { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.85), transparent 45%), var(--red); }
+      .led.off { background: radial-gradient(circle at 32% 28%, rgba(255,255,255,.5), transparent 45%), #8b8b8b; }
+
+      .mon-row .name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+      .mon-row .val { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+      /* 中央区域 */
+
+      .center {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        flex-direction: column;
+        background: var(--bg);
+        padding: 3px 0;
+      }
+
+      .tabstrip {
+        display: flex;
+        align-items: flex-end;
+        height: 23px;
+        padding: 0 3px;
+        gap: 2px;
+      }
+
+      .tab {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        height: 21px;
+        padding: 0 10px;
+        border: 1px solid var(--line);
+        border-bottom: 0;
+        border-radius: 3px 3px 0 0;
+        background: var(--chrome-2);
+        color: var(--text);
+        font-size: 11.5px;
+        cursor: default;
+        position: relative;
+        top: 1px;
+      }
+
+      .tab:hover { background: var(--hover); }
+
+      .tab.is-active {
+        background: var(--panel);
+        color: var(--text);
+        font-weight: 600;
+        top: 0;
+        height: 22px;
+      }
+
+      .tab .x { color: var(--muted); font-size: 11px; }
+      .tab .x:hover { color: var(--red); }
+      .tab .dirty { color: var(--amber); }
+
+      .doc {
+        flex: 1;
+        min-height: 0;
+        display: flex;
+        flex-direction: column;
+        border: 1px solid var(--line);
+        background: var(--panel);
+      }
+
+      /* 编辑器 */
+      .editor {
+        flex: 0 0 40%;
+        display: flex;
+        min-height: 150px;
+        background: var(--field);
+        border-bottom: 1px solid var(--line);
+        font-family: var(--mono);
+        font-size: 12px;
+        line-height: 18px;
+      }
+
+      .gutter {
+        padding: 6px 8px;
+        text-align: right;
+        color: var(--muted);
+        background: var(--panel);
+        border-right: 1px solid var(--line-soft);
+        user-select: none;
+      }
+
+      .code { padding: 6px 10px; flex: 1; overflow: auto; white-space: pre; color: var(--text); }
+      .code .ln { display: block; }
+      .code .ln.caret { background: var(--hover); box-shadow: inset 2px 0 0 var(--accent); }
+      .kw { color: var(--accent); font-weight: 600; }
+      .fn { color: var(--cyan); }
+      .str { color: var(--green); }
+      .num { color: var(--violet); }
+      .cmt { color: var(--muted); }
+
+      /* 数据网格 */
+
+      .grid-toolbar {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+        height: 25px;
+        padding: 0 4px;
+        background: var(--toolbar-plate);
+        border-bottom: 1px solid var(--line);
+        font-size: 11.5px;
+        color: var(--muted);
+      }
+
+      .grid-toolbar .tbtn { height: 20px; font-size: 11.5px; }
+      .grid-toolbar .spacer { flex: 1; }
+
+      .grid-scroll { flex: 1; min-height: 0; overflow: auto; background: var(--panel); }
+
+      table.grid {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+      }
+
+      table.grid thead th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        padding: 0 7px;
+        height: 24px;
+        text-align: left;
+        font-weight: 600;
+        color: var(--text);
+        white-space: nowrap;
+        background: var(--head-plate);
+        border: 1px solid var(--line);
+        box-shadow: inset 1px 1px 0 var(--bevel-hi), inset -1px -1px 0 var(--bevel-lo);
+      }
+
+      table.grid thead th .col-type {
+        margin-left: 6px;
+        font-family: var(--mono);
+        font-size: 10px;
+        font-weight: 400;
+        color: var(--muted);
+      }
+
+      table.grid thead th.is-key::before {
+        content: "";
+        display: inline-block;
+        width: 6px;
+        height: 6px;
+        margin-right: 5px;
+        background: var(--amber);
+        border: 1px solid rgba(0, 0, 0, 0.35);
+      }
+
+      table.grid td {
+        height: 21px;
+        padding: 0 7px;
+        border-right: 1px solid var(--grid-line);
+        border-bottom: 1px solid var(--grid-line);
+        white-space: nowrap;
+        color: var(--text);
+      }
+
+      table.grid tbody tr:nth-child(even) td { background: var(--row-alt); }
+      table.grid tbody tr:hover td { background: var(--hover); }
+      table.grid tbody tr.is-selected td { background: var(--row-selected); }
+      table.grid tbody tr.is-dirty td:first-child { box-shadow: inset 3px 0 0 var(--amber); }
+
+      td.mono, td.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+      td.num { text-align: right; }
+      td.null { color: var(--muted); font-style: italic; }
+
+      .state { display: inline-flex; align-items: center; gap: 4px; font-size: 11.5px; }
+      .state .dot { width: 7px; height: 7px; border: 1px solid rgba(0,0,0,.3); }
+      .state.ok .dot { background: var(--green); }
+      .state.wait .dot { background: var(--amber); }
+      .state.bad .dot { background: var(--red); }
+      .state.info .dot { background: var(--cyan); }
+
+      /* 输出窗口 */
+      .panel.output { height: 168px; flex: 0 0 auto; }
+      .panel.output .panel-header {
+        display: flex;
+        align-items: flex-end;
+        height: 22px;
+        padding: 0 3px;
+        background: var(--chrome-2);
+        border-bottom: 1px solid var(--line);
+        gap: 2px;
+      }
+
+      .panel.output .panel-header .tab {
+        border-radius: 0;
+        top: 0;
+        height: 21px;
+        border: 1px solid transparent;
+        border-bottom: 0;
+        background: transparent;
+        font-size: 11.5px;
+      }
+
+      .panel.output .panel-header .tab.is-active {
+        background: var(--panel);
+        border-color: var(--line);
+        border-bottom: 1px solid var(--panel);
+        box-shadow: inset 0 2px 0 var(--accent);
+      }
+
+      .panel.output .panel-header .spacer { flex: 1; }
+
+      .console {
+        flex: 1;
+        min-height: 0;
+        overflow: auto;
+        padding: 4px 8px 8px;
+        background: var(--field);
+        font-family: var(--mono);
+        font-size: 11.5px;
+        line-height: 1.65;
+        color: var(--text);
+        user-select: text;
+      }
+
+      .console .t { color: var(--muted); }
+      .console .ok { color: var(--green); }
+      .console .wa { color: var(--amber); }
+      .console .er { color: var(--red); }
+      .console .hi { color: var(--accent); }
+
+      /* 属性网格 */
+
+      .pg { background: var(--panel); }
+
+      .pg-caption {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        height: 22px;
+        padding: 0 6px;
+        background: var(--caption-plate);
+        border-bottom: 1px solid var(--line);
+        font-size: 11.5px;
+        font-weight: 600;
+        color: var(--caption-text);
+      }
+
+      .pg-caption .tri { color: var(--muted); font-size: 9px; }
+
+      .pg-cat {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        height: 21px;
+        padding: 0 6px;
+        background: var(--chrome-2);
+        border-bottom: 1px solid var(--line-soft);
+        font-weight: 600;
+        color: var(--text);
+        font-size: 11.5px;
+      }
+
+      .pg-cat .line { flex: 1; height: 1px; background: var(--line-soft); }
+
+      .pg-row {
+        display: flex;
+        align-items: stretch;
+        height: 21px;
+        border-bottom: 1px solid var(--line-soft);
+        font-size: 11.5px;
+      }
+
+      .pg-row:hover { background: var(--hover); }
+      .pg-row.is-active .pg-name { background: var(--sel); color: var(--sel-text); }
+
+      .pg-name {
+        width: 112px;
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+        padding: 0 6px 0 16px;
+        color: var(--text);
+        border-right: 1px solid var(--line-soft);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .pg-val {
+        flex: 1;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 0 4px;
+        color: var(--text);
+      }
+
+      .pg-val .field {
+        flex: 1;
+        min-width: 0;
+        height: 16px;
+        display: flex;
+        align-items: center;
+        padding: 0 4px;
+        border: 1px solid var(--line-soft);
+        background: var(--field);
+        box-shadow: inset 1px 1px 0 var(--bevel-lo);
+        font-family: var(--mono);
+        font-size: 11px;
+        color: var(--text);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .pg-val .bool {
+        width: 12px;
+        height: 12px;
+        display: grid;
+        place-items: center;
+        border: 1px solid var(--line);
+        background: var(--field);
+        box-shadow: inset 1px 1px 0 var(--bevel-lo);
+        color: var(--green);
+        font-size: 10px;
+        font-weight: 700;
+      }
+
+      /* 实时曲线 */
+
+      .trend {
+        position: relative;
+        height: 108px;
+        margin: 4px;
+        border: 1px solid var(--line);
+        background:
+          repeating-linear-gradient(to right, var(--grid-line) 0 1px, transparent 1px 40px),
+          repeating-linear-gradient(to bottom, var(--grid-line) 0 1px, transparent 1px 24px),
+          var(--field);
+        box-shadow: inset 1px 1px 0 var(--bevel-lo);
+        overflow: hidden;
+      }
+
+      .trend svg { display: block; width: 100%; height: 100%; }
+      .trend .axis {
+        position: absolute;
+        left: 4px;
+        top: 3px;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .trend .legend {
+        position: absolute;
+        right: 5px;
+        top: 3px;
+        display: flex;
+        gap: 9px;
+        font-family: var(--mono);
+        font-size: 10px;
+        color: var(--muted);
+      }
+      .trend .legend i { display: inline-block; width: 8px; height: 2px; margin-right: 4px; vertical-align: middle; }
+
+      .meters { padding: 2px 6px 7px; display: grid; gap: 5px; }
+
+      .meter { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--muted); }
+      .meter .label { width: 66px; }
+      .meter .track {
+        flex: 1;
+        height: 10px;
+        border: 1px solid var(--line);
+        background: var(--field);
+        box-shadow: inset 1px 1px 0 var(--bevel-lo);
+        padding: 1px;
+      }
+      .meter .track > i { display: block; height: 100%; background: var(--accent); }
+      .meter .track > i.warn { background: var(--amber); }
+      .meter .track > i.bad { background: var(--red); }
+      .meter .num { width: 52px; text-align: right; font-family: var(--mono); font-size: 11px; color: var(--text); }
+
+      /* ------------------------------ 状态栏 ------------------------------ */
+
+      .statusbar {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        height: 23px;
+        padding: 2px 3px;
+        background: var(--chrome);
+        border-top: 1px solid var(--line);
+      }
+
+      .sb-pane {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        height: 18px;
+        padding: 0 7px;
+        border: 1px solid var(--line-soft);
+        box-shadow: inset 1px 1px 0 var(--bevel-lo), inset -1px -1px 0 var(--bevel-hi);
+        font-size: 11.5px;
+        color: var(--text);
+        white-space: nowrap;
+      }
+
+      .sb-pane.mono { font-family: var(--mono); font-size: 11px; }
+      .sb-pane.push { margin-left: auto; }
+
+      .sb-resize {
+        width: 14px;
+        height: 14px;
+        margin-left: 2px;
+        background:
+          linear-gradient(135deg, transparent 45%, var(--line) 45% 55%, transparent 55%) 0 0 / 5px 5px,
+          linear-gradient(135deg, transparent 45%, var(--line) 45% 55%, transparent 55%) 4px 4px / 5px 5px,
+          var(--chrome-2);
+        border: 1px solid var(--line-soft);
+      }
+
+      /* ------------------------------ 规范区 ------------------------------ */
+
+      .spec {
+        max-width: 1500px;
+        margin: 22px auto 0;
+        display: grid;
+        gap: 10px;
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .spec-card {
+        border: 1px solid #3a3835;
+        background: #2b2a28;
+      }
+
+      .spec-card > h2 {
+        margin: 0;
+        padding: 7px 10px;
+        font-size: 11.5px;
+        font-weight: 600;
+        color: #e6e4e1;
+        background: linear-gradient(180deg, #3a3835, #312f2d);
+        border-bottom: 1px solid #3a3835;
+      }
+
+      .spec-card > h2 span { color: #9aa3ad; font-weight: 400; }
+
+      .spec-body { padding: 10px; display: grid; gap: 8px; }
+
+      .spec-row { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: #b8b5b1; }
+      .spec-row .k { width: 118px; font-family: var(--mono); font-size: 10.5px; color: #8d8a86; }
+
+      .size-swatch { height: 18px; border: 1px solid #55524e; background: #4a4845; }
+      .size-swatch.alt { height: 22px; background: #565350; }
+
+      .note {
+        max-width: 1500px;
+        margin: 16px auto 0;
+        padding: 12px 14px;
+        border: 1px solid #3a3835;
+        background: #2b2a28;
+        color: #b3b0ac;
+        font-size: 12px;
+        line-height: 1.7;
+        user-select: text;
+      }
+
+      .note b { color: #e6e4e1; }
+      .note code {
+        font-family: var(--mono);
+        font-size: 11px;
+        color: #9dc4ea;
+        background: rgba(90, 160, 220, 0.1);
+        border: 1px solid rgba(90, 160, 220, 0.25);
+        padding: 0 3px;
+      }
+
+      ::-webkit-scrollbar { width: 16px; height: 16px; }
+      ::-webkit-scrollbar-track { background: var(--chrome-2); }
+      ::-webkit-scrollbar-thumb {
+        background: var(--chrome);
+        border: 1px solid var(--line);
+        box-shadow: inset 1px 1px 0 var(--bevel-hi), inset -1px -1px 0 var(--bevel-lo);
+      }
+      ::-webkit-scrollbar-corner { background: var(--chrome-2); }
+    </style>
+  </head>
+  <body>
+    <!-- 图标精灵 -->
+    <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+      <defs>
+        <g id="i-new"><rect x="2.5" y="2.5" width="11" height="11" fill="none" stroke="currentColor"/><path d="M8 5v6M5 8h6" stroke="currentColor"/></g>
+        <g id="i-open"><path d="M2 4h4.5l1.2 1.6H14v7H2z" fill="none" stroke="currentColor"/><path d="M3.5 5.6v6.2" stroke="currentColor"/></g>
+        <g id="i-save"><path d="M3 2.5h8l2.5 2.5v9H3z" fill="none" stroke="currentColor"/><rect x="5.5" y="2.5" width="5" height="4" fill="none" stroke="currentColor"/><rect x="5.5" y="9" width="5" height="5" fill="none" stroke="currentColor"/></g>
+        <g id="i-run"><path d="M4 2.5l9 5.5-9 5.5z" fill="currentColor"/></g>
+        <g id="i-plan"><path d="M3 13.5V2.5M3 13.5h10" stroke="currentColor"/><rect x="5" y="8" width="2.4" height="4" fill="currentColor"/><rect x="8.4" y="5" width="2.4" height="7" fill="currentColor"/><rect x="11.8" y="10" width="2" height="2" fill="currentColor"/></g>
+        <g id="i-stop"><rect x="3.5" y="3.5" width="9" height="9" fill="currentColor"/></g>
+        <g id="i-commit"><path d="M8 13V3M4.5 6.5L8 3l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M3 14h10" stroke="currentColor"/></g>
+        <g id="i-rollback"><path d="M8 13V3M4.5 6.5L8 3l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.2" transform="rotate(180 8 8)"/><path d="M3 14h10" stroke="currentColor"/></g>
+        <g id="i-refresh"><path d="M13 8a5 5 0 1 1-1.6-3.7" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M13.5 2.5v3.2h-3.2" fill="none" stroke="currentColor" stroke-width="1.3"/></g>
+        <g id="i-export"><path d="M8 2v7.5M5 7l3 3 3-3" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M3 12.5h10v2H3z" fill="currentColor"/></g>
+        <g id="i-filter"><path d="M2.5 3h11L9.5 8v5.5l-3-1.5V8z" fill="none" stroke="currentColor"/></g>
+        <g id="i-gear"><circle cx="8" cy="8" r="2.4" fill="none" stroke="currentColor"/><path d="M8 1.5v2M8 12.5v2M1.5 8h2M12.5 8h2M3.4 3.4l1.4 1.4M11.2 11.2l1.4 1.4M12.6 3.4l-1.4 1.4M4.8 11.2l-1.4 1.4" stroke="currentColor"/></g>
+        <g id="i-grid"><rect x="2.5" y="2.5" width="11" height="11" fill="none" stroke="currentColor"/><path d="M2.5 6.2h11M2.5 9.8h11M6.2 2.5v11M9.8 2.5v11" stroke="currentColor"/></g>
+        <g id="i-chart"><path d="M3 13.5V2.5M3 13.5h10" stroke="currentColor"/><path d="M4.5 11l2.8-3.4 2.2 1.8L13 5" fill="none" stroke="currentColor" stroke-width="1.3"/></g>
+        <g id="i-doc"><path d="M4 2.5h5l3.5 3.5v7.5H4z" fill="none" stroke="currentColor"/><path d="M9 2.5V6h3.5" fill="none" stroke="currentColor"/></g>
+      </defs>
+    </svg>
+
+    <div class="doc-head">
+      <div>
+        <h1>Valkyrie · 工业软件风界面</h1>
+        <p>密集信息、方正控件、三维斜面、停靠面板与属性网格 —— 组态 / CAD / DCS 那一路的工作台观感。</p>
+      </div>
+      <div class="switcher">
+        <button type="button" data-set="classic" class="is-on">经典灰（浅）</button>
+        <button type="button" data-set="workshop">工程深色</button>
+      </div>
+    </div>
+
+    <div class="frame">
+      <!-- 标题栏 -->
+      <div class="titlebar">
+        <span class="app-icon">V</span>
+        <span class="title-text">
+          <b>Valkyrie 1.6.0</b> <span class="dim">— [so_recon.sql] — 工程：生产库月度对账</span>
+        </span>
+        <span class="spacer"></span>
+        <div class="caption-btns">
+          <button class="caption-btn" type="button">─</button>
+          <button class="caption-btn" type="button">▢</button>
+          <button class="caption-btn is-close" type="button">✕</button>
+        </div>
+      </div>
+
+      <!-- 菜单 -->
+      <div class="menubar">
+        <span class="menu is-open">文件(F)</span>
+        <span class="menu">编辑(E)</span>
+        <span class="menu">视图(V)</span>
+        <span class="menu">查询(Q)</span>
+        <span class="menu">工程(P)</span>
+        <span class="menu">工具(T)</span>
+        <span class="menu">窗口(W)</span>
+        <span class="menu">帮助(H)</span>
+      </div>
+
+      <!-- 工具栏 -->
+      <div class="toolbar">
+        <div class="tb-group">
+          <button class="tbtn" type="button" title="新建连接"><svg viewBox="0 0 16 16"><use href="#i-new"/></svg></button>
+          <button class="tbtn" type="button" title="打开脚本"><svg viewBox="0 0 16 16"><use href="#i-open"/></svg></button>
+          <button class="tbtn" type="button" title="保存"><svg viewBox="0 0 16 16"><use href="#i-save"/></svg></button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-group">
+          <button class="tbtn is-run" type="button" title="执行"><svg viewBox="0 0 16 16"><use href="#i-run"/></svg>执行</button>
+          <button class="tbtn" type="button" title="执行计划"><svg viewBox="0 0 16 16"><use href="#i-plan"/></svg></button>
+          <button class="tbtn is-stop" type="button" title="停止"><svg viewBox="0 0 16 16"><use href="#i-stop"/></svg></button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-group">
+          <button class="tbtn" type="button" title="提交"><svg viewBox="0 0 16 16"><use href="#i-commit"/></svg></button>
+          <button class="tbtn" type="button" title="回滚" disabled><svg viewBox="0 0 16 16"><use href="#i-rollback"/></svg></button>
+          <button class="tbtn" type="button" title="刷新"><svg viewBox="0 0 16 16"><use href="#i-refresh"/></svg></button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-group">
+          <button class="tbtn is-on" type="button" title="数据网格"><svg viewBox="0 0 16 16"><use href="#i-grid"/></svg></button>
+          <button class="tbtn" type="button" title="实时曲线"><svg viewBox="0 0 16 16"><use href="#i-chart"/></svg></button>
+          <button class="tbtn" type="button" title="过滤"><svg viewBox="0 0 16 16"><use href="#i-filter"/></svg></button>
+          <button class="tbtn" type="button" title="导出"><svg viewBox="0 0 16 16"><use href="#i-export"/></svg></button>
+        </div>
+        <div class="tb-sep"></div>
+        <div class="tb-group">
+          <button class="tbtn" type="button" title="设置"><svg viewBox="0 0 16 16"><use href="#i-gear"/></svg></button>
+        </div>
+        <span class="spacer"></span>
+        <div class="tb-group">
+          <div class="combo"><span class="combo-text">PROD-ORA-01</span><span class="combo-arrow">▼</span></div>
+        </div>
+        <div class="tb-group">
+          <div class="combo"><span class="combo-text">SALES</span><span class="combo-arrow">▼</span></div>
+        </div>
+      </div>
+
+      <!-- 工作区 -->
+      <div class="work">
+        <!-- 左侧停靠 -->
+        <div class="dock dock-left">
+          <div class="panel grow">
+            <div class="caption">
+              <span class="grip"></span>工程资源管理器
+              <div class="cap-tools">
+                <button class="cap-btn" type="button">▣</button>
+                <button class="cap-btn" type="button">✕</button>
+              </div>
+            </div>
+            <div class="panel-body tree">
+              <div class="node lv1 is-active"><span class="expander">−</span><span class="ico">▣</span>生产库月度对账<span class="tag">工程</span></div>
+              <div class="node lv2"><span class="expander">−</span><span class="ico">⊞</span>PROD-ORA-01<span class="tag">ORA</span></div>
+              <div class="node lv3"><span class="expander">−</span><span class="ico">▤</span>SALES<span class="tag">148</span></div>
+              <div class="node lv4"><span class="expander">−</span><span class="ico">▢</span>表<span class="muted">(42)</span></div>
+              <div class="node lv4" style="padding-left:62px"><span class="expander leaf"></span><span class="ico">▦</span>ORDERS<span class="tag">1.2M</span></div>
+              <div class="node lv4" style="padding-left:62px"><span class="expander leaf"></span><span class="ico">▦</span>CUSTOMERS<span class="tag">87K</span></div>
+              <div class="node lv4" style="padding-left:62px"><span class="expander leaf"></span><span class="ico">▦</span>ORDER_ITEMS<span class="tag">4.7M</span></div>
+              <div class="node lv4" style="padding-left:62px"><span class="expander leaf"></span><span class="ico">▦</span>PRODUCTS<span class="tag">12K</span></div>
+              <div class="node lv4"><span class="expander">+</span><span class="ico">▢</span>视图<span class="muted">(17)</span></div>
+              <div class="node lv4"><span class="expander">+</span><span class="ico">▢</span>存储过程<span class="muted">(9)</span></div>
+              <div class="node lv4"><span class="expander">+</span><span class="ico">▢</span>函数<span class="muted">(23)</span></div>
+              <div class="node lv3"><span class="expander">+</span><span class="ico">▤</span>STAGE<span class="tag">12</span></div>
+              <div class="node lv2"><span class="expander">+</span><span class="ico">⊞</span>STAGE-PG-02<span class="tag">PG</span></div>
+              <div class="node lv2"><span class="expander">+</span><span class="ico">⊞</span>DEV-MYSQL-07<span class="tag">MY</span></div>
+              <div class="node lv1"><span class="expander">+</span><span class="ico">▭</span>脚本库<span class="tag">36</span></div>
+              <div class="node lv1"><span class="expander">+</span><span class="ico">▭</span>查询模板<span class="tag">14</span></div>
+            </div>
+          </div>
+
+          <div class="splitter horizontal"></div>
+
+          <div class="panel" style="height:196px;flex:0 0 auto">
+            <div class="caption">
+              <span class="grip"></span>会话监视
+              <div class="cap-tools">
+                <button class="cap-btn" type="button">⟳</button>
+                <button class="cap-btn" type="button">▣</button>
+                <button class="cap-btn" type="button">✕</button>
+              </div>
+            </div>
+            <div class="panel-body monitor">
+              <div class="mon-row"><span class="led"></span><span class="name">PROD-ORA-01</span><span class="val">9 ms</span></div>
+              <div class="mon-row"><span class="led"></span><span class="name">STAGE-PG-02</span><span class="val">14 ms</span></div>
+              <div class="mon-row"><span class="led warn"></span><span class="name">DEV-MYSQL-07</span><span class="val">128 ms</span></div>
+              <div class="mon-row"><span class="led bad"></span><span class="name">ARCHIVE-01</span><span class="val">超时</span></div>
+              <div class="mon-row"><span class="led off"></span><span class="name">DB-LEGACY-03</span><span class="val">未启用</span></div>
+              <div class="mon-row" style="border-top:1px solid var(--line-soft);margin-top:4px;padding-top:4px"><span class="name muted" style="color:var(--muted)">连接池</span><span class="val">4 / 16</span></div>
+              <div class="mon-row"><span class="name muted" style="color:var(--muted)">活动事务</span><span class="val">1</span></div>
+              <div class="mon-row"><span class="name muted" style="color:var(--muted)">排队请求</span><span class="val">0</span></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="splitter vertical"></div>
+
+        <!-- 中央 -->
+        <div class="center">
+          <div class="tabstrip">
+            <div class="tab is-active"><span>▤</span>so_recon.sql<span class="dirty">●</span><span class="x">✕</span></div>
+            <div class="tab"><span>▦</span>ORDERS<span class="x">✕</span></div>
+            <div class="tab"><span>◫</span>执行计划<span class="x">✕</span></div>
+            <div class="tab"><span>◔</span>实时曲线<span class="x">✕</span></div>
+          </div>
+
+          <div class="doc">
+            <div class="editor">
+              <div class="gutter">1<br />2<br />3<br />4<br />5<br />6<br />7<br />8<br />9</div>
+              <div class="code"><span class="ln"><span class="cmt">-- 月度对账：取最近 30 天未结算订单</span></span><span class="ln caret"><span class="kw">SELECT</span> o.id, o.order_no, c.name <span class="kw">AS</span> customer,</span><span class="ln caret">       o.qty, o.amount, o.status, o.updated_at</span><span class="ln"><span class="kw">FROM</span>   sales.orders o</span><span class="ln"><span class="kw">JOIN</span>   sales.customers c <span class="kw">ON</span> c.id = o.customer_id</span><span class="ln"><span class="kw">WHERE</span>  o.status &lt;&gt; <span class="str">'SETTLED'</span></span><span class="ln">  <span class="kw">AND</span>  o.updated_at &gt;= <span class="fn">NOW</span>() - <span class="fn">INTERVAL</span> <span class="num">30</span> <span class="kw">DAY</span></span><span class="ln"><span class="kw">ORDER BY</span> o.amount <span class="kw">DESC</span></span><span class="ln"><span class="kw">LIMIT</span>  <span class="num">200</span>;</span></div>
+            </div>
+
+            <div class="grid-toolbar">
+              <button class="tbtn" type="button">＋ 新增行</button>
+              <button class="tbtn" type="button">⌫ 删除行</button>
+              <button class="tbtn" type="button">⎘ 复制行</button>
+              <div class="tb-sep"></div>
+              <button class="tbtn" type="button">☑ 全选</button>
+              <button class="tbtn" type="button">▽ 过滤</button>
+              <button class="tbtn" type="button">⇅ 排序</button>
+              <span class="spacer"></span>
+              <span>结果 1 · 200 行 · 0.182 s · 索引 idx_updated_at</span>
+            </div>
+
+            <div class="grid-scroll">
+              <table class="grid">
+                <thead>
+                  <tr>
+                    <th class="is-key">id<span class="col-type">bigint</span></th>
+                    <th>order_no<span class="col-type">varchar(32)</span></th>
+                    <th>customer<span class="col-type">varchar(64)</span></th>
+                    <th>qty<span class="col-type">int</span></th>
+                    <th>amount<span class="col-type">numeric(12,2)</span></th>
+                    <th>status<span class="col-type">varchar(12)</span></th>
+                    <th>updated_at<span class="col-type">timestamp</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr class="is-selected">
+                    <td class="mono">10248871</td>
+                    <td class="mono">SO-2026-0913-0041</td>
+                    <td>华东重工集团</td>
+                    <td class="num">1,240</td>
+                    <td class="num">862,400.00</td>
+                    <td><span class="state wait"><span class="dot"></span>待结算</span></td>
+                    <td class="mono">2026-09-13 09:41:02</td>
+                  </tr>
+                  <tr>
+                    <td class="mono">10248870</td>
+                    <td class="mono">SO-2026-0913-0040</td>
+                    <td>北方精密制造</td>
+                    <td class="num">860</td>
+                    <td class="num">611,900.00</td>
+                    <td><span class="state wait"><span class="dot"></span>待结算</span></td>
+                    <td class="mono">2026-09-13 09:12:47</td>
+                  </tr>
+                  <tr class="is-dirty">
+                    <td class="mono">10248866</td>
+                    <td class="mono">SO-2026-0912-0128</td>
+                    <td>南方动力科技</td>
+                    <td class="num">512</td>
+                    <td class="num">388,120.50</td>
+                    <td><span class="state info"><span class="dot"></span>已出库</span></td>
+                    <td class="mono">2026-09-12 22:05:13</td>
+                  </tr>
+                  <tr>
+                    <td class="mono">10248861</td>
+                    <td class="mono">SO-2026-0912-0097</td>
+                    <td>西部能源装备</td>
+                    <td class="num">2,400</td>
+                    <td class="num">1,204,880.00</td>
+                    <td><span class="state bad"><span class="dot"></span>已取消</span></td>
+                    <td class="mono">2026-09-12 18:33:29</td>
+                  </tr>
+                  <tr>
+                    <td class="mono">10248855</td>
+                    <td class="mono">SO-2026-0911-0311</td>
+                    <td>东海轴承厂</td>
+                    <td class="num">96</td>
+                    <td class="num">74,300.00</td>
+                    <td><span class="state ok"><span class="dot"></span>已结算</span></td>
+                    <td class="mono">2026-09-11 15:07:55</td>
+                  </tr>
+                  <tr>
+                    <td class="mono">10248849</td>
+                    <td class="mono">SO-2026-0911-0204</td>
+                    <td class="null">NULL</td>
+                    <td class="num">330</td>
+                    <td class="num">201,660.00</td>
+                    <td><span class="state info"><span class="dot"></span>已出库</span></td>
+                    <td class="mono">2026-09-11 11:58:04</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="splitter horizontal"></div>
+
+          <div class="panel output">
+            <div class="panel-header">
+              <div class="tab is-active">输出</div>
+              <div class="tab">错误列表 <span class="x">2</span></div>
+              <div class="tab">查询计划</div>
+              <div class="tab">监视</div>
+              <span class="spacer"></span>
+              <button class="cap-btn" type="button">✕</button>
+            </div>
+            <div class="console">
+              <div><span class="t">09:41:02.418</span> <span class="ok">[OK]</span>   SELECT 返回 200 行，耗时 182 ms</div>
+              <div><span class="t">09:41:02.402</span> 使用索引 <span class="hi">idx_updated_at (range scan)</span></div>
+              <div><span class="t">09:40:55.003</span> <span class="wa">[WARN]</span> 第 4 行 status 为只读列，已跳过写入</div>
+              <div><span class="t">09:40:31.776</span> 连接 PROD-ORA-01 成功（连接池 4/16）</div>
+              <div><span class="t">09:40:12.291</span> 载入脚本 D:\projects\valkyrie\sql\so_recon.sql</div>
+              <div><span class="t">09:39:58.140</span> <span class="er">[ERR ]</span> 连接 STAGE-PG-02 超时（3000 ms），已自动重试 1 次</div>
+              <div><span class="t">09:39:44.882</span> 已缓存 148 个对象元数据</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="splitter vertical"></div>
+
+        <!-- 右侧停靠 -->
+        <div class="dock dock-right">
+          <div class="panel grow">
+            <div class="caption">
+              <span class="grip"></span>属性
+              <div class="cap-tools">
+                <button class="cap-btn" type="button">▣</button>
+                <button class="cap-btn" type="button">✕</button>
+              </div>
+            </div>
+            <div class="pg">
+              <div class="pg-caption"><span class="tri">▾</span>SALES.ORDERS<span class="tri" style="margin-left:auto">▾</span></div>
+
+              <div class="pg-cat"><span class="tri">▾</span>常规<span class="line"></span></div>
+              <div class="pg-row"><span class="pg-name">对象名称</span><span class="pg-val"><span class="field">SALES.ORDERS</span></span></div>
+              <div class="pg-row"><span class="pg-name">对象类型</span><span class="pg-val"><span class="field">BASE TABLE</span></span></div>
+              <div class="pg-row"><span class="pg-name">所属连接</span><span class="pg-val"><span class="field">PROD-ORA-01</span></span></div>
+              <div class="pg-row is-active"><span class="pg-name">行数</span><span class="pg-val"><span class="field">1248031</span></span></div>
+              <div class="pg-row"><span class="pg-name">容量</span><span class="pg-val"><span class="field">412 MB</span></span></div>
+              <div class="pg-row"><span class="pg-name">创建时间</span><span class="pg-val"><span class="field">2023-04-18 10:22:07</span></span></div>
+
+              <div class="pg-cat"><span class="tri">▾</span>查询行为<span class="line"></span></div>
+              <div class="pg-row"><span class="pg-name">只读</span><span class="pg-val"><span class="bool">✓</span></span></div>
+              <div class="pg-row"><span class="pg-name">分页大小</span><span class="pg-val"><span class="field">200</span></span></div>
+              <div class="pg-row"><span class="pg-name">超时(秒)</span><span class="pg-val"><span class="field">30</span></span></div>
+              <div class="pg-row"><span class="pg-name">自动提交</span><span class="pg-val"><span class="field">开</span></span></div>
+              <div class="pg-row"><span class="pg-name">执行计划</span><span class="pg-val"><span class="bool">✓</span></span></div>
+
+              <div class="pg-cat"><span class="tri">▸</span>索引<span class="line"></span></div>
+              <div class="pg-cat"><span class="tri">▸</span>高级<span class="line"></span></div>
+            </div>
+          </div>
+
+          <div class="splitter horizontal"></div>
+
+          <div class="panel" style="height:238px;flex:0 0 auto">
+            <div class="caption">
+              <span class="grip"></span>实时曲线 · 查询耗时
+              <div class="cap-tools">
+                <button class="cap-btn" type="button">▣</button>
+                <button class="cap-btn" type="button">✕</button>
+              </div>
+            </div>
+            <div class="trend">
+              <span class="axis">ms</span>
+              <span class="legend"><span><i style="background:#2f6bb0"></i>耗时</span><span><i style="background:#9a6410"></i>阈值</span></span>
+              <svg viewBox="0 0 280 108" preserveAspectRatio="none">
+                <line x1="0" y1="30" x2="280" y2="30" stroke="var(--amber)" stroke-width="1" stroke-dasharray="4 3"/>
+                <polyline
+                  points="0,86 14,80 28,84 42,72 56,76 70,58 84,64 98,50 112,56 126,44 140,52 154,38 168,46 182,34 196,42 210,30 224,38 238,26 252,34 266,22 280,30"
+                  fill="none" stroke="var(--accent)" stroke-width="1.4"/>
+              </svg>
+            </div>
+            <div class="meters">
+              <div class="meter"><span class="label">CPU</span><span class="track"><i style="width:38%"></i></span><span class="num">38 %</span></div>
+              <div class="meter"><span class="label">会话</span><span class="track"><i style="width:25%"></i></span><span class="num">4/16</span></div>
+              <div class="meter"><span class="label">缓冲区</span><span class="track"><i class="warn" style="width:74%"></i></span><span class="num">74 %</span></div>
+              <div class="meter"><span class="label">等待</span><span class="track"><i class="bad" style="width:12%"></i></span><span class="num">0.9 s</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 状态栏 -->
+      <div class="statusbar">
+        <span class="sb-pane">就绪</span>
+        <span class="sb-pane"><span class="led"></span>PROD-ORA-01</span>
+        <span class="sb-pane">SALES · ORDERS</span>
+        <span class="sb-pane mono">行 1 / 200 · 列 3 / 7</span>
+        <span class="sb-pane mono">0.182 s</span>
+        <span class="sb-pane mono">UTF-8</span>
+        <span class="sb-pane mono">INS</span>
+        <span class="sb-pane push mono">自动提交：开</span>
+        <span class="sb-resize"></span>
+      </div>
+    </div>
+
+    <!-- 规范 -->
+    <section class="spec">
+      <div class="spec-card">
+        <h2>密度基准 <span>/ metrics</span></h2>
+        <div class="spec-body">
+          <div class="spec-row"><span class="k">行高</span><span class="size-swatch" style="width:18px"></span>18px<span class="size-swatch alt" style="width:22px;margin-left:8px"></span>22px</div>
+          <div class="spec-row"><span class="k">标题栏 / 面板标题</span>28px / 21px</div>
+          <div class="spec-row"><span class="k">工具栏高度</span>30px，按钮 22×22</div>
+          <div class="spec-row"><span class="k">字号</span>正文 12px · 面板标题 11.5px · 数据 11~12px 等宽</div>
+          <div class="spec-row"><span class="k">圆角</span>0px（仅页签顶部 3px）</div>
+          <div class="spec-row"><span class="k">分割条</span>4px + 点状握把</div>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <h2>立方体语言 <span>/ bevels</span></h2>
+        <div class="spec-body">
+          <div class="spec-row"><span class="k">凸起（按钮）</span><span style="display:inline-flex;gap:2px"><span class="size-swatch" style="width:56px;height:22px;background:var(--head-plate);border-color:#8f8c87;box-shadow:inset 1px 1px 0 #fff"></span>1px 亮线在内左上</span></div>
+          <div class="spec-row"><span class="k">凹陷（输入）</span><span style="display:inline-flex;gap:2px"><span class="size-swatch" style="width:56px;height:22px;background:#fff;border-color:#8f8c87;box-shadow:inset 1px 1px 0 #8f8c87"></span>亮线在内右下</span></div>
+          <div class="spec-row"><span class="k">选中</span><span style="display:inline-flex;gap:2px"><span class="size-swatch" style="width:56px;height:22px;background:#2f66a4;border-color:#2f66a4"></span>整行反白 #2f66a4</span></div>
+          <div class="spec-row"><span class="k">强调色</span>只用于链接、选中、焦点；状态另有语义色</div>
+        </div>
+      </div>
+
+      <div class="spec-card">
+        <h2>状态语义 <span>/ status</span></h2>
+        <div class="spec-body">
+          <div class="spec-row"><span class="k">正常</span><span class="led"></span>绿 · 在线 / 已结算 / 提交成功</div>
+          <div class="spec-row"><span class="k">注意</span><span class="led warn"></span>琥珀 · 待处理 / 慢查询 / 未保存</div>
+          <div class="spec-row"><span class="k">异常</span><span class="led bad"></span>红 · 错误 / 已取消 / 连接失败</div>
+          <div class="spec-row"><span class="k">离线</span><span class="led off"></span>灰 · 未启用（灰色而非红）</div>
+          <div class="spec-row"><span class="k">信息</span><span class="state info"><span class="dot"></span>企业青</span></div>
+        </div>
+      </div>
+    </section>
+
+    <div class="note">
+      <b>与前版的差别：</b>去掉了斜纹警示带、螺钉、大圆角和高饱和强调色，改成三维斜面 + 灰色板面 + 单一蓝色选中条；
+      信息密度提上来（行高 20~22px、面板标题 21px、工具栏 30px），并补齐工业软件的几个标志件：
+      停靠面板与握把分割条、属性网格（分类折叠 + 凹陷输入框）、带字段分隔的状态栏与右下角缩放柄、实时曲线与棒图仪表。
+      <br /><br />
+      <b>接入方式：</b>变量名与 <code>electron/src/renderer/styles.css</code> 的 <code>:root</code> 一致，
+      把 <code>[data-theme="classic"]</code> 或 <code>[data-theme="workshop"]</code> 整段覆盖过去即可，组件结构无需改动。
+      需要更偏向某一类软件的话告诉我方向：组态/SCADA 那种黑底监控台、CATIA/ANSYS 那种深灰三维工作台，还是 AutoCAD 那种经典浅灰多文档界面，我再按那一支细化。
+    </div>
+
+    <script>
+      const applyTheme = (theme) => {
+        document.documentElement.dataset.theme = theme;
+        document.querySelectorAll(".switcher button").forEach((b) =>
+          b.classList.toggle("is-on", b.dataset.set === theme)
+        );
+      };
+
+      for (const btn of document.querySelectorAll(".switcher button")) {
+        btn.addEventListener("click", () => applyTheme(btn.dataset.set));
+      }
+
+      const preset = new URLSearchParams(location.search).get("theme");
+      if (preset === "classic" || preset === "workshop") applyTheme(preset);
+    </script>
+  </body>
+</html>

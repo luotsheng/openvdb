@@ -1,0 +1,212 @@
+/**
+ * 渲染层与数据层之间的类型化调用封装。
+ * 所有数据库操作都通过 Electron 主进程转发给 Java 数据层，渲染层不直接访问数据库。
+ */
+
+export interface SavedConnection {
+  name: string;
+  type: string;
+  host?: string;
+  port?: string;
+  db?: string;
+  username?: string;
+  password?: string;
+  savePassword?: boolean;
+  jdbcUrl?: string;
+  timezone?: string;
+  useSSL?: boolean;
+  tinyint1isBit?: boolean;
+  sqlitePath?: string;
+}
+
+export interface TableMeta {
+  name: string;
+  engine?: string;
+  rows?: number;
+  size?: number;
+  comment?: string;
+  createTime?: number;
+  updateTime?: number;
+}
+
+export type NodeKind = "ROOT" | "CONNECTION" | "CATALOG" | "SCHEMA" | "TABLE" | "QUERY";
+
+export interface SchemaNode {
+  id: string;
+  label: string;
+  kind: NodeKind;
+  icon?: string;
+  hasChildren: boolean;
+  catalog?: string;
+  schema?: string;
+  table?: TableMeta;
+  connected?: boolean;
+  badge?: string;
+  path?: string;
+  size?: number;
+  modified?: number;
+}
+
+export interface ProductMeta {
+  productName?: string;
+  version?: string;
+  majorVersion?: number;
+  minorVersion?: number;
+  type?: string;
+}
+
+export interface QueryColumn {
+  label: string;
+  name: string;
+  type: string;
+  primary: boolean;
+  notNull: boolean;
+  autoIncrement: boolean;
+  comment?: string;
+  defaultValue?: string;
+}
+
+export interface TableColumn extends QueryColumn {
+  index?: number;
+}
+
+export interface TableIndex {
+  name: string;
+  columnsText?: string;
+  type?: string;
+  visible?: boolean;
+}
+
+export interface SuggestionItem {
+  label: string;
+  kind: string;
+  insertText?: string;
+  detail?: string;
+}
+
+export interface QueryResultPayload {
+  jobId?: number;
+  hasResultSet: boolean;
+  columns?: QueryColumn[];
+  rows?: (string | null)[][];
+  editable?: boolean;
+  addable?: boolean;
+  dirty?: boolean;
+  offset?: number;
+  size?: number;
+}
+
+export interface OpenConnectionPayload {
+  sessionId: string;
+  product: ProductMeta;
+  nodes: SchemaNode[];
+}
+
+export interface ProgressEvent {
+  channel: string;
+  sessionId?: string;
+  jobId?: number;
+  kind?: string;
+  detail?: string;
+  pid?: number;
+  javaVersion?: string;
+}
+
+interface InvokeResponse<T> {
+  ok: boolean;
+  result?: T;
+  error?: string;
+}
+
+/** 系统原生消息框参数（错误提示等） */
+export interface MessageOptions {
+  type?: "none" | "info" | "error" | "question" | "warning";
+  title?: string;
+  message: string;
+  detail?: string;
+  buttons?: string[];
+}
+
+/** 系统原生菜单项：与 Electron MenuItem 对齐的最小集合 */
+export interface NativeMenuItem {
+  id?: string;
+  label?: string;
+  type?: "separator";
+  enabled?: boolean;
+  /** PNG data URL（系统菜单只吃位图） */
+  icon?: string;
+}
+
+declare global {
+  interface Window {
+    valkyrie?: {
+      invoke: (method: string, params?: Record<string, unknown>) => Promise<InvokeResponse<unknown>>;
+      onEvent: (callback: (params: ProgressEvent) => void) => () => void;
+      windowControl?: (action: "minimize" | "maximize" | "close") => void;
+      onWindowState?: (callback: (state: { maximized: boolean }) => void) => () => void;
+      chooseSavePath?: (options: { title?: string; defaultPath?: string; filters?: { name: string; extensions: string[] }[] }) => Promise<string | null>;
+      revealPath?: (target: string) => Promise<boolean>;
+      showMessage?: (options: MessageOptions) => Promise<number>;
+      showMenu?: (options: { items: NativeMenuItem[] }) => Promise<string | null>;
+      setNativeTheme?: (theme: string) => Promise<boolean>;
+    };
+  }
+}
+
+export async function invoke<T>(method: string, params?: Record<string, unknown>): Promise<T> {
+  if (!window.valkyrie)
+    throw new Error("未检测到数据层通道，请在 Electron 客户端中运行");
+
+  const response = await window.valkyrie.invoke(method, params);
+
+  if (!response.ok)
+    throw new Error(response.error || "数据层调用失败");
+
+  return response.result as T;
+}
+
+export function onEvent(callback: (params: ProgressEvent) => void): () => void {
+  if (!window.valkyrie)
+    return () => undefined;
+
+  return window.valkyrie.onEvent(callback);
+}
+
+export function windowControl(action: "minimize" | "maximize" | "close"): void {
+  window.valkyrie?.windowControl?.(action);
+}
+
+export function onWindowState(callback: (state: { maximized: boolean }) => void): () => void {
+  return window.valkyrie?.onWindowState?.(callback) ?? (() => undefined);
+}
+
+export function chooseSavePath(options: { title?: string; defaultPath?: string; filters?: { name: string; extensions: string[] }[] }): Promise<string | null> {
+  return window.valkyrie?.chooseSavePath?.(options) ?? Promise.resolve(null);
+}
+
+export function revealPath(target: string): Promise<boolean> {
+  return window.valkyrie?.revealPath?.(target) ?? Promise.resolve(false);
+}
+
+/** 弹系统原生消息框（返回按钮下标） */
+export function showMessage(options: MessageOptions): Promise<number> {
+  return window.valkyrie?.showMessage?.(options) ?? Promise.resolve(0);
+}
+
+/** 弹系统原生右键菜单（在当前鼠标位置；返回被选中项 id，未选中为 null） */
+export function showMenu(items: NativeMenuItem[]): Promise<string | null> {
+  return window.valkyrie?.showMenu?.({ items }) ?? Promise.resolve(null);
+}
+
+/** 让原生菜单 / 系统对话框跟随应用主题 */
+export function setNativeTheme(theme: string): Promise<boolean> {
+  return window.valkyrie?.setNativeTheme?.(theme) ?? Promise.resolve(false);
+}
+
+export function messageOf(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+export function isNumericType(type: string | undefined): boolean {
+  return Boolean(type) && /(int|decimal|numeric|float|double|real|money|number)/i.test(type as string);
+}

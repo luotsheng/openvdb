@@ -1,0 +1,38 @@
+{
+  "name": "valkyrie-desktop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Valkyrie 桌面客户端：Electron 界面 + Java 数据层",
+  "main": "src/main/main.cjs",
+  "scripts": {
+    "build:server": "mvn -q -DskipTests -pl server -am package -f ../pom.xml",
+    "build:renderer": "vite build",
+    "typecheck": "tsc --noEmit",
+    "build": "npm run build:renderer",
+    "start": "node scripts/dev.cjs",
+    "start:force": "node scripts/dev.cjs --force-server",
+    "start:ui": "npm run build:renderer && electron .",
+    "smoke": "node scripts/rpc-smoke.cjs",
+    "dist": "npm run build && electron-builder"
+  },
+  "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.23",
+    "@radix-ui/react-dropdown-menu": "^2.1.24",
+    "@radix-ui/react-select": "^2.3.7",
+    "lucide-react": "^1.45.0",
+    "monaco-editor": "^0.52.2",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-resizable-panels": "^4.12.4",
+    "sonner": "^2.0.8"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.1",
+    "electron": "^44.3.0",
+    "electron-builder": "^26.15.3",
+    "typescript": "~6.0.2",
+    "vite": "^8.0.12"
+  }
+}

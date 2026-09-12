@@ -1,0 +1,236 @@
+"use strict";
+
+const { app, BrowserWindow, ipcMain, dialog, Menu, shell, nativeTheme, nativeImage } = require("electron");
+const path = require("node:path");
+const { JavaBridge } = require("./java-bridge.cjs");
+const { registerWindowControls, attachWindowState, disableBrowserShortcuts } = require("./window-controls.cjs");
+
+/* 防止用户重复启动导致起两份数据层进程，抢占同一份连接配置 */
+if (!app.requestSingleInstanceLock()) {
+  app.quit();
+  return;
+}
+
+let bridge = null;
+let mainWindow = null;
+
+function rendererEntry() {
+  return path.join(__dirname, "..", "..", "dist", "renderer", "index.html");
+}
+
+function createWindow() {
+  const isMac = process.platform === "darwin";
+
+  /* 桌面客户端不需要浏览器默认菜单（其中的刷新 / 开发者工具等快捷键一并去掉） */
+  Menu.setApplicationMenu(null);
+
+  mainWindow = new BrowserWindow({
+    width: 1320,
+    height: 860,
+    minWidth: 1000,
+    minHeight: 640,
+    show: false,
+    backgroundColor: "#e7e9ee",
+    title: "VALKYRIE",
+    /* Windows/Linux 使用自绘标题栏；macOS 保留原生红绿灯按钮 */
+    frame: isMac,
+    titleBarStyle: isMac ? "hiddenInset" : "default",
+    thickFrame: true,
+    webPreferences: {
+      preload: path.join(__dirname, "..", "preload", "preload.cjs"),
+      contextIsolation: true,
+      nodeIntegration: false,
+      sandbox: false
+    }
+  });
+
+  /* 默认以最大化打开（先最大化再显示，避免先闪一下小窗口） */
+  mainWindow.once("ready-to-show", () => {
+    mainWindow.maximize();
+    mainWindow.show();
+  });
+  mainWindow.on("closed", () => {
+    mainWindow = null;
+  });
+
+  disableBrowserShortcuts(mainWindow);
+
+  attachWindowState(mainWindow);
+
+  if (process.env.VALKYRIE_DEV === "1")
+    mainWindow.webContents.openDevTools({ mode: "detach" });
+
+  mainWindow.loadFile(rendererEntry());
+}
+
+function registerIpc() {
+  ipcMain.handle("valkyrie:invoke", async (_event, method, params) => {
+    try {
+      return { ok: true, result: await bridge.call(method, params || {}) };
+    } catch (error) {
+      return { ok: false, error: error && error.message ? error.message : String(error) };
+    }
+  });
+
+  registerWindowControls();
+
+  /* 导出另存为：由主进程弹系统对话框，返回用户选择的路径 */
+  ipcMain.handle("valkyrie:choose-save-path", async (event, options) => {
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    const result = await dialog.showSaveDialog(owner, {
+      title: options?.title || "保存文件",
+      defaultPath: options?.defaultPath,
+      filters: options?.filters || [{ name: "所有文件", extensions: ["*"] }]
+    });
+
+    return result.canceled ? null : result.filePath;
+  });
+
+  /* 在系统文件管理器中定位文件 */
+  ipcMain.handle("valkyrie:reveal-path", async (_event, target) => {
+    if (target)
+      shell.showItemInFolder(target);
+
+    return true;
+  });
+
+  /*
+   * 系统原生消息框（错误 / 提示）：模态挂在主窗口上，不走网页弹层。
+   * 自动化脚本可设 VALKYRIE_SUPPRESS_DIALOGS=1 跳过，避免阻塞。
+   */
+  ipcMain.handle("valkyrie:show-message", async (event, options) => {
+    if (process.env.VALKYRIE_SUPPRESS_DIALOGS === "1")
+      return 0;
+
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    const result = await dialog.showMessageBox(owner, {
+      type: options?.type || "info",
+      title: options?.title || "Valkyrie",
+      message: options?.message || "",
+      detail: options?.detail,
+      buttons: options?.buttons?.length ? options.buttons : ["确定"],
+      defaultId: 0,
+      noLink: true,
+      /* 错误类用系统警示音与图标 */
+      icon: undefined
+    });
+
+    return result.response;
+  });
+
+  /*
+   * 系统原生右键菜单：渲染层把菜单项发过来，主进程用 Menu.popup 弹出，
+   * 选中哪一项通过 Promise 回传该项 id（未选中返回 null）。
+   */
+  ipcMain.handle("valkyrie:show-menu", async (event, options) => {
+    const owner = BrowserWindow.fromWebContents(event.sender);
+
+    if (!owner)
+      return null;
+
+    return new Promise(resolve => {
+      const template = (options?.items || []).map(item => item.type === "separator"
+        ? { type: "separator" }
+        : {
+            id: item.id,
+            label: item.label,
+            enabled: item.enabled !== false,
+            /* 渲染层传过来的是 PNG data URL，转成原生图像 */
+            icon: item.icon ? nativeImage.createFromDataURL(item.icon) : undefined,
+            click: () => resolve(item.id ?? null)
+          });
+
+      const menu = Menu.buildFromTemplate(template);
+
+      /*
+       * 自动化钩子：设置 VALKYRIE_MENU_PICK 后不弹窗，直接按标签包含匹配选中一项，
+       * 便于冒烟脚本驱动原生菜单（原生菜单不在 DOM 里，无法用选择器点击）。
+       */
+      const pick = process.env.VALKYRIE_MENU_PICK;
+
+      if (pick) {
+        const matched = template.find(item => item.label && String(item.label).includes(pick));
+        resolve(matched ? matched.id ?? null : null);
+        return;
+      }
+
+      menu.popup({
+        window: owner,
+        /* 不传坐标：默认在当前鼠标位置弹出（右键所在处），省掉坐标系换算 */
+        /* 关闭（含点到空白处）时返回 null */
+        callback: () => resolve(null)
+      });
+    });
+  });
+
+  /* 原生菜单 / 系统对话框跟随应用主题 */
+  ipcMain.handle("valkyrie:set-native-theme", async (_event, theme) => {
+    nativeTheme.themeSource = theme === "dark" || theme === "light" ? theme : "system";
+    return nativeTheme.shouldUseDarkColors;
+  });
+}
+
+app.on("second-instance", () => {
+  if (!mainWindow)
+    return;
+
+  if (mainWindow.isMinimized())
+    mainWindow.restore();
+
+  mainWindow.focus();
+});
+
+app.whenReady().then(async () => {
+  bridge = new JavaBridge();
+
+  bridge.on("log", chunk => process.stderr.write(`[data-layer] ${chunk}`));
+
+  bridge.on("event", params => {
+    if (mainWindow && !mainWindow.isDestroyed())
+      mainWindow.webContents.send("valkyrie:event", params);
+  });
+
+  bridge.on("exit", code => {
+    if (code !== 0 && mainWindow && !mainWindow.isDestroyed()) {
+      dialog.showMessageBox(mainWindow, {
+        type: "error",
+        title: "数据层已退出",
+        message: `数据层进程异常退出（code=${code}），请重启应用。`
+      });
+    }
+  });
+
+  registerIpc();
+
+  try {
+    await bridge.start();
+  } catch (error) {
+    dialog.showErrorBox("数据层启动失败", String(error && error.message ? error.message : error));
+    app.quit();
+    return;
+  }
+
+  createWindow();
+
+  app.on("activate", () => {
+    if (BrowserWindow.getAllWindows().length === 0)
+      createWindow();
+  });
+});
+
+app.on("window-all-closed", () => {
+  if (process.platform !== "darwin")
+    app.quit();
+});
+
+let stopping = false;
+
+app.on("before-quit", event => {
+  if (stopping || !bridge)
+    return;
+
+  event.preventDefault();
+  stopping = true;
+
+  bridge.stop().finally(() => app.quit());
+});
