@@ -3,6 +3,7 @@ package valkyrie.driver.suggestion;
 import valkyrie.driver.api.Column;
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.Session;
+import valkyrie.driver.utils.SQLParser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -145,14 +146,15 @@ public class SuggestionEngine
 
                 offset = Math.max(0, Math.min(offset, sql.length()));
 
-                String before = sql.substring(0, offset);
+                /* 注释不参与上下文判断：注释里写 from xxx 不该被当成真实表引用 */
+                String before = SQLParser.stripComments(sql.substring(0, offset));
 
                 int statementStart = before.lastIndexOf(';') + 1;
                 int statementEnd = sql.indexOf(';', offset);
                 if (statementEnd < 0)
                         statementEnd = sql.length();
 
-                String statement = sql.substring(statementStart, statementEnd);
+                String statement = SQLParser.stripComments(sql.substring(statementStart, statementEnd));
 
                 Map<String, String> aliasToTable = new LinkedHashMap<>();
                 List<String> referencedTables = new ArrayList<>();

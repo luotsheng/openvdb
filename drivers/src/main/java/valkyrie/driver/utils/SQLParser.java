@@ -23,6 +23,88 @@ import static valkyrie.utils.string.StrStaticImports.uppercase;
 public class SQLParser
 {
         /**
+         * 去掉 SQL 里的注释（行注释 {@code --} / {@code #}、块注释 {@code /* ... *}{@code /}，可跨行），
+         * 字符串与引用标识符里的注释符号保持原样。注释用一个空格替换，避免把前后 token 粘在一起。
+         * <p>
+         * 用于按关键字判断语句类型、抽取表名等场景：注释里出现 select / from 之类字样不应影响判断。
+         */
+        public static String stripComments(String sql)
+        {
+                if (sql == null || sql.isEmpty())
+                        return sql == null ? null : "";
+
+                StringBuilder out = new StringBuilder(sql.length());
+                int i = 0;
+                int n = sql.length();
+                char quote = 0;
+
+                while (i < n) {
+                        char c = sql.charAt(i);
+
+                        if (quote != 0) {
+                                out.append(c);
+
+                                if (c == '\\' && quote != '`' && i + 1 < n) {
+                                        out.append(sql.charAt(i + 1));
+                                        i += 2;
+                                        continue;
+                                }
+
+                                if (c == quote) {
+                                        /* 连续两个引号是转义，字符串继续 */
+                                        if (i + 1 < n && sql.charAt(i + 1) == quote) {
+                                                out.append(quote);
+                                                i += 2;
+                                                continue;
+                                        }
+
+                                        quote = 0;
+                                }
+
+                                i++;
+                                continue;
+                        }
+
+                        if (c == '\'' || c == '"' || c == '`') {
+                                quote = c;
+                                out.append(c);
+                                i++;
+                                continue;
+                        }
+
+                        if (c == '-' && i + 1 < n && sql.charAt(i + 1) == '-') {
+                                i = skipLine(sql, i + 2);
+                                out.append(' ');
+                                continue;
+                        }
+
+                        if (c == '#') {
+                                i = skipLine(sql, i + 1);
+                                out.append(' ');
+                                continue;
+                        }
+
+                        if (c == '/' && i + 1 < n && sql.charAt(i + 1) == '*') {
+                                int end = sql.indexOf("*/", i + 2);
+                                i = end < 0 ? n : end + 2;
+                                out.append(' ');
+                                continue;
+                        }
+
+                        out.append(c);
+                        i++;
+                }
+
+                return out.toString();
+        }
+
+        private static int skipLine(String sql, int from)
+        {
+                int end = sql.indexOf('\n', from);
+                return end < 0 ? sql.length() : end + 1;
+        }
+
+        /**
          * 从 DDL 中解析字段权威类型和默认值
          */
         public static void parseColumnDefSpec(String ddl, Dialect dialect, Map<String, Column> metas)

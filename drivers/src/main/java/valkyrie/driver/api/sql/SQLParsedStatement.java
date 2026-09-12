@@ -23,6 +23,8 @@ import net.sf.jsqlparser.util.TablesNamesFinder;
 import java.util.HashSet;
 import java.util.Set;
 
+import valkyrie.driver.utils.SQLParser;
+
 import static valkyrie.utils.string.StrStaticImports.lowercase;
 import static valkyrie.utils.string.StrStaticImports.strhas;
 
@@ -141,7 +143,8 @@ public class SQLParsedStatement
          */
         static SQLCommandType classify(String sql)
         {
-                String lower = lowercase(sql).trim();
+                /* 先去掉注释：语句前面带块注释或行注释时，也按真正的首关键字判断 */
+                String lower = lowercase(SQLParser.stripComments(sql)).trim();
 
                 /* SELECT ... INTO 用户变量 / OUTFILE / DUMPFILE 不产生结果集 */
                 if (lower.startsWith("select") && strhas(lower, " into "))

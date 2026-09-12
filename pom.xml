@@ -18,6 +18,7 @@
         <module>richtextfx</module>
         <module>monacofx</module>
         <module>blueprint</module>
+        <module>server</module>
         <module>test</module>
     </modules>
 

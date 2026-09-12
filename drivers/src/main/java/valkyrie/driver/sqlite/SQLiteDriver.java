@@ -93,7 +93,16 @@ public class SQLiteDriver extends Driver
         @Override
         public List<Suggestion> getSuggestions(Session session)
         {
-                return List.of();
+                Set<Suggestion> ret = Sets.newHashSet();
+
+                ret.addAll(SQLiteSuggestions.VALUES);
+
+                /* 表信息：字段由 SuggestionEngine 通过 getTableColumns 补充 */
+                ret.addAll(getTables(session).stream()
+                        .map(t -> Suggestion.ofClass(t.getName(), t.getComment()))
+                        .toList());
+
+                return Lists.newArrayList(ret);
         }
 
         @Override
@@ -107,7 +116,15 @@ public class SQLiteDriver extends Driver
                      Statement statement = connection.createStatement()) {
                         try (var rs = statement.executeQuery(sql)) {
                                 while (rs.next()) {
-                                        tables.add(new Table(rs.getString("name")));
+                                        String name = rs.getString("name");
+                                        Table table = new Table(name);
+
+                                        /* SQLite 不记录创建 / 修改时间，这里补上行数与大小（取不到就留空） */
+                                        table.setEngine("SQLite");
+                                        table.setRows(countRows(connection, name));
+                                        table.setSize(tableSize(connection, name));
+
+                                        tables.add(table);
                                 }
                         }
                 } catch (SQLException e) {
@@ -115,6 +132,47 @@ public class SQLiteDriver extends Driver
                 }
 
                 return tables;
+        }
+
+        /**
+         * 表行数：直接 COUNT(*)；失败（视图、权限等）返回 null，不影响列表展示。
+         */
+        private static Integer countRows(Connection connection, String table)
+        {
+                try (Statement statement = connection.createStatement();
+                     var rs = statement.executeQuery(fmt("SELECT COUNT(*) FROM %s", quoteIdentifier(table)))) {
+                        return rs.next() ? rs.getInt(1) : null;
+                } catch (SQLException e) {
+                        return null;
+                }
+        }
+
+        /**
+         * 表大小（KB）：SQLite 没有现成元数据，dbstat 虚表可用时按页统计。
+         */
+        private static Float tableSize(Connection connection, String table)
+        {
+                try (Statement statement = connection.createStatement();
+                     var rs = statement.executeQuery(
+                             fmt("SELECT SUM(pgsize) FROM dbstat WHERE name = %s", quoteLiteral(table)))) {
+                        if (!rs.next())
+                                return null;
+
+                        long bytes = rs.getLong(1);
+                        return bytes > 0 ? bytes / 1024f : null;
+                } catch (SQLException e) {
+                        return null;
+                }
+        }
+
+        private static String quoteIdentifier(String value)
+        {
+                return "\"" + value.replace("\"", "\"\"") + "\"";
+        }
+
+        private static String quoteLiteral(String value)
+        {
+                return "'" + value.replace("'", "''") + "'";
         }
 
         @Override

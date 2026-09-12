@@ -1,0 +1,1093 @@
+package valkyrie.server;
+
+import com.alibaba.fastjson2.JSON;
+import com.alibaba.fastjson2.JSONArray;
+import com.alibaba.fastjson2.JSONObject;
+import com.github.vertical_blank.sqlformatter.SqlFormatter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import valkyrie.core.model.DiskSavedConnection;
+import valkyrie.core.model.QueryFile;
+import valkyrie.core.exception.CoreException;
+import valkyrie.core.repository.ConnectionRepository;
+import valkyrie.core.repository.QueryFileRepository;
+import valkyrie.driver.api.Column;
+import valkyrie.driver.api.ConnectionConfig;
+import valkyrie.driver.api.DbType;
+import valkyrie.driver.api.Driver;
+import valkyrie.driver.api.DriverFactory;
+import valkyrie.driver.api.GridRow;
+import valkyrie.driver.api.Index;
+import valkyrie.driver.api.QueryResult;
+import valkyrie.driver.api.SQLExecuteCallback;
+import valkyrie.driver.api.Session;
+import valkyrie.driver.api.Table;
+import valkyrie.driver.api.VkDataSource;
+import valkyrie.driver.api.node.DBNode;
+import valkyrie.driver.api.node.DBCatalogNode;
+import valkyrie.driver.api.node.DBQueryContainerNode;
+import valkyrie.driver.api.node.DBSchemaNode;
+import valkyrie.driver.api.node.DBTableContainerNode;
+import valkyrie.driver.api.node.DBTableNode;
+import valkyrie.driver.api.sql.SQL;
+import valkyrie.driver.suggestion.Suggestion;
+import valkyrie.driver.suggestion.SuggestionEngine;
+import valkyrie.utils.exception.Causes;
+import valkyrie.utils.poi.WorkBook;
+
+import java.io.File;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import java.io.PrintStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+/**
+ * 基于标准输入输出的 JSON-RPC 服务。
+ * <p>
+ * 协议为按行分隔的 JSON：
+ * <ul>
+ *   <li>请求：{@code {"id":<any>,"method":"<name>","params":{...}}}</li>
+ *   <li>响应：{@code {"id":<any>,"result":{...}}} 或 {@code {"id":<any>,"error":{"message":"..."}}}</li>
+ *   <li>通知：{@code {"method":"event","params":{"channel":"...",...}}}</li>
+ * </ul>
+ * 每个请求由独立工作线程处理，因此长时间执行的查询不会阻塞 ping / query.cancel。
+ *
+ * @author Luo Tiansheng
+ * @since 2026/9/12
+ */
+public class RpcServer
+{
+        private static final Logger LOG = LoggerFactory.getLogger(RpcServer.class);
+
+        private final PrintStream out;
+        private final Object writeLock = new Object();
+
+        private final ExecutorService workers = Executors.newCachedThreadPool(r -> {
+                Thread thread = new Thread(r, "rpc-worker");
+                thread.setDaemon(true);
+                return thread;
+        });
+
+        private final Map<String, OpenConnection> sessions = new ConcurrentHashMap<>();
+        /* 每个会话（按 catalog/schema 维度）缓存一次智能提示引擎，避免每次按键都读元数据 */
+        private final Map<String, SuggestionEngine> suggestionEngines = new ConcurrentHashMap<>();
+        /* 已执行的结果集缓存：编辑、提交、删除都作用在同一个 QueryResult 上 */
+        private final Map<Long, QueryResult> resultCache = new ConcurrentHashMap<>();
+        private final Map<Long, String> resultOwner = new ConcurrentHashMap<>();
+        private final AtomicLong sessionSequence = new AtomicLong();
+
+        public RpcServer(PrintStream out)
+        {
+                this.out = out;
+        }
+
+        /* ********************************************************************* */
+        /*                              协议处理                                  */
+        /* ********************************************************************* */
+
+        public void ready()
+        {
+                JSONObject payload = new JSONObject();
+                payload.put("pid", ProcessHandle.current().pid());
+                payload.put("javaVersion", System.getProperty("java.version"));
+
+                notify("server.ready", payload);
+        }
+
+        public void handle(String line)
+        {
+                workers.execute(() -> dispatch(line));
+        }
+
+        private void dispatch(String line)
+        {
+                Object id = null;
+
+                try {
+                        JSONObject request = JSON.parseObject(line);
+                        id = request.get("id");
+
+                        String method = request.getString("method");
+                        JSONObject params = request.getJSONObject("params");
+
+                        Object result = call(method, params == null ? new JSONObject() : params);
+
+                        respond(id, result);
+                } catch (Throwable e) {
+                        LOG.error("RPC 调用失败: {}", line, e);
+                        fail(id, e);
+                }
+        }
+
+        private Object call(String method, JSONObject params)
+        {
+                return switch (method) {
+                        case "ping" -> ping();
+                        case "connections.list" -> listConnections();
+                        case "connections.save" -> saveConnection(params);
+                        case "connections.delete" -> deleteConnection(params);
+                        case "connection.open" -> openConnection(params);
+                        case "connection.close" -> closeConnection(params);
+                        case "schema.children" -> schemaChildren(params);
+                        case "table.page" -> tablePage(params);
+                        case "table.columns" -> tableColumns(params);
+                        case "table.indexes" -> tableIndexes(params);
+                        case "table.ddl" -> tableDdl(params);
+                        case "sql.format" -> formatSql(params);
+                        case "sql.suggest" -> suggestSql(params);
+                        case "result.update" -> updateCell(params);
+                        case "result.insert" -> insertRow(params);
+                        case "result.delete" -> deleteRows(params);
+                        case "result.setNull" -> setNull(params);
+                        case "result.commit" -> commitResult(params);
+                        case "result.rollback" -> rollbackResult(params);
+                        case "result.reload" -> reloadResult(params);
+                        case "queryFiles.list" -> listQueryFiles(params);
+                        case "queryFiles.read" -> readQueryFile(params);
+                        case "queryFiles.save" -> saveQueryFile(params);
+                        case "queryFiles.rename" -> renameQueryFile(params);
+                        case "queryFiles.delete" -> deleteQueryFile(params);
+                        case "result.export" -> exportResult(params);
+                        case "query.execute" -> executeQuery(params);
+                        case "query.cancel" -> cancelQuery(params);
+                        default -> throw new IllegalArgumentException("未知方法: " + method);
+                };
+        }
+
+        private void respond(Object id, Object result)
+        {
+                JSONObject message = new JSONObject();
+                message.put("id", id);
+                message.put("result", result == null ? new JSONObject() : result);
+
+                write(message);
+        }
+
+        private void fail(Object id, Throwable e)
+        {
+                JSONObject error = new JSONObject();
+                error.put("message", Causes.message(e));
+                error.put("type", e.getClass().getName());
+
+                JSONObject message = new JSONObject();
+                message.put("id", id);
+                message.put("error", error);
+
+                write(message);
+        }
+
+        private void notify(String channel, JSONObject payload)
+        {
+                JSONObject params = new JSONObject();
+                params.put("channel", channel);
+
+                if (payload != null)
+                        params.putAll(payload);
+
+                JSONObject message = new JSONObject();
+                message.put("method", "event");
+                message.put("params", params);
+
+                write(message);
+        }
+
+        private void write(JSONObject message)
+        {
+                /* 多线程共用一个输出流，必须串行写入，避免 JSON 行交错 */
+                synchronized (writeLock) {
+                        out.println(message.toJSONString());
+                        out.flush();
+                }
+        }
+
+        /* ********************************************************************* */
+        /*                              连接配置                                  */
+        /* ********************************************************************* */
+
+        private Object ping()
+        {
+                JSONObject ret = new JSONObject();
+                ret.put("pong", true);
+                ret.put("pid", ProcessHandle.current().pid());
+                ret.put("javaVersion", System.getProperty("java.version"));
+                return ret;
+        }
+
+        private Object listConnections()
+        {
+                JSONArray connections = new JSONArray();
+
+                for (DiskSavedConnection connection : ConnectionRepository.loadConnections())
+                        connections.add(JSON.parseObject(JSON.toJSONString(connection)));
+
+                JSONObject ret = new JSONObject();
+                ret.put("connections", connections);
+                return ret;
+        }
+
+        private Object saveConnection(JSONObject params)
+        {
+                JSONObject connection = params.getJSONObject("connection");
+
+                if (connection == null || connection.getString("name") == null)
+                        throw new IllegalArgumentException("connection.name 不能为空");
+
+                String name = connection.getString("name");
+                String content = connection.toJSONString();
+                String oldName = params.getString("oldName");
+
+                if (oldName == null || oldName.isBlank())
+                        ConnectionRepository.saveConnection(name, content);
+                else
+                        ConnectionRepository.updateConnection(oldName, name, content);
+
+                return new JSONObject();
+        }
+
+        private Object deleteConnection(JSONObject params)
+        {
+                String name = params.getString("name");
+
+                if (name == null || name.isBlank())
+                        throw new IllegalArgumentException("name 不能为空");
+
+                ConnectionRepository.deleteConnection(name);
+                return new JSONObject();
+        }
+
+        /* ********************************************************************* */
+        /*                              连接会话                                  */
+        /* ********************************************************************* */
+
+        private Object openConnection(JSONObject params)
+        {
+                JSONObject connection = params.getJSONObject("connection");
+
+                if (connection == null)
+                        connection = findSavedConnection(params.getString("name"));
+
+                Driver driver = DriverFactory.create(toConfig(connection));
+                String sessionId = "s" + sessionSequence.incrementAndGet();
+                OpenConnection session = new OpenConnection(sessionId, connection.getString("name"), driver);
+
+                try {
+                        JSONArray nodes = new JSONArray();
+
+                        for (DBNode node : driver.getNodeHierarchy())
+                                nodes.add(nodeJson(session, node));
+
+                        sessions.put(sessionId, session);
+
+                        JSONObject ret = new JSONObject();
+                        ret.put("sessionId", sessionId);
+                        ret.put("product", productJson(driver));
+                        ret.put("nodes", nodes);
+
+                        return ret;
+                } catch (Throwable e) {
+                        closeQuietly(driver.getDataSource());
+                        throw e;
+                }
+        }
+
+        private Object closeConnection(JSONObject params)
+        {
+                String sessionId = params.getString("sessionId");
+                OpenConnection session = sessions.remove(sessionId);
+
+                if (session != null)
+                        closeQuietly(session.driver.getDataSource());
+
+                if (sessionId != null)
+                        suggestionEngines.keySet().removeIf(key -> key.startsWith(sessionId + "|"));
+
+                if (sessionId != null) {
+                        resultOwner.entrySet().removeIf(entry -> {
+                                if (!sessionId.equals(entry.getValue()))
+                                        return false;
+
+                                resultCache.remove(entry.getKey());
+                                return true;
+                        });
+                }
+
+                return new JSONObject();
+        }
+
+        private Object schemaChildren(JSONObject params)
+        {
+                OpenConnection session = require(params.getString("sessionId"));
+                DBNode node = session.nodes.get(params.getString("nodeId"));
+
+                if (node == null)
+                        throw new IllegalArgumentException("节点不存在: " + params.getString("nodeId"));
+
+                /* 「查询脚本」节点下的子节点不是数据库对象，而是本地脚本文件 */
+                if (node instanceof DBQueryContainerNode)
+                        return queryScriptNodes(session, node);
+
+                JSONArray nodes = new JSONArray();
+                List<DBNode> children = node.getChildren();
+
+                if (children != null) {
+                        for (DBNode child : children)
+                                nodes.add(nodeJson(session, child));
+                }
+
+                JSONObject ret = new JSONObject();
+                ret.put("nodes", nodes);
+                return ret;
+        }
+
+        /* ********************************************************************* */
+        /*                              查询执行                                  */
+        /* ********************************************************************* */
+
+        private Object tablePage(JSONObject params)
+        {
+                OpenConnection session = require(params.getString("sessionId"));
+                Session context = Session.of(params.getString("catalog"), params.getString("schema"));
+
+                int offset = params.getIntValue("offset");
+                int size = params.containsKey("size") ? params.getIntValue("size") : 200;
+
+                QueryResult queryResult = session.driver.selectByPage(
+                        context, params.getString("table"), offset, size);
+
+                long jobId = System.currentTimeMillis();
+                cacheResult(session.id, jobId, queryResult);
+
+                JSONObject ret = new JSONObject();
+                ret.put("jobId", jobId);
+                ret.putAll(resultJson(jobId, queryResult));
+                ret.put("offset", offset);
+                ret.put("size", size);
+
+                return ret;
+        }
+
+        private Object tableColumns(JSONObject params)
+        {
+                OpenConnection session = require(params.getString("sessionId"));
+                Session context = Session.of(params.getString("catalog"), params.getString("schema"));
+
+                JSONArray columns = new JSONArray();
+
+                for (Column column : session.driver.getColumns(context, params.getString("table"))) {
+                        JSONObject json = new JSONObject();
+                        json.put("label", column.getLabel());
+                        json.put("name", column.getName());
+                        json.put("type", column.getType());
+                        json.put("index", column.getIndex());
+                        json.put("primary", column.isPrimary());
+                        json.put("notNull", column.isNotNull());
+                        json.put("autoIncrement", column.isAutoIncrement());
+                        json.put("defaultValue", column.getDefaultValue());
+                        json.put("comment", column.getComment());
+                        columns.add(json);
+                }
+
+                JSONObject ret = new JSONObject();
+                ret.put("columns", columns);
+                return ret;
+        }
+
+        private Object tableIndexes(JSONObject params)
+        {
+                OpenConnection session = require(params.getString("sessionId"));
+                Session context = Session.of(params.getString("catalog"), params.getString("schema"));
+
+                JSONArray indexes = new JSONArray();
+
+                for (Index index : session.driver.getIndexes(context, params.getString("table"))) {
+                        JSONObject json = new JSONObject();
+                        json.put("name", index.getName());
+                        json.put("columnsText", index.getColumnsText());
+                        json.put("type", index.getType());
+                        json.put("visible", index.isVisible());
+                        indexes.add(json);
+                }
+
+                JSONObject ret = new JSONObject();
+                ret.put("indexes", indexes);
+                return ret;
+        }
+
+        private Object tableDdl(JSONObject params)
+        {
+                OpenConnection session = require(params.getString("sessionId"));
+                Session context = Session.of(params.getString("catalog"), params.getString("schema"));
+
+                JSONObject ret = new JSONObject();
+                ret.put("ddl", session.driver.showCreateTable(context, params.getString("table")));
+
+                return ret;
+        }
+
+        private Object formatSql(JSONObject params)
+        {
+                String sql = params.getString("sql");
+
+                JSONObject ret = new JSONObject();
+                ret.put("sql", sql == null || sql.isBlank() ? sql : SqlFormatter.format(sql));
+
+                return ret;
+        }
+
+        /**
+         * SQL 智能提示：按光标所在的 FROM / JOIN 上下文过滤表与字段。
+         * <p>
+         * 引擎构建需要读取库表元数据，这里按「会话 + catalog + schema」缓存，
+         * {@code resolve} 本身是纯内存计算，可以随每次按键调用。
+         */
+        private Object suggestSql(JSONObject params)
+        {
+                OpenConnection session = require(params.getString("sessionId"));
+                String sql = params.getString("sql");
+                JSONArray suggestions = new JSONArray();
+
+                if (sql == null || sql.isBlank())
+                        return suggestionResult(suggestions);
+
+                Session context = Session.of(params.getString("catalog"), params.getString("schema"));
+                int offset = params.containsKey("offset")
+                        ? Math.min(params.getIntValue("offset"), sql.length())
+                        : sql.length();
+
+                String cacheKey = session.id + "|" + context.catalog() + "|" + context.schema();
+                SuggestionEngine engine = suggestionEngines.get(cacheKey);
+
+                if (engine == null) {
+                        engine = SuggestionEngine.of(session.driver, context);
+                        suggestionEngines.put(cacheKey, engine);
+                }
+
+                for (Suggestion suggestion : engine.resolve(sql, offset)) {
+                        JSONObject json = new JSONObject();
+                        json.put("label", suggestion.getLabel());
+                        json.put("kind", suggestion.getKind());
+                        json.put("insertText", suggestion.getInsertText());
+                        json.put("detail", suggestion.getDetail());
+                        suggestions.add(json);
+                }
+
+                return suggestionResult(suggestions);
+        }
+
+        private JSONObject suggestionResult(JSONArray suggestions)
+        {
+                JSONObject ret = new JSONObject();
+                ret.put("suggestions", suggestions);
+                return ret;
+        }
+
+        private Object executeQuery(JSONObject params)
+        {
+                OpenConnection session = require(params.getString("sessionId"));
+                String raw = params.getString("sql");
+
+                if (raw == null || raw.isBlank())
+                        throw new IllegalArgumentException("sql 不能为空");
+
+                Session context = Session.of(params.getString("catalog"), params.getString("schema"));
+                long jobId = params.containsKey("jobId")
+                        ? params.getLongValue("jobId")
+                        : System.currentTimeMillis();
+                String sessionId = session.id;
+
+                QueryResult queryResult = session.driver.execute(jobId, context, new SQL(raw),
+                        new SQLExecuteCallback()
+                        {
+                                @Override
+                                public void execute(String sql)
+                                {
+                                        progress(sessionId, jobId, "execute", sql);
+                                }
+
+                                @Override
+                                public void executeQuery(String sql, boolean skip)
+                                {
+                                        progress(sessionId, jobId, skip ? "skip" : "query", sql);
+                                }
+
+                                @Override
+                                public void executeUpdate(String sql)
+                                {
+                                        progress(sessionId, jobId, "update", sql);
+                                }
+
+                                @Override
+                                public void row(int value)
+                                {
+                                        progress(sessionId, jobId, "rows", String.valueOf(value));
+                                }
+
+                                @Override
+                                public void cost(long time)
+                                {
+                                        progress(sessionId, jobId, "cost", String.valueOf(time));
+                                }
+                        });
+
+                JSONObject ret = new JSONObject();
+                ret.put("jobId", jobId);
+                ret.put("hasResultSet", queryResult != null);
+
+                /* DDL 之后元数据变了，丢弃该会话缓存的智能提示引擎 */
+                if (raw.matches("(?is).*\\b(create|drop|alter|truncate|rename)\\b.*"))
+                        suggestionEngines.keySet().removeIf(key -> key.startsWith(sessionId + "|"));
+
+                if (queryResult != null) {
+                        cacheResult(sessionId, jobId, queryResult);
+                        ret.putAll(resultJson(jobId, queryResult));
+                }
+
+                return ret;
+        }
+
+        private Object cancelQuery(JSONObject params)
+        {
+                OpenConnection session = require(params.getString("sessionId"));
+                session.driver.cancel(params.getLongValue("jobId"));
+
+                return new JSONObject();
+        }
+
+        private void progress(String sessionId, long jobId, String kind, String detail)
+        {
+                JSONObject payload = new JSONObject();
+                payload.put("sessionId", sessionId);
+                payload.put("jobId", jobId);
+                payload.put("kind", kind);
+                payload.put("detail", detail);
+
+                notify("query.progress", payload);
+        }
+
+        /* ********************************************************************* */
+        /*                              序列化                                    */
+        /* ********************************************************************* */
+
+        private JSONObject nodeJson(OpenConnection session, DBNode node)
+        {
+                String id = "n" + session.nodeSequence.incrementAndGet();
+                session.nodes.put(id, node);
+
+                JSONObject json = new JSONObject();
+                json.put("id", id);
+                json.put("label", node.getLabel());
+                json.put("kind", node.getKind().name());
+                json.put("icon", node.getKind().getIcon());
+                /* 「查询脚本」容器的子节点是本地脚本文件，驱动本身不感知，这里按可展开上报 */
+                json.put("hasChildren", node.hasChildren() || node instanceof DBQueryContainerNode);
+
+                /* 节点所属的 catalog / schema 供前端做分页、表结构查询使用 */
+                Session nodeSession = switch (node) {
+                        case DBCatalogNode catalog -> catalog.getSession();
+                        case DBSchemaNode schema -> schema.getSession();
+                        case DBTableContainerNode container -> container.getSession();
+                        default -> null;
+                };
+
+                if (nodeSession != null) {
+                        json.put("catalog", nodeSession.catalog());
+                        json.put("schema", nodeSession.schema());
+                }
+
+                if (node instanceof DBTableNode tableNode) {
+                        Table table = tableNode.getTable();
+                        JSONObject meta = new JSONObject();
+                        meta.put("name", table.getName());
+                        meta.put("engine", table.getEngine());
+                        meta.put("rows", table.getRows());
+                        meta.put("size", table.getSize());
+                        meta.put("comment", table.getComment());
+                        meta.put("createTime", table.getCreateTime() == null ? null : table.getCreateTime().getTime());
+                        meta.put("updateTime", table.getUpdateTime() == null ? null : table.getUpdateTime().getTime());
+                        json.put("table", meta);
+                }
+
+                return json;
+        }
+
+        private JSONObject productJson(Driver driver)
+        {
+                JSONObject json = new JSONObject();
+                var meta = driver.getProductMetaData();
+
+                if (meta != null) {
+                        json.put("productName", meta.getProductName());
+                        json.put("version", meta.getVersion());
+                        json.put("majorVersion", meta.getMajorVersion());
+                        json.put("minorVersion", meta.getMinorVersion());
+                }
+
+                json.put("type", driver.getType().name());
+                return json;
+        }
+
+        private JSONArray columnsJson(QueryResult queryResult)
+        {
+                JSONArray columns = new JSONArray();
+
+                for (Column column : queryResult.getColumns()) {
+                        JSONObject json = new JSONObject();
+                        json.put("label", column.getLabel());
+                        json.put("name", column.getName());
+                        json.put("type", column.getType());
+                        json.put("primary", column.isPrimary());
+                        json.put("notNull", column.isNotNull());
+                        json.put("autoIncrement", column.isAutoIncrement());
+                        json.put("comment", column.getComment());
+                        json.put("defaultValue", column.getDefaultValue());
+                        columns.add(json);
+                }
+
+                return columns;
+        }
+
+        private JSONArray rowsJson(QueryResult queryResult)
+        {
+                return rowsJson(queryResult, false);
+        }
+
+        /**
+         * 行数据；{@code mergeBuffer} 为 true 时把未提交的修改合并进来，
+         * 让前端直接看到"改过但未提交"的效果。
+         */
+        private JSONArray rowsJson(QueryResult queryResult, boolean mergeBuffer)
+        {
+                JSONArray rows = new JSONArray();
+                var buffer = mergeBuffer ? queryResult.getUpdateRowBuffer() : Map.<Integer, GridRow>of();
+
+                for (int index = 0; index < queryResult.getRows().size(); index++) {
+                        GridRow row = buffer.containsKey(index) ? buffer.get(index) : queryResult.getRows().get(index);
+                        rows.add(new JSONArray(row));
+                }
+
+                return rows;
+        }
+
+        /* ********************************************************************* */
+        /*                          结果集编辑                                    */
+        /* ********************************************************************* */
+
+        private void cacheResult(String sessionId, long jobId, QueryResult queryResult)
+        {
+                if (queryResult == null)
+                        return;
+
+                resultCache.put(jobId, queryResult);
+                resultOwner.put(jobId, sessionId);
+        }
+
+        private QueryResult requireResult(JSONObject params)
+        {
+                long jobId = params.getLongValue("jobId");
+                QueryResult result = resultCache.get(jobId);
+
+                if (result == null)
+                        throw new IllegalArgumentException("结果集已失效，请重新执行查询");
+
+                return result;
+        }
+
+        /**
+         * 结果集回传：列、行、是否可编辑/可插入、是否有未提交修改。
+         */
+        private JSONObject resultJson(long jobId, QueryResult queryResult)
+        {
+                JSONObject ret = new JSONObject();
+                /* 回传 jobId，前端后续的编辑/提交/删除都基于同一个结果集 */
+                ret.put("jobId", jobId);
+                ret.put("hasResultSet", true);
+                ret.put("columns", columnsJson(queryResult));
+                ret.put("rows", rowsJson(queryResult, true));
+                ret.put("editable", queryResult.isEditable());
+                ret.put("addable", queryResult.isAddable());
+                ret.put("dirty", queryResult.isUpdatable());
+
+                return ret;
+        }
+
+        private Object updateCell(JSONObject params)
+        {
+                QueryResult result = requireResult(params);
+
+                result.addUpdateRow(
+                        params.getIntValue("col"),
+                        params.getIntValue("row"),
+                        params.containsKey("value") ? params.getString("value") : null);
+
+                return resultJson(params.getLongValue("jobId"), result);
+        }
+
+        private Object setNull(JSONObject params)
+        {
+                QueryResult result = requireResult(params);
+
+                for (int row : toIntArray(params.getJSONArray("rows"))) {
+                        for (int col : toIntArray(params.getJSONArray("cols")))
+                                result.addUpdateRow(col, row, null);
+                }
+
+                return resultJson(params.getLongValue("jobId"), result);
+        }
+
+        private Object insertRow(JSONObject params)
+        {
+                QueryResult result = requireResult(params);
+
+                result.addEmptyRow();
+
+                return resultJson(params.getLongValue("jobId"), result);
+        }
+
+        private Object deleteRows(JSONObject params)
+        {
+                QueryResult result = requireResult(params);
+                List<Integer> indices = new ArrayList<>();
+
+                for (int index : toIntArray(params.getJSONArray("rows")))
+                        indices.add(index);
+
+                result.remove(indices);
+                result.reload();
+
+                return resultJson(params.getLongValue("jobId"), result);
+        }
+
+        private Object commitResult(JSONObject params)
+        {
+                QueryResult result = requireResult(params);
+
+                result.update();
+
+                return resultJson(params.getLongValue("jobId"), result);
+        }
+
+        private Object rollbackResult(JSONObject params)
+        {
+                QueryResult result = requireResult(params);
+
+                result.clearUpdateBuffer();
+
+                return resultJson(params.getLongValue("jobId"), result);
+        }
+
+        private Object reloadResult(JSONObject params)
+        {
+                QueryResult result = requireResult(params);
+
+                result.reload();
+                result.clearUpdateBuffer();
+
+                return resultJson(params.getLongValue("jobId"), result);
+        }
+
+        private int[] toIntArray(JSONArray array)
+        {
+                if (array == null)
+                        return new int[0];
+
+                int[] values = new int[array.size()];
+
+                for (int i = 0; i < array.size(); i++)
+                        values[i] = array.getIntValue(i);
+
+                return values;
+        }
+
+        /* ********************************************************************* */
+        /*                          查询脚本文件                                  */
+        /* ********************************************************************* */
+
+        /** 脚本目录：<连接配置目录>/<连接名>/<数据库名> */
+        private String scriptBasePath(OpenConnection session, DBNode node)
+        {
+                return session.name + "/" + catalogOf(node);
+        }
+
+        /** 沿父链找到所属的数据库（或模式）名 */
+        private String catalogOf(DBNode node)
+        {
+                DBNode current = node;
+
+                while (current != null) {
+                        if (current instanceof DBCatalogNode catalog)
+                                return catalog.getLabel();
+
+                        if (current instanceof DBSchemaNode schema)
+                                return schema.getLabel();
+
+                        current = current.getParent();
+                }
+
+                return "default";
+        }
+
+        private JSONObject queryScriptNodes(OpenConnection session, DBNode node)
+        {
+                JSONArray nodes = new JSONArray();
+
+                for (QueryFile file : QueryFileRepository.loadScriptFiles(scriptBasePath(session, node))) {
+                        if (!file.isFile())
+                                continue;
+
+                        JSONObject json = new JSONObject();
+                        json.put("id", "script:" + file.getAbsolutePath());
+                        json.put("label", file.getName());
+                        json.put("kind", "QUERY");
+                        json.put("hasChildren", false);
+                        json.put("path", file.getAbsolutePath());
+                        json.put("size", file.length());
+                        json.put("modified", file.lastModified());
+                        nodes.add(json);
+                }
+
+                JSONObject ret = new JSONObject();
+                ret.put("nodes", nodes);
+                return ret;
+        }
+
+        private Object listQueryFiles(JSONObject params)
+        {
+                String basePath = require(params.getString("connection"))
+                        + "/" + params.getString("catalog");
+
+                JSONArray files = new JSONArray();
+
+                for (QueryFile file : QueryFileRepository.loadScriptFiles(basePath)) {
+                        if (!file.isFile())
+                                continue;
+
+                        JSONObject json = new JSONObject();
+                        json.put("name", file.getName());
+                        json.put("path", file.getAbsolutePath());
+                        json.put("size", file.length());
+                        json.put("modified", file.lastModified());
+                        files.add(json);
+                }
+
+                JSONObject ret = new JSONObject();
+                ret.put("files", files);
+                return ret;
+        }
+
+        private Object readQueryFile(JSONObject params)
+        {
+                String basePath = require(params.getString("connection"))
+                        + "/" + params.getString("catalog") + "/" + params.getString("name");
+
+                JSONObject ret = new JSONObject();
+                ret.put("content", QueryFileRepository.getFile(basePath).strread());
+
+                return ret;
+        }
+
+        private Object saveQueryFile(JSONObject params)
+        {
+                String basePath = require(params.getString("connection"))
+                        + "/" + params.getString("catalog") + "/" + params.getString("name");
+
+                QueryFile file = QueryFileRepository.write(basePath, params.getString("content"));
+
+                JSONObject ret = new JSONObject();
+                ret.put("name", file.getName());
+                ret.put("path", file.getAbsolutePath());
+
+                return ret;
+        }
+
+        private Object renameQueryFile(JSONObject params)
+        {
+                String prefix = require(params.getString("connection")) + "/" + params.getString("catalog") + "/";
+                QueryFile source = QueryFileRepository.getFile(prefix + params.getString("oldName"));
+
+                if (!source.exists())
+                        throw new IllegalArgumentException("脚本不存在: " + params.getString("oldName"));
+
+                QueryFile target = QueryFileRepository.rename(source, params.getString("newName"));
+
+                JSONObject ret = new JSONObject();
+                ret.put("name", target.getName());
+                ret.put("path", target.getAbsolutePath());
+
+                return ret;
+        }
+
+        private Object deleteQueryFile(JSONObject params)
+        {
+                String basePath = require(params.getString("connection"))
+                        + "/" + params.getString("catalog") + "/" + params.getString("name");
+
+                QueryFileRepository.getFile(basePath).forceDelete();
+
+                return new JSONObject();
+        }
+
+        /**
+         * 导出结果集：CSV 直接写文本，XLSX 交给工具模块的 POI 封装。
+         */
+        private Object exportResult(JSONObject params)
+        {
+                QueryResult result = requireResult(params);
+                String path = params.getString("path");
+                String format = params.getString("format");
+
+                if (path == null || path.isBlank())
+                        throw new IllegalArgumentException("导出路径不能为空");
+
+                if ("csv".equalsIgnoreCase(format)) {
+                        StringBuilder builder = new StringBuilder();
+
+                        for (int i = 0; i < result.getColumns().size(); i++) {
+                                if (i > 0)
+                                        builder.append(',');
+
+                                builder.append(csv(result.getColumns().get(i).getLabel()));
+                        }
+
+                        builder.append("\r\n");
+
+                        for (GridRow row : result.getRows()) {
+                                for (int i = 0; i < row.size(); i++) {
+                                        if (i > 0)
+                                                builder.append(',');
+
+                                        builder.append(csv(row.get(i)));
+                                }
+
+                                builder.append("\r\n");
+                        }
+
+                        try {
+                                /* 带 BOM，Excel 打开中文不乱码 */
+                                Files.writeString(Path.of(path), "\uFEFF" + builder, StandardCharsets.UTF_8);
+                        } catch (Exception e) {
+                                throw new CoreException(e);
+                        }
+                } else {
+                        WorkBook workBook = WorkBook.create();
+                        workBook.addRow(result.getColumns().stream().map(Column::getLabel).toArray());
+                        result.getRows().forEach(row -> workBook.addRow(row.toArray()));
+                        workBook.transferTo(path);
+                }
+
+                JSONObject ret = new JSONObject();
+                ret.put("path", path);
+                ret.put("rows", result.getRows().size());
+
+                return ret;
+        }
+
+        private String csv(String value)
+        {
+                if (value == null)
+                        return "";
+
+                if (value.contains(",") || value.contains("\"") || value.contains("\n") || value.contains("\r"))
+                        return "\"" + value.replace("\"", "\"\"") + "\"";
+
+                return value;
+        }
+
+        /* ********************************************************************* */
+        /*                              辅助                                      */
+        /* ********************************************************************* */
+
+        private JSONObject findSavedConnection(String name)
+        {
+                if (name == null || name.isBlank())
+                        throw new IllegalArgumentException("name 或 connection 必须提供其一");
+
+                for (DiskSavedConnection connection : ConnectionRepository.loadConnections()) {
+                        if (name.equals(connection.getName()))
+                                return JSON.parseObject(JSON.toJSONString(connection));
+                }
+
+                throw new IllegalArgumentException("连接不存在: " + name);
+        }
+
+        private ConnectionConfig toConfig(JSONObject connection)
+        {
+                ConnectionConfig config = new ConnectionConfig();
+
+                config.setType(DbType.of(connection.getString("type")));
+                config.setHost(connection.getString("host"));
+                config.setPort(connection.getString("port"));
+                config.setUsername(connection.getString("username"));
+                config.setPassword(connection.getString("password"));
+                config.setDefaultDatabase(connection.getString("db"));
+                config.setJdbcUrl(connection.getString("jdbcUrl"));
+
+                return config;
+        }
+
+        private OpenConnection require(String sessionId)
+        {
+                OpenConnection session = sessionId == null ? null : sessions.get(sessionId);
+
+                if (session == null)
+                        throw new IllegalArgumentException("会话不存在或已关闭: " + sessionId);
+
+                return session;
+        }
+
+        private void closeQuietly(VkDataSource dataSource)
+        {
+                if (dataSource == null)
+                        return;
+
+                try {
+                        dataSource.close();
+                } catch (Exception e) {
+                        LOG.warn("关闭数据源失败", e);
+                }
+        }
+
+        public void shutdown()
+        {
+                /* 先让已提交的请求执行完，再释放数据源，避免最后一批响应被截断 */
+                workers.shutdown();
+
+                try {
+                        if (!workers.awaitTermination(10, TimeUnit.SECONDS))
+                                workers.shutdownNow();
+                } catch (InterruptedException e) {
+                        workers.shutdownNow();
+                        Thread.currentThread().interrupt();
+                }
+
+                for (OpenConnection session : sessions.values())
+                        closeQuietly(session.driver.getDataSource());
+
+                sessions.clear();
+        }
+
+        private static final class OpenConnection
+        {
+                private final String id;
+                private final Driver driver;
+                private final Map<String, DBNode> nodes = new ConcurrentHashMap<>();
+                private final AtomicLong nodeSequence = new AtomicLong();
+
+        private final String name;
+
+        private OpenConnection(String id, String name, Driver driver)
+        {
+                this.id = id;
+                this.name = name;
+                this.driver = driver;
+        }
+        }
+}
