@@ -31,6 +31,9 @@ contextBridge.exposeInMainWorld("valkyrie", {
   /* 导出另存为 / 在文件夹中显示 */
   chooseSavePath: options => ipcRenderer.invoke("valkyrie:choose-save-path", options),
 
+  /* 选择本地文件（SQLite 数据库文件等） */
+  chooseOpenPath: options => ipcRenderer.invoke("valkyrie:choose-open-path", options),
+
   revealPath: target => ipcRenderer.invoke("valkyrie:reveal-path", target),
 
   /* 系统原生消息框（错误提示等） */

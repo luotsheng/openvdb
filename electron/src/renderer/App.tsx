@@ -18,6 +18,7 @@ import {
   type QueryResultPayload,
   type SavedConnection,
   type SchemaNode,
+  type ScriptFile,
   type SuggestionItem,
   type TableColumn,
   type TableIndex
@@ -27,13 +28,15 @@ import { ResultGrid } from "./ui/ResultGrid";
 import { ObjectInfo } from "./ui/ObjectInfo";
 import { TableDesign } from "./ui/TableDesign";
 import { TableList } from "./ui/TableList";
+import { ScriptList } from "./ui/ScriptList";
 import { ConnectionDialog } from "./ui/ConnectionDialog";
+import { ConnectionManager } from "./ui/ConnectionManager";
 import { Dialog } from "./ui/Dialog";
 import { MenuButton, popupNativeMenu, type MenuEntry } from "./ui/Menu";
 import { OptionsDialog } from "./ui/OptionsDialog";
 import { Select } from "./ui/Select";
 import { Icon } from "./ui/icons";
-import { LogConsole, errorRecord, progressRecord, type LogRecord } from "./ui/LogConsole";
+import { LogConsole, appendLog, errorRecord, progressRecord, type LogRecord } from "./ui/LogConsole";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
 import { Group, Panel, Separator, useDefaultLayout, usePanelRef } from "react-resizable-panels";
 import { Toaster, toast } from "sonner";
@@ -68,6 +71,8 @@ interface BaseTab {
 interface QueryTab extends BaseTab {
   kind: "query";
   sql: string;
+  /** 上次保存到磁盘的内容；与 sql 不一致说明有未保存修改 */
+  savedSql?: string;
   result: QueryResultPayload | null;
   plan: QueryResultPayload | null;
   dirtyRows: number[];
@@ -103,7 +108,13 @@ interface TableListTab extends BaseTab {
   loading: boolean;
 }
 
-type WorkTab = QueryTab | DataTab | DesignTab | TableListTab;
+interface ScriptListTab extends BaseTab {
+  kind: "scripts";
+  scripts: ScriptFile[];
+  loading: boolean;
+}
+
+type WorkTab = QueryTab | DataTab | DesignTab | TableListTab | ScriptListTab;
 
 type ResultPane = "grid" | "msg" | "plan" | "log";
 
@@ -163,6 +174,12 @@ export function App() {
     row: number; col: number; rows: number; cols: number;
   } | null>(null);
   const [tableFilter, setTableFilter] = useState("");
+  /* 「脚本」页：过滤词、选中项（按脚本绝对路径）、刷新闪烁 */
+  const [scriptFilter, setScriptFilter] = useState("");
+  const [scriptSelection, setScriptSelection] = useState<string[]>([]);
+  const [scriptFlash, setScriptFlash] = useState(0);
+  /* 「连接管理」窗口 */
+  const [managerOpen, setManagerOpen] = useState(false);
   /* 结果集全表搜索：输入值 / 防抖后的关键字（同 FX 版，停顿一下再过滤） */
   const [gridSearch, setGridSearch] = useState("");
   const [gridKeyword, setGridKeyword] = useState("");
@@ -305,7 +322,7 @@ export function App() {
       if (event.kind === "cost" && event.detail)
         setLastCost(Number(event.detail));
 
-      setLogs(previous => [...previous.slice(-299), record]);
+      setLogs(previous => appendLog(previous, record));
 
       const tabId = event.jobId != null ? jobTabRef.current.get(event.jobId) : undefined;
 
@@ -647,6 +664,22 @@ export function App() {
     setError(null);
     setStatus(`正在连接 ${connection.name} …`);
 
+    /* 换连接会清掉当前会话：先把没保存的内容问清楚 */
+    if (session && session.name !== connection.name) {
+      const unsaved = tabs.filter(hasUnsaved);
+
+      if (unsaved.length > 0) {
+        const confirmed = await askConfirm(
+          `连接 ${session.name} 上还有没保存的内容：\n${unsaved.map(describeUnsaved).join("\n")}\n\n切到 ${connection.name} 会丢失这些改动，确定继续吗？`,
+          "未保存的修改",
+          true
+        );
+
+        if (!confirmed)
+          return false;
+      }
+    }
+
     /* 连接期间在对应节点上显示加载动画 */
     const nodeId = `conn:${connection.name}`;
 
@@ -888,8 +921,8 @@ export function App() {
     return { connection, catalog, schema };
   }
 
-  /** 关闭标签：当前 / 左侧 / 右侧 / 全部 */
-  function closeTabs(mode: "current" | "left" | "right" | "all", id: string) {
+  /** 关闭标签：当前 / 左侧 / 右侧 / 全部（有没保存的脚本时先确认） */
+  async function closeTabs(mode: "current" | "left" | "right" | "all", id: string) {
     const index = tabs.findIndex(tab => tab.id === id);
 
     if (index < 0)
@@ -907,7 +940,22 @@ export function App() {
           ? (_tab: WorkTab, position: number) => position <= index
           : () => false;
 
-    const next = tabs.filter((tab, position) => tab.kind === "tables" || keep(tab, position));
+    const kept = (tab: WorkTab, position: number) => tab.kind === "tables" || keep(tab, position);
+    const closing = tabs.filter((tab, position) => !kept(tab, position));
+    const unsaved = closing.filter(hasUnsaved);
+
+    if (unsaved.length > 0) {
+      const confirmed = await askConfirm(
+        `以下标签还有没保存的内容：\n${unsaved.map(describeUnsaved).join("\n")}\n\n关闭后改动会丢失，确定关闭吗？`,
+        "未保存的修改",
+        true
+      );
+
+      if (!confirmed)
+        return;
+    }
+
+    const next = tabs.filter((tab, position) => kept(tab, position));
 
     setTabs(next);
 
@@ -916,14 +964,19 @@ export function App() {
   }
 
   function closeTab(id: string) {
-    closeTabs("current", id);
+    void closeTabs("current", id);
   }
 
   function openTableData(node: SchemaNode) {
     if (!node.table)
       return;
 
-    const existing = tabs.find(tab => tab.kind === "data" && tab.node.table?.name === node.table?.name);
+    /* 同名表可能出现在不同库 / 模式下，必须带上上下文一起比较 */
+    const existing = tabs.find(tab =>
+      tab.kind === "data"
+      && tab.node.table?.name === node.table?.name
+      && tab.node.catalog === node.catalog
+      && tab.node.schema === node.schema);
 
     if (existing) {
       setActiveTabId(existing.id);
@@ -1093,6 +1146,13 @@ export function App() {
       return;
     }
 
+    /* 「查询脚本」容器：双击直接进脚本对象页，比一层层展开目录更顺手 */
+    if (node.kind === "QUERY") {
+      void toggleNode(node);
+      void openScriptList();
+      return;
+    }
+
     /* 打开数据库 / 模式：展开对象树的同时把「对象」页显示出来 */
     if (node.kind === "CATALOG" || node.kind === "SCHEMA") {
       void toggleNode(node);
@@ -1106,11 +1166,15 @@ export function App() {
 
   /* ------------------------------ 查询脚本 ------------------------------ */
 
-  async function openScript(node: SchemaNode) {
-    if (!session)
+  /** 打开脚本文件（对象树里的脚本节点与「脚本」页共用一条路径） */
+  async function openScriptFile(file: { name: string; catalog: string }) {
+    if (!session) {
+      setError("请先在左侧选择一个连接");
       return;
+    }
 
-    const existing = tabs.find(tab => tab.kind === "query" && tab.script?.name === node.label);
+    const existing = tabs.find(tab =>
+      tab.kind === "query" && tab.script?.name === file.name && tab.script?.catalog === file.catalog);
 
     if (existing) {
       setActiveTabId(existing.id);
@@ -1118,126 +1182,281 @@ export function App() {
     }
 
     try {
-      const catalog = node.catalog ?? "default";
       const payload = await invoke<{ content: string }>("queryFiles.read", {
         connection: session.name,
-        catalog,
-        name: node.label
+        catalog: file.catalog,
+        name: file.name
       });
 
       const tab = newQueryTab();
-      tab.title = node.label;
+      tab.title = file.name;
       tab.sql = payload.content;
-      tab.script = { connection: session.name, catalog, name: node.label };
-      tab.path = { catalog };
+      tab.savedSql = payload.content;
+      tab.script = { connection: session.name, catalog: file.catalog, name: file.name };
+      tab.path = { catalog: file.catalog };
 
       setTabs(previous => [...previous, tab]);
       setActiveTabId(tab.id);
-      setStatus(`已打开脚本 ${node.label}`);
+      setStatus(`已打开脚本 ${file.name}`);
     } catch (e) {
       setError(messageOf(e));
     }
   }
 
-  async function createScript(node: SchemaNode) {
-    const active = sessionRef.current;
+  async function openScript(node: SchemaNode) {
+    await openScriptFile({ name: node.label, catalog: node.catalog ?? "default" });
+  }
 
-    if (!active)
+  /** 当前上下文所属的数据库目录（脚本按「连接/数据库」分目录存放） */
+  function scriptCatalog(): string {
+    if (activeNode?.kind === "CATALOG")
+      return activeNode.label;
+
+    return activeNode?.catalog ?? catalogOptions[0]?.label ?? "default";
+  }
+
+  /**
+   * 新建表：按当前连接的类型生成一份建表草稿放进查询控制台，
+   * 由用户确认 / 补全后再执行 —— 各数据库的建表语法差异很大，
+   * 与其替用户猜，不如给一份能直接改的模板。
+   */
+  async function createTableDraft(catalogHint?: string) {
+    if (!session) {
+      setError("请先在左侧选择一个连接");
+      return;
+    }
+
+    const name = await askText("新建表（生成建表草稿）", "new_table");
+
+    if (!name)
       return;
 
-    const name = await askText("新建查询脚本", "新建查询.sql");
+    const type = (session.product.type ?? connections.find(item => item.name === session.name)?.type ?? "mysql").toLowerCase();
+    const catalog = catalogHint ?? scriptCatalog();
+    const tab = await openQueryTab();
+
+    if (!tab)
+      return;
+
+    updateTab(tab.id, {
+      title: `新建表 ${name}`,
+      sql: createTableTemplate(name, type),
+      path: { ...tab.path, catalog }
+    });
+    setStatus("已生成建表草稿，确认无误后按 Ctrl+R 执行");
+  }
+
+  /** 新建脚本：问到名字后写进当前上下文所在的数据库目录，并直接打开 */
+  async function createScript(catalogHint?: string) {
+    const active = sessionRef.current;
+
+    if (!active) {
+      setError("请先在左侧选择一个连接");
+      return;
+    }
+
+    const catalog = catalogHint ?? scriptCatalog();
+    const name = await askText(`新建脚本（保存到 ${catalog}）`, "新建查询.sql");
 
     if (!name)
       return;
 
     const fileName = name.toLowerCase().endsWith(".sql") ? name : `${name}.sql`;
+    const content = `-- ${fileName.replace(/\.sql$/i, "")}\n`;
 
     try {
-      await invoke("queryFiles.save", {
-        connection: active.name,
-        catalog: node.catalog ?? "default",
-        name: fileName,
-        content: "-- 新建查询脚本\n"
-      });
+      await invoke("queryFiles.save", { connection: active.name, catalog, name: fileName, content });
 
-      await refreshNode(node);
+      await refreshScriptTree();
+
+      /* 脚本页开着就同步刷新，不然新脚本看不见 */
+      const listTab = tabs.find(tab => tab.kind === "scripts");
+
+      if (listTab)
+        void refreshScriptList(listTab.id);
+
+      await openScriptFile({ name: fileName, catalog });
       setStatus(`已创建脚本 ${fileName}`);
     } catch (e) {
       setError(messageOf(e));
     }
   }
 
- async function renameScript(node: SchemaNode) {
+  /** 重命名脚本（新名字不带 .sql 时自动补上） */
+  async function renameScriptFile(file: { name: string; catalog: string }) {
     const active = sessionRef.current;
 
     if (!active)
       return;
 
-    const name = await askText("重命名脚本", node.label);
+    const input = await askText(`重命名脚本（${file.catalog}）`, file.name);
 
-    if (!name || name === node.label)
+    if (!input)
+      return;
+
+    const name = input.toLowerCase().endsWith(".sql") ? input : `${input}.sql`;
+
+    if (name === file.name)
       return;
 
     try {
       await invoke("queryFiles.rename", {
         connection: active.name,
-        catalog: node.catalog ?? "default",
-        oldName: node.label,
+        catalog: file.catalog,
+        oldName: file.name,
         newName: name
       });
 
       /* 已打开的标签同步改名，避免保存时写回旧文件 */
       setTabs(previous => previous.map(tab =>
-        tab.kind === "query" && tab.script?.name === node.label
+        tab.kind === "query" && tab.script?.name === file.name && tab.script?.catalog === file.catalog
           ? { ...tab, title: name, script: { ...tab.script, name } }
           : tab));
 
-      await refreshScriptContainer(node);
+      await refreshScriptTree();
+
+      const listTab = tabs.find(tab => tab.kind === "scripts");
+
+      if (listTab)
+        void refreshScriptList(listTab.id);
+
       setStatus(`已重命名为 ${name}`);
     } catch (e) {
       setError(messageOf(e));
     }
   }
 
- async function deleteScript(node: SchemaNode) {
+  async function renameScript(node: SchemaNode) {
+    await renameScriptFile({ name: node.label, catalog: node.catalog ?? "default" });
+  }
+
+  /** 删除脚本：支持一次删多个（脚本页多选后删除） */
+  async function deleteScriptFiles(files: { name: string; catalog: string }[]) {
     const active = sessionRef.current;
 
-    if (!active)
+    if (!active || files.length === 0)
       return;
 
-    const confirmed = await askConfirm(`确认删除查询脚本：${node.label}？`, "删除脚本", true);
+    const title = files.length === 1 ? files[0].name : `选中的 ${files.length} 个脚本`;
+    const confirmed = await askConfirm(`确认删除 ${title}？删除后无法恢复。`, "删除脚本", true);
 
     if (!confirmed)
       return;
 
     try {
-      await invoke("queryFiles.delete", {
-        connection: active.name,
-        catalog: node.catalog ?? "default",
-        name: node.label
-      });
+      for (const file of files)
+        await invoke("queryFiles.delete", { connection: active.name, catalog: file.catalog, name: file.name });
 
-      const opened = tabs.find(tab => tab.kind === "query" && tab.script?.name === node.label);
+      /* 关掉这些脚本对应的查询页 */
+      const opened = tabs.filter(tab =>
+        tab.kind === "query" && tab.script && files.some(file => file.name === tab.script?.name && file.catalog === tab.script?.catalog));
 
-      if (opened)
-        closeTab(opened.id);
+      if (opened.length > 0)
+        setTabs(previous => previous.filter(tab => !opened.some(item => item.id === tab.id)));
 
-      await refreshScriptContainer(node);
-      setStatus(`已删除脚本 ${node.label}`);
+      await refreshScriptTree();
+
+      const listTab = tabs.find(tab => tab.kind === "scripts");
+
+      if (listTab)
+        void refreshScriptList(listTab.id);
+
+      setScriptSelection([]);
+      setStatus(`已删除 ${files.length} 个脚本`);
     } catch (e) {
       setError(messageOf(e));
     }
   }
 
-  /* 脚本文件的操作需要刷新它所在的「查询脚本」容器 */
-  async function refreshScriptContainer(node: SchemaNode) {
-    const all = [treeRoot, ...Object.values(treeChildren).flat()];
-    const container = all.find(item => item.id === node.id)?.hasChildren
-      ? node
-      : all.find(item => (treeChildren[item.id] ?? []).some(child => child.id === node.id));
+  async function deleteScript(node: SchemaNode) {
+    await deleteScriptFiles([{ name: node.label, catalog: node.catalog ?? "default" }]);
+  }
 
-    if (container)
-      await refreshNode(container);
+  /* 拉取当前连接下所有数据库目录里的脚本（脚本对象页数据源） */
+  async function loadScriptFiles(): Promise<ScriptFile[]> {
+    const active = sessionRef.current;
+
+    if (!active)
+      return [];
+
+    const payload = await invoke<{ files: ScriptFile[] }>("queryFiles.list", { connection: active.name });
+    return payload.files ?? [];
+  }
+
+  /**
+   * 「脚本」对象页：和「对象」页一样是整连接共用一个标签页，
+   * 列出所有数据库目录下的 .sql，双击打开、右键重命名 / 删除 / 在文件夹中显示。
+   */
+  async function openScriptList() {
+    if (!session) {
+      setError("请先在左侧选择一个连接");
+      return;
+    }
+
+    const existing = tabs.find(tab => tab.kind === "scripts");
+
+    if (existing) {
+      setActiveTabId(existing.id);
+      setScriptFilter("");
+      await refreshScriptList(existing.id);
+      return;
+    }
+
+    const scripts = await loadScriptFiles().catch(error => {
+      setError(messageOf(error));
+      return [] as ScriptFile[];
+    });
+
+    const tab: ScriptListTab = {
+      id: `tab-${tabSequence++}`,
+      kind: "scripts",
+      title: `脚本 · ${session.name}`,
+      running: false,
+      messages: [],
+      scripts,
+      loading: false
+    };
+
+    /* 紧跟在常驻「对象」页后面，别把对象页挤到后面去 */
+    setTabs(previous => {
+      const index = previous.findIndex(item => item.kind === "tables");
+      const next = [...previous];
+
+      next.splice(index < 0 ? 0 : index + 1, 0, tab);
+      return next;
+    });
+    setActiveTabId(tab.id);
+    setScriptFilter("");
+    setScriptSelection([]);
+  }
+
+  async function refreshScriptList(tabId: string) {
+    updateTab(tabId, { loading: true });
+
+    try {
+      const scripts = await loadScriptFiles();
+
+      updateTab(tabId, { scripts, loading: false });
+      setScriptFlash(previous => previous + 1);
+    } catch (e) {
+      updateTab(tabId, { loading: false });
+      setError(messageOf(e));
+    }
+  }
+
+  /* 刷新对象树里所有「查询脚本」容器，让树上的脚本列表跟上文件变化 */
+  async function refreshScriptTree() {
+    const active = sessionRef.current;
+
+    if (!active)
+      return;
+
+    const containers = Object.values(treeChildren)
+      .flat()
+      .filter(node => node.kind === "QUERY" && !node.path);
+
+    await Promise.all(containers.map(node =>
+      loadChildren(active.sessionId, node, true).catch(() => [])));
   }
 
   async function saveActiveScript(saveAs = false) {
@@ -1246,10 +1465,13 @@ export function App() {
 
     const script = activeTab.script;
     const content = activeTab.sql;
+    const catalog = activeTab.path.catalog ?? scriptCatalog();
+    /* 已有脚本就存回它原本的数据库目录，避免另存为跑到别的库里去 */
+    const target = script?.catalog ?? catalog;
 
     try {
       if (!script || saveAs) {
-        const name = await askText("保存查询脚本", script?.name ?? `${activeTab.title}.sql`);
+        const name = await askText(`保存查询脚本（${target}）`, script?.name ?? `${activeTab.title}.sql`);
 
         if (!name)
           return;
@@ -1258,15 +1480,24 @@ export function App() {
 
         await invoke("queryFiles.save", {
           connection: session.name,
-          catalog: activeTab.path.catalog ?? "default",
+          catalog: target,
           name: fileName,
           content
         });
 
         updateTab(activeTab.id, {
           title: fileName,
-          script: { connection: session.name, catalog: activeTab.path.catalog ?? "default", name: fileName }
+          savedSql: content,
+          script: { connection: session.name, catalog: target, name: fileName }
         });
+
+        await refreshScriptTree();
+
+        const listTab = tabs.find(tab => tab.kind === "scripts");
+
+        if (listTab)
+          void refreshScriptList(listTab.id);
+
         setStatus(`已保存脚本 ${fileName}`);
         return;
       }
@@ -1277,10 +1508,35 @@ export function App() {
         name: script.name,
         content
       });
+
+      updateTab(activeTab.id, { savedSql: content });
+
+      const listTab = tabs.find(tab => tab.kind === "scripts");
+
+      if (listTab)
+        void refreshScriptList(listTab.id);
+
       setStatus(`已保存脚本 ${script.name}`);
     } catch (e) {
       setError(messageOf(e));
     }
+  }
+
+  /** 查询页绑定了脚本文件、且内容与上次保存的不一致 → 有未保存修改 */
+  function isScriptDirty(tab: WorkTab): boolean {
+    return tab.kind === "query" && Boolean(tab.script) && tab.savedSql != null && tab.savedSql !== tab.sql;
+  }
+
+  /** 这个标签关掉会丢东西吗：脚本没存盘 or 结果集里有未提交的修改 */
+  function hasUnsaved(tab: WorkTab): boolean {
+    return isScriptDirty(tab) || (tab.pending ?? 0) > 0;
+  }
+
+  function describeUnsaved(tab: WorkTab): string {
+    if (isScriptDirty(tab))
+      return `· ${tab.title}（脚本未保存）`;
+
+    return `· ${tab.title}（${tab.pending ?? 0} 条未提交修改）`;
   }
 
   async function exportResult(format: "csv" | "excel") {
@@ -1314,6 +1570,38 @@ export function App() {
 
   /* ------------------------------ 对象操作 ------------------------------ */
 
+  /** 执行表设计页里编辑过的 DDL（先确认，再重新读取结构与表列表） */
+  async function applyTableDdl(tabId: string, node: SchemaNode, ddl: string) {
+    if (!session)
+      return;
+
+    const confirmed = await askConfirm(
+      `确定执行下面这段 DDL？它会直接改动数据库里的对象，无法撤销。\n\n${ddl.length > 400 ? `${ddl.slice(0, 400)}…` : ddl}`,
+      "执行 DDL",
+      true
+    );
+
+    if (!confirmed)
+      return;
+
+    try {
+      await withBusy(() => invoke("query.execute", {
+        sessionId: session.sessionId,
+        sql: ddl,
+        jobId: Date.now(),
+        catalog: node.catalog,
+        schema: node.schema
+      }));
+
+      await loadDesign(tabId, node);
+      await refreshTableContainer(node);
+      setStatus("DDL 已执行");
+      flash("DDL 已执行");
+    } catch (e) {
+      setError(messageOf(e));
+    }
+  }
+
   async function copyText(text: string) {
     try {
       await navigator.clipboard?.writeText(text);
@@ -1338,6 +1626,20 @@ export function App() {
   async function disconnect() {
     if (!session)
       return;
+
+    /* 有没保存的内容就先确认：断开后脚本页与结果集都会一起收走 */
+    const unsaved = tabs.filter(hasUnsaved);
+
+    if (unsaved.length > 0) {
+      const confirmed = await askConfirm(
+        `以下标签还有没保存的内容：\n${unsaved.map(describeUnsaved).join("\n")}\n\n断开连接后这些改动会丢失，确定断开吗？`,
+        "未保存的修改",
+        true
+      );
+
+      if (!confirmed)
+        return;
+    }
 
     await invoke("connection.close", { sessionId: session.sessionId }).catch(() => undefined);
 
@@ -1364,6 +1666,10 @@ export function App() {
     setActiveNode(null);
     setTableNodes([]);
     setTableFilter("");
+    setTreeFilter("");
+    setScriptFilter("");
+    setScriptSelection([]);
+    setGridHits(null);
     setGridSearch("");
     setGridKeyword("");
     setTableSelection([]);
@@ -1550,6 +1856,7 @@ export function App() {
       return [
         { label: open ? "关闭数据库" : "打开数据库", action: () => void toggleNode(node) },
         { label: "表列表", action: () => void openTableList(node) },
+        { label: "新建表…", action: () => void createTableDraft(node.label) },
         { label: "新建查询", action: createQueryTab },
         { separator: true },
         { label: "刷新", action: () => void refreshNode(node) },
@@ -1561,6 +1868,7 @@ export function App() {
       return [
         { label: open ? "收起模式" : "展开模式", action: () => void toggleNode(node) },
         { label: "表列表", action: () => void openTableList(node) },
+        { label: "新建表…", action: () => void createTableDraft(node.label) },
         { label: "新建查询", action: createQueryTab },
         { separator: true },
         { label: "刷新列表", action: () => void refreshNode(node) },
@@ -1572,6 +1880,7 @@ export function App() {
       return [
         { label: open ? "收起列表" : "展开列表", action: () => void toggleNode(node) },
         { label: "表列表", action: () => void openTableList(node) },
+        { label: "新建表…", action: () => void createTableDraft(node.catalog) },
         { label: "刷新列表", action: () => void refreshNode(node) },
         { label: "新建查询", action: createQueryTab }
       ];
@@ -1584,9 +1893,9 @@ export function App() {
           { label: "打开查询", action: () => void openScript(node) },
           { separator: true },
           { label: "新建查询", action: createQueryTab },
-          { label: "重命名", action: () => void renameScript(node) },
+          { label: "重命名脚本", action: () => void renameScript(node) },
           { separator: true },
-          { label: "复制查询名", action: () => void copyText(node.label) },
+          { label: "复制脚本名", action: () => void copyText(node.label) },
           { label: "复制路径", action: () => node.path && void copyText(node.path) },
           { label: "在文件夹中显示", action: () => node.path && void revealPath(node.path) },
           { separator: true },
@@ -1595,7 +1904,8 @@ export function App() {
       }
 
       return [
-        { label: "新建查询脚本", action: () => void createScript(node) },
+        { label: "脚本列表", action: () => void openScriptList() },
+        { label: "新建脚本", action: () => void createScript(node.catalog) },
         { label: "新建查询", action: createQueryTab },
         { separator: true },
         { label: open ? "收起列表" : "展开列表", action: () => void toggleNode(node) },
@@ -1721,7 +2031,7 @@ export function App() {
       /* 语句执行失败：写进日志面板（不弹窗、不占工作区顶部） */
       const line = formatErrorLog(message);
 
-      setLogs(previous => [...previous.slice(-299), errorRecord(message, jobId)]);
+      setLogs(previous => appendLog(previous, errorRecord(message, jobId)));
       setResultPane("log");
       setStatus("执行失败");
       updateTab(tabId, { running: false, messages: [line] });
@@ -1743,9 +2053,16 @@ export function App() {
     await runQuery(activeTab.id, selected.trim() ? selected : activeTab.sql);
   }
 
-  /* Ctrl/Cmd + R：执行查询（焦点在对象树 / 结果表时也生效） */
+  /*
+   * 窗口级快捷键：Ctrl+R 执行、Ctrl+Shift+F 格式化、Ctrl+S / Ctrl+Shift+S 保存脚本。
+   * 焦点在编辑器里时交给 Monaco 自己的命令处理，避免同一个动作触发两次。
+   */
   const runShortcutRef = useRef<() => void>(() => undefined);
   runShortcutRef.current = () => void runSelectionOrAll();
+  const formatShortcutRef = useRef<() => void>(() => undefined);
+  formatShortcutRef.current = () => void formatActiveQuery();
+  const saveShortcutRef = useRef<(saveAs?: boolean) => void>(() => undefined);
+  saveShortcutRef.current = (saveAs?: boolean) => void saveActiveScript(saveAs);
 
   /* 结果集搜索防抖：连续输入时只在停顿后过滤一次（同 FX 版 100ms） */
   useEffect(() => {
@@ -1764,15 +2081,33 @@ export function App() {
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (!(event.ctrlKey || event.metaKey) || event.shiftKey || event.altKey)
+      if (!(event.ctrlKey || event.metaKey) || event.altKey)
         return;
 
-      if (event.key.toLowerCase() !== "r")
+      const key = event.key.toLowerCase();
+      const shift = event.shiftKey;
+
+      /* 编辑器有焦点：Monaco 自己的 Ctrl+R / Ctrl+S / Ctrl+W 命令先处理 */
+      if ((event.target as HTMLElement | null)?.closest?.(".editor"))
         return;
 
-      /* 拦下浏览器刷新，交给「执行」 */
-      event.preventDefault();
-      runShortcutRef.current();
+      if (!shift && key === "r") {
+        /* 拦下浏览器刷新，交给「执行」 */
+        event.preventDefault();
+        runShortcutRef.current();
+        return;
+      }
+
+      if (shift && key === "f") {
+        event.preventDefault();
+        formatShortcutRef.current();
+        return;
+      }
+
+      if (key === "s") {
+        event.preventDefault();
+        saveShortcutRef.current(shift);
+      }
     };
 
     window.addEventListener("keydown", onKeyDown);
@@ -1829,7 +2164,7 @@ export function App() {
       /* 执行计划解析失败：同样写进日志面板 */
       const message = messageOf(e);
 
-      setLogs(previous => [...previous.slice(-299), errorRecord(message, jobId)]);
+      setLogs(previous => appendLog(previous, errorRecord(message, jobId)));
       setResultPane("log");
       setStatus("执行计划解析失败");
     }
@@ -1845,6 +2180,9 @@ export function App() {
       return activeTab.columns;
 
     if (activeTab.kind === "tables")
+      return [];
+
+    if (activeTab.kind === "scripts")
       return [];
 
     return activeTab.result?.columns ?? [];
@@ -1863,6 +2201,40 @@ export function App() {
   const objectSelections = activeTab?.kind === "tables"
     ? activeTab.tables.filter(node => tableSelection.includes(node.label))
     : [];
+
+  /* 「脚本」页当前选中的脚本 */
+  const scriptSelections = activeTab?.kind === "scripts"
+    ? activeTab.scripts.filter(script => scriptSelection.includes(script.path))
+    : [];
+
+  /* 「对象」页与「脚本」页是整页列表：结果集那一套面板（消息 / 执行计划 / 日志）在这里不出现 */
+  const pageTab = activeTab?.kind === "tables" || activeTab?.kind === "scripts";
+
+  /* 「脚本」页右键菜单：多选时换成批量版本 */
+  function buildScriptMenuEntries(script: ScriptFile): MenuEntry[] {
+    const batch = scriptSelection.length > 1 && scriptSelection.includes(script.path);
+
+    if (batch) {
+      return [
+        { label: `打开选中的 ${scriptSelections.length} 个脚本`, action: () => scriptSelections.forEach(item => void openScriptFile(item)) },
+        { separator: true },
+        { label: `删除选中的 ${scriptSelections.length} 个脚本`, danger: true, action: () => void deleteScriptFiles(scriptSelections) }
+      ];
+    }
+
+    return [
+      { label: "打开", action: () => void openScriptFile(script) },
+      { separator: true },
+      { label: "新建脚本", action: () => void createScript(script.catalog) },
+      { label: "重命名", action: () => void renameScriptFile(script) },
+      { separator: true },
+      { label: "复制脚本名", action: () => void copyText(script.name) },
+      { label: "复制路径", action: () => void copyText(script.path) },
+      { label: "在文件夹中显示", action: () => void revealPath(script.path) },
+      { separator: true },
+      { label: "删除脚本", danger: true, action: () => void deleteScriptFiles([script]) }
+    ];
+  }
 
   /* 「对象」页右键菜单：多选时换成批量版本 */
   function buildObjectMenu(node: SchemaNode): MenuEntry[] {
@@ -1945,6 +2317,7 @@ export function App() {
     },
     { separator: true },
     { label: "复制为 INSERT", action: () => void copyRows("insert") },
+    { label: "复制为 UPDATE", action: () => void copyRows("update") },
     { label: "复制为 JSON", action: () => void copyRows("json") },
     { separator: true },
     { label: "导出 CSV", action: () => void exportResult("csv") },
@@ -1961,11 +2334,11 @@ export function App() {
       return [];
 
     return [
-      { label: "关闭", disabled: tabs[index].kind === "tables", action: () => closeTabs("current", id) },
-      { label: "关闭左侧标签", disabled: index === 0, action: () => closeTabs("left", id) },
-      { label: "关闭右侧标签", disabled: index === tabs.length - 1, action: () => closeTabs("right", id) },
+      { label: "关闭", disabled: tabs[index].kind === "tables", action: () => void closeTabs("current", id) },
+      { label: "关闭左侧标签", disabled: index === 0, action: () => void closeTabs("left", id) },
+      { label: "关闭右侧标签", disabled: index === tabs.length - 1, action: () => void closeTabs("right", id) },
       { separator: true },
-      { label: "全部关闭", action: () => closeTabs("all", id) }
+      { label: "全部关闭", action: () => void closeTabs("all", id) }
     ];
   }
 
@@ -2031,7 +2404,7 @@ export function App() {
     return json;
   }
 
-  async function copyRows(format: "json" | "insert") {
+  async function copyRows(format: "json" | "insert" | "update") {
     if (!currentResult?.columns || !currentResult.rows)
       return;
 
@@ -2049,11 +2422,41 @@ export function App() {
     }
 
     const table = activeTab && "node" in activeTab ? activeTab.node.label : "table";
+    const name = (column: QueryColumn) => `\`${column.name || column.label}\``;
+
+    if (format === "update") {
+      /*
+       * 复制为 UPDATE：有主键就用主键做条件，没有主键只能退化成"全列匹配"
+       * （这种语句可能一次改到多行，SQL 里带注释提示一下）。
+       */
+      const keys = columns.filter(column => column.primary);
+      const match = keys.length > 0 ? keys : columns;
+      const assignments = (keys.length > 0 ? columns.filter(column => !keys.includes(column)) : columns);
+      const hint = keys.length > 0 ? "" : "-- 该结果集没有主键信息，WHERE 使用全部列，请确认后再执行\n";
+
+      const statements = selectedRows.map(row => {
+        const set = assignments
+          .map(column => `${name(column)} = ${sqlLiteral(row?.[columns.indexOf(column)] ?? null)}`)
+          .join(", ");
+        const where = match
+          .map(column => {
+            const value = row?.[columns.indexOf(column)] ?? null;
+            return value === null ? `${name(column)} IS NULL` : `${name(column)} = ${sqlLiteral(value)}`;
+          })
+          .join(" AND ");
+
+        return `UPDATE \`${table}\` SET ${set} WHERE ${where};`;
+      }).join("\n");
+
+      await copyText(hint + statements);
+      return;
+    }
+
     const statements = selectedRows
       .filter(Boolean)
       .map(row => {
-        const names = columns.map(column => `\`${column.name || column.label}\``).join(", ");
-        const values = (row ?? []).map(value => value === null ? "NULL" : `'${value.replace(/'/g, "''")}'`).join(", ");
+        const names = columns.map(name).join(", ");
+        const values = (row ?? []).map(value => sqlLiteral(value)).join(", ");
 
         return `INSERT INTO \`${table}\` (${names}) VALUES (${values});`;
       })
@@ -2106,11 +2509,15 @@ export function App() {
         { label: "新建连接…", action: () => setConnectionDialog({ mode: "new" }) },
         { label: "编辑当前连接…", disabled: !currentConnection, action: () => setConnectionDialog({ mode: "edit", connection: currentConnection }) },
         { label: "复制当前连接…", disabled: !currentConnection, action: () => setConnectionDialog({ mode: "copy", connection: currentConnection }) },
+        { label: "连接管理…", action: () => setManagerOpen(true) },
         { separator: true },
         { label: "删除当前连接", danger: true, disabled: !currentConnection, action: () => currentConnection && void deleteConnection(currentConnection.name) },
         { separator: true },
+        { label: "新建脚本…", disabled: !session, action: () => void createScript() },
+        { label: "脚本列表", disabled: !session, action: () => void openScriptList() },
+        { separator: true },
         { label: "保存脚本 (Ctrl+S)", disabled: activeTab?.kind !== "query", action: () => void saveActiveScript() },
-        { label: "脚本另存为…", disabled: activeTab?.kind !== "query", action: () => void saveActiveScript(true) },
+        { label: "脚本另存为… (Ctrl+Shift+S)", disabled: activeTab?.kind !== "query", action: () => void saveActiveScript(true) },
         { separator: true },
         { label: "退出", action: () => windowControl("close") }
       ]
@@ -2118,7 +2525,7 @@ export function App() {
     {
       label: "编辑",
       items: [
-        { label: "格式化 SQL", disabled: activeTab?.kind !== "query", action: () => void formatActiveQuery() },
+        { label: "格式化 SQL (Ctrl+Shift+F)", disabled: activeTab?.kind !== "query", action: () => void formatActiveQuery() },
         { separator: true },
         { label: "扩展选中 (Ctrl+W)", disabled: activeTab?.kind !== "query", action: () => editorRef.current?.trigger("menu", "editor.action.smartSelect.expand", null) },
         { label: "收窄选中 (Ctrl+Shift+W)", disabled: activeTab?.kind !== "query", action: () => editorRef.current?.trigger("menu", "editor.action.smartSelect.shrink", null) },
@@ -2144,7 +2551,13 @@ export function App() {
       items: [
         { label: "断开连接", disabled: !session, action: () => void disconnect() },
         { separator: true },
-        { label: "表列表", disabled: !session || !activeNode, action: () => activeNode && void openTableList(activeNode) },
+        {
+          label: "表列表",
+          disabled: !session || (!activeNode && roots.length === 0),
+          action: () => session && void openTableList(activeNode ?? roots[0])
+        },
+        { label: "新建表…", disabled: !session, action: () => void createTableDraft() },
+        { label: "脚本列表", disabled: !session, action: () => void openScriptList() },
         { label: "刷新对象", disabled: !session, action: () => void refreshNode(activeNode ?? roots[0]) }
       ]
     },
@@ -2152,6 +2565,7 @@ export function App() {
       label: "查询",
       items: [
         { label: "新建查询", action: createQueryTab },
+        { label: "新建脚本…", disabled: !session, action: () => void createScript() },
         { separator: true },
         { label: "执行 (Ctrl+R)", disabled: activeTab?.kind !== "query", action: () => void runSelectionOrAll() },
         { label: "停止", disabled: !activeTab?.running, action: () => void stopQuery() },
@@ -2161,7 +2575,8 @@ export function App() {
     {
       label: "工具",
       items: [
-        { label: "连接管理…", action: () => setConnectionDialog({ mode: "new" }) },
+        { label: "连接管理…", action: () => setManagerOpen(true) },
+        { label: "新建连接…", action: () => setConnectionDialog({ mode: "new" }) },
         { separator: true },
         { label: "选项…", action: () => setOptionsOpen(true) }
       ]
@@ -2232,11 +2647,20 @@ export function App() {
         <button
           type="button"
           className="tbtn"
-          disabled={!session || !activeNode}
+          disabled={!session || (!activeNode && roots.length === 0)}
           title="打开当前对象的表列表"
-          onClick={() => activeNode && void openTableList(activeNode)}
+          onClick={() => session && void openTableList(activeNode ?? roots[0])}
         >
           <Icon name="list" />表列表
+        </button>
+        <button
+          type="button"
+          className="tbtn"
+          disabled={!session}
+          title="查看 / 管理本地 SQL 脚本"
+          onClick={() => void openScriptList()}
+        >
+          <Icon name="code" />脚本
         </button>
         <span className="tbtn-push" aria-hidden="true" />
         <span className="toolbar-text">行数限制 {activeTab && activeTab.kind === "data" ? activeTab.pageSize : settings.pageSize}</span>
@@ -2324,10 +2748,13 @@ export function App() {
                     name={tab.kind === "query" ? "terminal"
                       : tab.kind === "data" ? "table"
                         : tab.kind === "tables" ? "list"
-                          : "columns"}
+                          : tab.kind === "scripts" ? "code"
+                            : "columns"}
                     size={13}
                   />
                   <span className="work-tab-title">{tab.title}</span>
+                  {/* 脚本有未保存的修改 → 标题后面点一个小圆点 */}
+                  {isScriptDirty(tab) && <span className="work-tab-dot" title="有未保存的修改" aria-label="有未保存的修改" />}
                 </button>
                 {/* 「对象」页常驻，不给关闭按钮 */}
                 {tab.kind !== "tables" && (
@@ -2464,8 +2891,77 @@ export function App() {
               </>
             )}
 
+            {activeTab?.kind === "scripts" && (
+              <>
+                <button type="button" className="tbtn" onClick={() => void createScript()}>
+                  <Icon name="plus" />新建脚本
+                </button>
+                <button
+                  type="button"
+                  className="tbtn"
+                  disabled={scriptSelections.length === 0}
+                  onClick={() => scriptSelections.forEach(script => void openScriptFile(script))}
+                >
+                  <Icon name="terminal" />打开
+                </button>
+                <button
+                  type="button"
+                  className="tbtn"
+                  disabled={scriptSelections.length !== 1}
+                  onClick={() => scriptSelections[0] && void renameScriptFile(scriptSelections[0])}
+                >
+                  <Icon name="pencil" />重命名
+                </button>
+                <button
+                  type="button"
+                  className="tbtn"
+                  disabled={scriptSelections.length !== 1}
+                  onClick={() => scriptSelections[0] && void revealPath(scriptSelections[0].path)}
+                >
+                  <Icon name="folderOpen" />在文件夹中显示
+                </button>
+                <button
+                  type="button"
+                  className="tbtn is-danger"
+                  disabled={scriptSelections.length === 0}
+                  onClick={() => void deleteScriptFiles(scriptSelections)}
+                >
+                  <Icon name="trash" />删除
+                </button>
+                <span className="tbtn-sep" aria-hidden="true" />
+                <button
+                  type="button"
+                  className={`tbtn${activeTab.loading ? " is-busy" : ""}`}
+                  disabled={activeTab.loading}
+                  onClick={() => void refreshScriptList(activeTab.id)}
+                >
+                  <Icon name="refresh" />刷新
+                </button>
+                <span className="tbtn-sep" aria-hidden="true" />
+                <span className="toolbar-text">{activeTab.scripts.length} 个脚本</span>
+                <span className="tbtn-push" aria-hidden="true" />
+                <span className="toolbar-search">
+                  <Icon name="search" size={13} />
+                  <input
+                    type="search"
+                    value={scriptFilter}
+                    placeholder="搜索脚本名 / 数据库…"
+                    aria-label="搜索脚本"
+                    onChange={event => setScriptFilter(event.target.value)}
+                  />
+                </span>
+              </>
+            )}
+
             {activeTab?.kind === "tables" && (
               <>
+                <button
+                  type="button"
+                  className="tbtn"
+                  onClick={() => void createTableDraft(activeTab.node.catalog ?? activeTab.node.label)}
+                >
+                  <Icon name="plus" />新建表
+                </button>
                 <button
                   type="button"
                   className="tbtn"
@@ -2590,7 +3086,7 @@ export function App() {
 
             <Panel id="result" className="result-panel" defaultSize="20%" minSize="12%">
           <div className={`result${tabs.length === 0 ? " is-hidden" : ""}`}>
-            <div className={`result-tabs${activeTab?.kind === "tables" ? " is-hidden" : ""}`}>
+            <div className={`result-tabs${pageTab ? " is-hidden" : ""}`}>
               <button type="button" className={`result-tab${resultPane === "grid" ? " is-active" : ""}`} onClick={() => setResultPane("grid")}>
                 结果集
                 {rows.length > 0 && <span className="result-count">{rows.length}</span>}
@@ -2729,6 +3225,21 @@ export function App() {
                 </div>
               )}
 
+              {activeTab?.kind === "scripts" && (
+                <div className="table-list-host">
+                  <ScriptList
+                    scripts={activeTab.scripts}
+                    loading={activeTab.loading}
+                    filter={scriptFilter}
+                    flashToken={scriptFlash}
+                    selectedPaths={scriptSelection}
+                    onSelectionChange={setScriptSelection}
+                    onOpen={script => void openScriptFile(script)}
+                    onContextMenu={script => void popupNativeMenu(buildScriptMenuEntries(script))}
+                  />
+                </div>
+              )}
+
               {resultPane === "grid" && activeTab?.kind === "design" && (
                 <TableDesign
                   table={activeTab.node.label}
@@ -2736,6 +3247,7 @@ export function App() {
                   indexes={activeTab.indexes}
                   ddl={activeTab.ddl}
                   loading={activeTab.loading}
+                  onApply={ddl => void applyTableDdl(activeTab.id, activeTab.node, ddl)}
                 />
               )}
 
@@ -2758,7 +3270,7 @@ export function App() {
                 </div>
               )}
 
-              {resultPane === "msg" && activeTab?.kind !== "tables" && (
+              {resultPane === "msg" && !pageTab && (
                 <div className="console">
                   {activeTab?.messages.length
                     ? activeTab.messages.map((line, index) => <div key={index}>{line}</div>)
@@ -2766,7 +3278,7 @@ export function App() {
                 </div>
               )}
 
-              {resultPane === "plan" && activeTab?.kind !== "tables" && (
+              {resultPane === "plan" && !pageTab && (
                 <ResultGrid
                   columns={activeTab?.kind === "query" ? activeTab.plan?.columns ?? [] : []}
                   rows={activeTab?.kind === "query" ? activeTab.plan?.rows ?? [] : []}
@@ -2774,7 +3286,7 @@ export function App() {
               )}
 
               {/* 日志面板常驻（切到别的页时只是隐藏），筛选、搜索、滚动位置都能保住 */}
-              {activeTab?.kind !== "tables" && (
+              {!pageTab && (
                 <LogConsole
                   records={logs}
                   active={resultPane === "log"}
@@ -2816,7 +3328,7 @@ export function App() {
         </span>
         <span className="status-item">{productLabel}</span>
         <span className="status-item">{currentDatabase}</span>
-        <span className="status-item">{activeTab?.kind === "query" ? "只读查询" : activeTab?.kind === "data" ? "数据浏览" : "表结构"}</span>
+        <span className="status-item">{tabKindLabel(activeTab?.kind)}</span>
         <span className="status-item">结果 {rows.length} 行{lastCost != null ? ` / ${lastCost} ms` : ""}</span>
         <span className="status-spacer" />
         <span className="status-item">{status}</span>
@@ -2848,11 +3360,36 @@ export function App() {
           mode={connectionDialog.mode}
           source={connectionDialog.connection}
           onClose={() => setConnectionDialog(null)}
-          onSaved={async name => {
+          onSaved={async (name, options) => {
             setConnectionDialog(null);
             await refreshConnections();
             setStatus(`已保存连接 ${name}`);
+
+            /* 「保存并连接」：直接连上，省得再去树里点一次 */
+            if (options?.connect) {
+              const connection = { name };
+              const saved = (await invoke<{ connections: SavedConnection[] }>("connections.list")).connections
+                .find(item => item.name === connection.name);
+
+              if (saved)
+                await openConnection(saved);
+            }
           }}
+        />
+      )}
+
+      {managerOpen && (
+        <ConnectionManager
+          connections={connections}
+          connected={session?.name ?? null}
+          onClose={() => setManagerOpen(false)}
+          onOpen={connection => {
+            setManagerOpen(false);
+            void openConnection(connection);
+          }}
+          onEdit={(mode, connection) => setConnectionDialog({ mode, connection: connection ?? null })}
+          onDelete={connection => void deleteConnection(connection.name)}
+          onRefresh={() => void refreshConnections()}
         />
       )}
 
@@ -2893,7 +3430,11 @@ export function App() {
                 else if (event.key === "Escape")
                   answerText(null);
               }}
-              ref={input => input?.focus()}
+              /* 打开即聚焦并全选默认值，改名时直接输入就能覆盖 */
+              ref={input => {
+                input?.focus();
+                input?.select();
+              }}
             />
           </div>
           <div className="modal-actions">
@@ -2931,6 +3472,45 @@ function tableParams(sessionId: string, node: SchemaNode): Record<string, unknow
     catalog: node.catalog,
     schema: node.schema
   };
+}
+
+/** SQL 字面量：NULL 原样，其余单引号转义后包起来 */
+function sqlLiteral(value: string | null | undefined): string {
+  return value === null || value === undefined ? "NULL" : `'${value.replace(/'/g, "''")}'`;
+}
+
+/** 状态栏右侧的页面类型文案 */
+function tabKindLabel(kind: WorkTab["kind"] | undefined): string {
+  switch (kind) {
+    case "query":
+      return "查询控制台";
+    case "data":
+      return "数据浏览";
+    case "design":
+      return "表结构";
+    case "tables":
+      return "对象列表";
+    case "scripts":
+      return "脚本列表";
+    default:
+      return "就绪";
+  }
+}
+
+/** 按数据库类型生成建表草稿（只是模板，用户可随意改） */
+function createTableTemplate(name: string, type: string): string {
+  switch (type) {
+    case "postgresql":
+      return `CREATE TABLE ${name} (\n  id SERIAL PRIMARY KEY,\n  name VARCHAR(64) NOT NULL\n);\n`;
+    case "sqlite":
+      return `CREATE TABLE ${name} (\n  id INTEGER PRIMARY KEY AUTOINCREMENT,\n  name VARCHAR(64) NOT NULL\n);\n`;
+    case "dm":
+      return `CREATE TABLE ${name} (\n  id INT IDENTITY(1, 1) PRIMARY KEY,\n  name VARCHAR(64) NOT NULL\n);\n`;
+    case "redis":
+      return `-- Redis 没有建表语句，这里按键值对思路写两句备注：\n-- SET ${name}:1 "value"\n-- HSET ${name}:1 field "value"\n`;
+    default:
+      return `CREATE TABLE \`${name}\` (\n  \`id\` INT NOT NULL AUTO_INCREMENT,\n  \`name\` VARCHAR(64) NOT NULL,\n  PRIMARY KEY (\`id\`)\n);\n`;
+  }
 }
 
 /** 数据层返回的补全类型 → Monaco 内置弹窗的图标类型 */

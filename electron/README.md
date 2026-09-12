@@ -25,6 +25,21 @@ Electron 只负责界面，数据库相关能力全部保留在 Java 侧。两�
 | `scripts/rpc-smoke.cjs` | 无界面冒烟测试（本地 SQLite，不访问外部数据库） |
 | `scripts/ui-smoke.cjs` | 界面冒烟测试：真实窗口点击连接并执行，输出截图 |
 
+## 功能
+
+| 区域 | 能力 |
+| --- | --- |
+| 对象导航 | 我的连接 → 连接 → 数据库 → 数据表 → 表 / 查询脚本；右键走系统原生菜单，支持搜索、展开状态保留、双击连库 |
+| 连接管理 | 「工具 → 连接管理」集中完成新建 / 编辑 / 复制 / 删除 / 测试连接 / 打开连接，双击一行即连 |
+| 连接编辑器 | 常规（连接名、类型、地址、库、账号、密码可见性）+ 高级（时区、SSL、TINYINT 映射、附加参数、自定义 JDBC URL），带字段校验与「保存并连接」 |
+| 对象页（表列表） | 名称 / 行数 / 数据长度 / 引擎 / 注释 / 时间，表头排序、搜索、多选、批量删除；「新建表」按连接类型生成建表草稿到查询控制台 |
+| 数据页 | 分页浏览、单元格编辑、整行/整列/矩形框选、列宽拖动与自适应、斑马纹、全表搜索（命中黄底）、复制为 INSERT / UPDATE / JSON、导出 CSV / Excel、提交与回滚 |
+| 表设计页 | 字段与索引明细 + 可就地编辑 DDL 并「执行 DDL」（执行前二次确认） |
+| 查询控制台 | Monaco 编辑器、智能提示、格式化、执行计划、右键菜单与 FX 版一致；`Ctrl+R` 执行、`Ctrl+Shift+F` 格式化、`Ctrl+W` 智能扩选 |
+| 脚本 | `Ctrl+S` 保存、`Ctrl+Shift+S` 另存为；「脚本」对象页列出当前连接下所有库的 .sql，支持搜索、排序、多选、重命名、删除、在文件夹中显示；未保存的标签带圆点标记，关标签 / 断开连接前会拦一道 |
+| 日志 | 按语句聚合的批次视图，按「全部 / 语句 / 错误」筛选、关键字搜索、换行开关、跟随最新、单条与整批复制；语句报错只进日志页 |
+| 选项 | 主题、界面字号、编辑器字号 / 换行 / 智能提示、结果表字号 / 斑马纹 / 行号、分页大小 |
+
 ## 开发
 
 ```powershell
@@ -115,6 +130,11 @@ Valkyrie/
 | `connections.list` / `connections.save` / `connections.delete` | 连接配置增删查（密码沿用现有 AES-GCM 加密落盘） |
 | `connection.open` / `connection.close` | 打开/关闭连接，返回会话号与根节点 |
 | `schema.children` | 按节点 id 懒加载子节点（库 → 表容器 → 表） |
+| `table.page` / `table.columns` / `table.indexes` / `table.ddl` | 表数据分页与结构、索引、建表语句 |
+| `result.update` / `result.insert` / `result.delete` / `result.setNull` | 结果集编辑（写入待提交缓冲） |
+| `result.commit` / `result.rollback` / `result.reload` / `result.export` | 提交 / 回滚 / 重新读取 / 导出 CSV、Excel |
+| `queryFiles.list` / `queryFiles.read` / `queryFiles.save` / `queryFiles.rename` / `queryFiles.delete` | 本地脚本文件读写（`list` 不带 catalog 时列出该连接下所有库的脚本） |
+| `sql.format` / `sql.suggest` | SQL 格式化与智能提示候选 |
 | `query.execute` / `query.cancel` | 执行 SQL / 取消执行，执行过程通过 `query.progress` 推送 |
 
 ## 已知事项
@@ -122,6 +142,8 @@ Valkyrie/
 - 渲染层当前会拿到解密后的连接密码（与 JavaFX 版本行为一致），后续建议改为渲染层不持有密码、
   由数据层在 `connection.open` 时按名称取用。
 - Monaco 目前全量引入，bundle 约 4MB；后续只需 SQL 语言即可显著瘦身。
+- 建表目前是「按数据库类型生成草稿 → 在查询控制台里改完再执行」，还没有列级别的表设计向导；
+  查询历史、SSH 隧道、Redis 键浏览器也还没做。
 - 样式里大量使用 `light-dark()` 跟随 `document.documentElement.style.colorScheme` 切换主题，
   因此 `vite.config.ts` 的 `build.target` 必须保持支持该特性的 Chromium 版本；
   一旦被降级成 `--lightningcss-*` 变量，深色主题在打包版里会完全失效。

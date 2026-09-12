@@ -29,6 +29,16 @@ export interface TableMeta {
   updateTime?: number;
 }
 
+/** 本地查询脚本文件（脚本对象页用） */
+export interface ScriptFile {
+  name: string;
+  path: string;
+  /** 所属数据库目录 */
+  catalog: string;
+  size: number;
+  modified: number;
+}
+
 export type NodeKind = "ROOT" | "CONNECTION" | "CATALOG" | "SCHEMA" | "TABLE" | "QUERY";
 
 export interface SchemaNode {
@@ -145,6 +155,7 @@ declare global {
       windowControl?: (action: "minimize" | "maximize" | "close") => void;
       onWindowState?: (callback: (state: { maximized: boolean }) => void) => () => void;
       chooseSavePath?: (options: { title?: string; defaultPath?: string; filters?: { name: string; extensions: string[] }[] }) => Promise<string | null>;
+      chooseOpenPath?: (options: { title?: string; defaultPath?: string; directory?: boolean; filters?: { name: string; extensions: string[] }[] }) => Promise<string | null>;
       revealPath?: (target: string) => Promise<boolean>;
       showMessage?: (options: MessageOptions) => Promise<number>;
       showMenu?: (options: { items: NativeMenuItem[] }) => Promise<string | null>;
@@ -182,6 +193,11 @@ export function onWindowState(callback: (state: { maximized: boolean }) => void)
 
 export function chooseSavePath(options: { title?: string; defaultPath?: string; filters?: { name: string; extensions: string[] }[] }): Promise<string | null> {
   return window.valkyrie?.chooseSavePath?.(options) ?? Promise.resolve(null);
+}
+
+/** 弹系统"打开文件/选择目录"对话框（SQLite 文件、脚本导入等） */
+export function chooseOpenPath(options: { title?: string; defaultPath?: string; directory?: boolean; filters?: { name: string; extensions: string[] }[] }): Promise<string | null> {
+  return window.valkyrie?.chooseOpenPath?.(options) ?? Promise.resolve(null);
 }
 
 export function revealPath(target: string): Promise<boolean> {

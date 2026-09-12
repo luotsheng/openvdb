@@ -621,15 +621,15 @@ async function main() {
   await delay(500);
 
   const dialogState = await window.webContents.executeJavaScript(`(() => ({
-    title: document.querySelector(".modal-form .modal-title") ? document.querySelector(".modal-form .modal-title").textContent : null,
-    fields: document.querySelectorAll(".modal-form input").length + document.querySelectorAll(".modal-form .vk-select").length,
-    selects: [...document.querySelectorAll(".modal-form .vk-select")].map(item => item.querySelector(".vk-select-value").textContent),
-    buttons: [...document.querySelectorAll(".modal-form .mini-btn")].map(node => node.textContent)
+    title: document.querySelector(".conn-dialog .modal-title") ? document.querySelector(".conn-dialog .modal-title").textContent : null,
+    fields: document.querySelectorAll(".conn-dialog input").length + document.querySelectorAll(".conn-dialog .vk-select").length,
+    selects: [...document.querySelectorAll(".conn-dialog .vk-select")].map(item => item.querySelector(".vk-select-value").textContent),
+    buttons: [...document.querySelectorAll(".conn-dialog .mini-btn")].map(node => node.textContent)
   }))()`);
 
   /* 对话框可拖动（按标题栏拖 60×40），位移在 React 重渲染后测量 */
   const dialogBefore = await window.webContents.executeJavaScript(`(() => {
-    const modal = document.querySelector(".modal-form");
+    const modal = document.querySelector(".conn-dialog");
     const title = modal ? modal.querySelector(".modal-title") : null;
     if (!modal || !title) return null;
 
@@ -646,7 +646,7 @@ async function main() {
   await delay(250);
 
   const dialogAfter = await window.webContents.executeJavaScript(`(() => {
-    const modal = document.querySelector(".modal-form");
+    const modal = document.querySelector(".conn-dialog");
     if (!modal) return null;
     const box = modal.getBoundingClientRect();
     return { left: Math.round(box.left), top: Math.round(box.top) };
@@ -657,7 +657,7 @@ async function main() {
     : null;
 
   result.closeDialog = await window.webContents.executeJavaScript(`(() => {
-    const button = [...document.querySelectorAll(".modal-form .mini-btn")].find(node => node.textContent === "取消");
+    const button = [...document.querySelectorAll(".conn-dialog .mini-btn")].find(node => node.textContent === "取消");
     if (!button) return { ok: false };
     button.click();
     return { ok: true };

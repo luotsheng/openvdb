@@ -94,6 +94,19 @@ function registerIpc() {
     return true;
   });
 
+  /* 选择文件（SQLite 数据库文件等）：由主进程弹系统对话框 */
+  ipcMain.handle("valkyrie:choose-open-path", async (event, options) => {
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    const result = await dialog.showOpenDialog(owner, {
+      title: options?.title || "选择文件",
+      defaultPath: options?.defaultPath,
+      properties: options?.directory ? ["openDirectory"] : ["openFile"],
+      filters: options?.filters || [{ name: "所有文件", extensions: ["*"] }]
+    });
+
+    return result.canceled || result.filePaths.length === 0 ? null : result.filePaths[0];
+  });
+
   /*
    * 系统原生消息框（错误 / 提示）：模态挂在主窗口上，不走网页弹层。
    * 自动化脚本可设 VALKYRIE_SUPPRESS_DIALOGS=1 跳过，避免阻塞。

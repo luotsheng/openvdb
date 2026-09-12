@@ -1655,7 +1655,10 @@ table.design-table .is-null { color: var(--muted); font-style: italic; }
 
 .ddl {
   flex: 0 0 auto;
-  max-height: 180px;
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+  min-height: 120px;
   overflow: auto;
   border-top: 1px solid var(--line);
   background: var(--panel);
@@ -1671,12 +1674,33 @@ table.design-table .is-null { color: var(--muted); font-style: italic; }
   font-size: 11px;
 }
 
-.ddl pre {
+/* 标题栏右侧：复制 / 还原 / 执行 */
+.ddl-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.ddl-dirty { color: var(--red); }
+
+.ddl-actions .mini-btn { height: 22px; padding: 0 8px; font-size: 11.5px; }
+
+/* DDL 直接就地编辑，改完点「执行 DDL」应用 */
+.ddl-editor {
+  flex: 1;
+  min-height: 96px;
   margin: 0;
   padding: 8px 12px;
-  font-family: var(--mono);
+  border: 0;
+  background: transparent;
+  color: var(--text);
   font-size: 12px;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
   white-space: pre;
+  overflow: auto;
 }
 
 /* ------------------------------ 对象信息 ------------------------------ */
@@ -1753,4 +1777,187 @@ table.design-table .is-null { color: var(--muted); font-style: italic; }
 
 @media (max-width: 1100px) {
   .info { display: none; }
+}
+
+/* ------------------------- 连接编辑器 / 连接管理 ------------------------- */
+
+.conn-dialog { width: min(620px, calc(100% - 32px)); }
+.conn-title-icon { display: inline-flex; align-items: center; }
+
+.conn-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 6px 12px 0;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--line);
+}
+
+.conn-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-bottom: 0;
+  border-radius: 6px 6px 0 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.conn-tab:hover { color: var(--text); }
+
+.conn-tab.is-active {
+  background: var(--panel);
+  border-color: var(--line);
+  color: var(--text);
+  box-shadow: inset 0 2px 0 var(--accent);
+}
+
+.conn-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--red);
+}
+
+.conn-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-height: min(56vh, 520px);
+  overflow: auto;
+}
+
+.conn-section {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.conn-section-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.conn-row { display: flex; gap: 12px; }
+
+.conn-field {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.conn-field.is-narrow { flex: 0 0 120px; }
+.conn-field > label { color: var(--muted); font-size: 12px; }
+.conn-req { color: var(--red); }
+
+.conn-field input,
+.conn-url {
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--field);
+  color: var(--text);
+  font-size: 13px;
+}
+
+.conn-field input:focus,
+.conn-url:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.conn-field input[aria-invalid="true"] { border-color: var(--red); }
+
+.conn-inline { display: flex; align-items: center; gap: 8px; }
+.conn-inline > input { flex: 1; min-width: 0; }
+
+.conn-hint {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+  line-height: 1.4;
+}
+
+.conn-hint.is-error { color: var(--red); }
+
+.conn-url {
+  height: auto;
+  padding: 6px 8px;
+  resize: vertical;
+  font-size: 12.5px;
+  line-height: 1.5;
+  word-break: break-all;
+}
+
+.conn-url[readonly] { background: var(--chrome); color: var(--muted); }
+.conn-body .form-check { color: var(--text); font-size: 13px; }
+
+/* 连接管理窗口 */
+.conn-manager {
+  display: flex;
+  flex-direction: column;
+  width: min(940px, calc(100% - 48px));
+  max-height: min(80vh, 720px);
+}
+
+.manager-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  padding: 6px 10px;
+  background: var(--chrome);
+  border-bottom: 1px solid var(--line);
+}
+
+.manager-body {
+  flex: 1;
+  min-height: 180px;
+  overflow: auto;
+  background: var(--panel);
+}
+
+.conn-table .is-ok { color: var(--green); }
+.conn-table .is-error { color: var(--red); max-width: 360px; }
+
+/* 脚本对象页 */
+table.script-list .script-catalog {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+}
+
+table.script-list .table-name { min-width: 200px; max-width: 520px; }
+
+/* 标签页上的「未保存」圆点 */
+.work-tab-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  margin-left: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.modal-status .is-ok,
+.modal-status .is-error {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }

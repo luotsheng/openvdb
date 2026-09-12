@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import type { TableColumn, TableIndex } from "../api";
 import { Icon } from "./icons";
 
@@ -7,9 +8,25 @@ interface TableDesignProps {
   indexes: TableIndex[];
   ddl: string;
   loading: boolean;
+  /** 执行编辑后的 DDL（外层负责确认、执行与重新读取结构） */
+  onApply?: (ddl: string) => void;
 }
 
-export function TableDesign({ table, columns, indexes, ddl, loading }: TableDesignProps) {
+export function TableDesign({ table, columns, indexes, ddl, loading, onApply }: TableDesignProps) {
+  const [edited, setEdited] = useState(ddl);
+  const [copied, setCopied] = useState(false);
+
+  /* 重新读取结构 / 切换表时同步一次，避免把上一张表的编辑串带过来 */
+  useEffect(() => setEdited(ddl), [ddl, table]);
+
+  const changed = edited.trim() !== ddl.trim();
+
+  async function copyDdl() {
+    await navigator.clipboard?.writeText(edited);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1200);
+  }
+
   if (loading)
     return <div className="empty">正在读取表结构…</div>;
 
@@ -57,8 +74,33 @@ export function TableDesign({ table, columns, indexes, ddl, loading }: TableDesi
       </div>
 
       <div className="ddl">
-        <div className="ddl-title"><Icon name="code" />DDL · {table}</div>
-        <pre>{ddl || "-- 无 DDL"}</pre>
+        <div className="ddl-title">
+          <Icon name="code" />DDL · {table}
+          <span className="ddl-actions">
+            {changed && <span className="ddl-dirty">已修改</span>}
+            <button type="button" className="mini-btn" onClick={() => void copyDdl()}>
+              <Icon name="copy" size={12} />{copied ? "已复制" : "复制"}
+            </button>
+            <button type="button" className="mini-btn" disabled={!changed} onClick={() => setEdited(ddl)}>
+              <Icon name="refresh" size={12} />还原
+            </button>
+            <button
+              type="button"
+              className="mini-btn is-danger"
+              disabled={!changed || !onApply}
+              onClick={() => onApply?.(edited)}
+            >
+              <Icon name="play" size={12} />执行 DDL
+            </button>
+          </span>
+        </div>
+        <textarea
+          className="ddl-editor mono"
+          value={edited || "-- 无 DDL"}
+          spellCheck={false}
+          aria-label={`${table} 的 DDL`}
+          onChange={event => setEdited(event.target.value)}
+        />
       </div>
     </div>
   );
