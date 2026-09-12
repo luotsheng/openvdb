@@ -9,14 +9,14 @@ import valkyrie.core.model.DiskSavedConnection;
 import valkyrie.core.utils.FileUtils;
 import valkyrie.core.utils.JSONUtils;
 import valkyrie.core.utils.SecretCipher;
-import valkyrie.utils.Captor;
 import valkyrie.utils.io.UFile;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.text.Collator;
 import java.util.*;
 
@@ -41,12 +41,15 @@ public class ConnectionRepository
 
                 dir.mkdirs();
 
-                if (!meta.exists())
-                        Captor.call(meta::createNewFile);
+                /* 先写临时文件再移动，避免写入中断时留下损坏的配置 */
+                UFile tmp = new UFile(dir, Users.META_INF + ".tmp");
 
-                try (FileOutputStream fos = new FileOutputStream(meta)) {
-                        fos.write(encryptPassword(content).getBytes(StandardCharsets.UTF_8));
+                try {
+                        Files.write(tmp.toPath(),
+                                encryptPassword(content).getBytes(StandardCharsets.UTF_8));
+                        Files.move(tmp.toPath(), meta.toPath(), StandardCopyOption.REPLACE_EXISTING);
                 } catch (IOException e) {
+                        tmp.forceDelete();
                         /* 删除文件夹 */
                         dir.forceDelete();
                         throw new CoreException(e);
@@ -74,6 +77,11 @@ public class ConnectionRepository
                 new UFile(Users.connectionDir, name).forceDelete();
         }
 
+        public static boolean exists(String name)
+        {
+                return name != null && new UFile(Users.connectionDir, name).exists();
+        }
+
         public static List<DiskSavedConnection> loadConnections()
         {
                 UFile[] files = Users.connectionDir.listFiles();
@@ -85,8 +93,13 @@ public class ConnectionRepository
                 for (UFile file : files) {
                         UFile meta = new UFile(file, Users.META_INF);
 
-                        if (FileUtils.isDeepEmptyDirectory(file)) {
-                                file.forceDelete();
+                        if (!meta.isFile()) {
+                                if (FileUtils.isDeepEmptyDirectory(file)) {
+                                        file.forceDelete();
+                                } else {
+                                        LOG.warn("连接配置缺失，已跳过：{}", file.getAbsolutePath());
+                                }
+
                                 continue;
                         }
 
@@ -96,11 +109,19 @@ public class ConnectionRepository
 
                                 DiskSavedConnection connection =
                                         JSONUtils.toJavaObject(content, DiskSavedConnection.class);
+
+                                if (connection == null)
+                                        throw new CoreException("连接配置内容为空或格式不正确");
+
+                                if (connection.getName() == null || connection.getName().isBlank())
+                                        connection.setName(file.getName());
+
                                 connection.setPassword(decryptPassword(connection.getPassword()));
 
                                 ret.add(connection);
                         } catch (Exception e) {
-                                throw new CoreException(e);
+                                /* 单个连接配置损坏时跳过，避免整个应用无法启动 */
+                                LOG.error("加载连接配置失败，已跳过：{}", meta.getAbsolutePath(), e);
                         }
                 }
 
