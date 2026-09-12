@@ -71,6 +71,37 @@ public class QueryFileRepository
                 return models;
         }
 
+        /**
+         * 列出某个连接下所有数据库目录里的脚本（脚本对象页用）。
+         * 目录结构：{@code <连接>/<数据库>/<脚本>.sql}
+         */
+        public static List<QueryFile> loadConnectionScripts(String connection)
+        {
+                List<QueryFile> models = new ArrayList<>();
+
+                File[] catalogs = getFile(connection).listFiles();
+
+                if (catalogs == null)
+                        return models;
+
+                for (File catalog : catalogs) {
+                        File[] files = catalog.listFiles();
+
+                        if (files == null)
+                                continue;
+
+                        for (File file : files) {
+                                if (file.isFile())
+                                        models.add(new QueryFile(file));
+                        }
+                }
+
+                Collator collator = Collator.getInstance(Locale.CHINA);
+                models.sort(Comparator.comparing(QueryFile::getName, collator));
+
+                return models;
+        }
+
         @SuppressWarnings("SameParameterValue")
         public static QueryFile getFile(String basePath)
         {

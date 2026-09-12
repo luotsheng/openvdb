@@ -861,18 +861,24 @@ public class RpcServer
 
         private Object listQueryFiles(JSONObject params)
         {
-                String basePath = require(params.getString("connection"))
-                        + "/" + params.getString("catalog");
+                String connection = params.getString("connection");
+                String catalog = params.getString("catalog");
+
+                if (connection == null || connection.isBlank())
+                        throw new IllegalArgumentException("connection 不能为空");
 
                 JSONArray files = new JSONArray();
 
-                for (QueryFile file : QueryFileRepository.loadScriptFiles(basePath)) {
-                        if (!file.isFile())
-                                continue;
+                /* 不指定数据库：列出该连接下全部数据库目录里的脚本（脚本对象页用） */
+                List<QueryFile> scripts = catalog == null || catalog.isBlank()
+                        ? QueryFileRepository.loadConnectionScripts(connection)
+                        : QueryFileRepository.loadScriptFiles(connection + "/" + catalog);
 
+                for (QueryFile file : scripts) {
                         JSONObject json = new JSONObject();
                         json.put("name", file.getName());
                         json.put("path", file.getAbsolutePath());
+                        json.put("catalog", file.getParentFile() == null ? "" : file.getParentFile().getName());
                         json.put("size", file.length());
                         json.put("modified", file.lastModified());
                         files.add(json);
@@ -880,6 +886,7 @@ public class RpcServer
 
                 JSONObject ret = new JSONObject();
                 ret.put("files", files);
+                ret.put("connection", connection);
                 return ret;
         }
 
