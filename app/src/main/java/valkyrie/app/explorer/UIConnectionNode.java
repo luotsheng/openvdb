@@ -72,6 +72,9 @@ public class UIConnectionNode extends UIExplorerNode
                 MenuItem editMenuItem = new MenuItem("编辑连接");
                 editMenuItem.setOnAction(e -> edit());
 
+                MenuItem copyConnectionItem = new MenuItem("复制连接");
+                copyConnectionItem.setOnAction(e -> copyConnection());
+
                 MenuItem deleteMenuItem = new MenuItem("删除连接");
                 deleteMenuItem.setOnAction(e -> delete());
 
@@ -84,6 +87,7 @@ public class UIConnectionNode extends UIExplorerNode
                         copyNameItem,
                         new SeparatorMenuItem(),
                         editMenuItem,
+                        copyConnectionItem,
                         deleteMenuItem
                 );
 
@@ -130,6 +134,11 @@ public class UIConnectionNode extends UIExplorerNode
                 } else {
                         new CreateOrEditConnectionDialog(propertyModel).showAndWait();
                 }
+        }
+
+        private void copyConnection()
+        {
+                CreateOrEditConnectionDialog.copyOf(propertyModel).showAndWait();
         }
 
         private void delete()

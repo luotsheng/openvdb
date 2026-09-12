@@ -36,26 +36,35 @@ public class CreateOrEditConnectionDialog extends Stage
         private final ConnectionPropertyModel oldProperty;
         private final ConnectionPropertyModel newProperty;
         private final Label status = new Label();
+        private final String title;
 
         private static final int WW = 700;
         private static final int WH = 500;
 
         public CreateOrEditConnectionDialog(DbType dbType)
         {
-                this(dbType, null);
+                this(dbType, null, false, "新增连接");
         }
 
         public CreateOrEditConnectionDialog(ConnectionPropertyModel propertyModel)
         {
-                this(propertyModel.getDbType(), propertyModel);
+                this(propertyModel.getDbType(), propertyModel, true, "编辑连接");
         }
 
         public CreateOrEditConnectionDialog(DbType dbType, ConnectionPropertyModel newProperty)
         {
-                this.isUpdate = newProperty != null;
-                this.dbType = dbType;
+                this(dbType, newProperty, newProperty != null,
+                        newProperty != null ? "编辑连接" : "新增连接");
+        }
 
-                this.newProperty = isUpdate ? newProperty : switch (dbType) {
+        private CreateOrEditConnectionDialog(DbType dbType, ConnectionPropertyModel property,
+                                             boolean isUpdate, String title)
+        {
+                this.isUpdate = isUpdate;
+                this.dbType = dbType;
+                this.title = title;
+
+                this.newProperty = property != null ? property : switch (dbType) {
                         case mysql -> ConnectionPropertyModel.createMySQL();
                         case postgresql -> ConnectionPropertyModel.createPostgresql();
                         case sqlite -> ConnectionPropertyModel.createSQLite();
@@ -64,7 +73,7 @@ public class CreateOrEditConnectionDialog extends Stage
                 };
 
                 this.oldProperty = isUpdate
-                        ? JSONUtils.deepCopy(newProperty)
+                        ? JSONUtils.deepCopy(property)
                         : null;
 
                 if (!isUpdate)
@@ -73,6 +82,33 @@ public class CreateOrEditConnectionDialog extends Stage
                 setupTabPane();
                 setupButtonBar();
                 setupScene();
+        }
+
+        /**
+         * 复制连接：以已有连接为模板创建一个新连接，复制后打开编辑框，
+         * 修改名称等信息后保存，原连接不受影响。
+         */
+        public static CreateOrEditConnectionDialog copyOf(ConnectionPropertyModel source)
+        {
+                ConnectionPropertyModel copy = JSONUtils.deepCopy(source);
+                copy.setName(nextCopyName(source.getName()));
+
+                return new CreateOrEditConnectionDialog(source.getDbType(), copy, false, "复制连接");
+        }
+
+        private static String nextCopyName(String name)
+        {
+                String base = (name == null || name.isBlank() ? "连接" : name) + " - 副本";
+
+                if (!ConnectionRepository.exists(base))
+                        return base;
+
+                for (int index = 2; ; index++) {
+                        String candidate = base + "(" + index + ")";
+
+                        if (!ConnectionRepository.exists(candidate))
+                                return candidate;
+                }
         }
 
         private void setupTabPane()
@@ -113,7 +149,7 @@ public class CreateOrEditConnectionDialog extends Stage
 
         private void setupScene()
         {
-                setTitle(isUpdate ? "编辑连接" : "新增连接");
+                setTitle(title);
 
                 HBox statusBar = new HBox(status);
                 statusBar.setPadding(new Insets(20, 0, 0, 20));
