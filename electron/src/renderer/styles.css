@@ -1444,7 +1444,12 @@ table.table-list .table-name-text {
 
 .log-row {
   display: grid;
-  grid-template-columns: 42px 76px 62px minmax(0, 1fr) auto 20px;
+  /*
+   * 序号固定宽；时间与标签按内容取宽 —— 时间串是定长的，用 max-content
+   * 既能保证各行对齐，又不会因为字体/字号变化撑破列宽压到下一列上。
+   */
+  grid-template-columns: 42px max-content max-content minmax(0, 1fr) auto 20px;
+  column-gap: 8px;
   align-items: baseline;
   padding: 1px 8px 1px 0;
 }
@@ -1453,7 +1458,7 @@ table.table-list .table-name-text {
 .log-view.is-nowrap .log-row {
   width: max-content;
   min-width: 100%;
-  grid-template-columns: 42px 76px 62px max-content auto 20px;
+  grid-template-columns: 42px max-content max-content max-content auto 20px;
 }
 
 .log-row:hover { background: var(--hover); }
@@ -1474,6 +1479,8 @@ table.table-list .table-name-text {
 
 .log-badge {
   justify-self: start;
+  /* 各类型标签等宽（内容按 max-content 撑，宽度不足时补到 62px），语句列才齐 */
+  min-width: 62px;
   padding: 0 6px;
   border-radius: 4px;
   background: var(--accent-soft);
@@ -1482,6 +1489,8 @@ table.table-list .table-name-text {
   font-weight: 700;
   letter-spacing: .06em;
   line-height: 16px;
+  text-align: center;
+  box-sizing: border-box;
   user-select: none;
 }
 
