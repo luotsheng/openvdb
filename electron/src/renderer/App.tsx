@@ -1099,7 +1099,8 @@ export function App() {
     try {
       const tables = await loadTableNodes(container);
 
-      updateTab(tabId, { tables, loading: false });
+      /* 顺带把标签页绑定的容器节点换成刚读到的这份，后续刷新继续对齐 */
+      updateTab(tabId, { tables, node: container, loading: false });
       setStatus(`已刷新 ${tables.length} 张表`);
       setListFlash(previous => previous + 1);
     } catch (e) {
@@ -1107,6 +1108,82 @@ export function App() {
       setError(messageOf(e));
     } finally {
       setPending(null);
+    }
+  }
+
+  /**
+   * 刷新对象：树里的刷新入口（右键 / 菜单 / 工具条）统一走这里。
+   *
+   * - 先把节点对应的「表容器」找出来（表 → 父容器；库 / 模式 → 它下面的容器），
+   *   `loadTableNodes` 会强制重读容器子节点，所以树上的表列表一起是新的；
+   * - 「对象」页开着就交给 `refreshTableList` —— 和顶部刷新按钮同一条路径，
+   *   因此同样会走 pending、改列表内容并触发闪烁，不会再出现两套刷新行为。
+   */
+  async function refreshObjectList(node: SchemaNode) {
+    const active = sessionRef.current;
+
+    if (!active)
+      return;
+
+    try {
+      /*
+       * 先找出这个节点下可能对应的「表容器」：
+       * 表容器 → 自己；表 → 父容器；库 / 模式 → 底下的容器（库还要再往下走一层模式）。
+       */
+      const candidates: SchemaNode[] = [];
+
+      if (node.kind === "TABLE" && node.hasChildren) {
+        candidates.push(node);
+      } else if (node.kind === "TABLE") {
+        const parent = parentTreeNode(node.id);
+
+        if (parent && parent.kind === "TABLE" && parent.hasChildren)
+          candidates.push(parent);
+      } else if (node.kind === "CATALOG" || node.kind === "SCHEMA") {
+        const children = await loadChildren(active.sessionId, node, true);
+        const direct = children.find(child => child.kind === "TABLE" && child.hasChildren);
+
+        if (direct)
+          candidates.push(direct);
+
+        for (const schema of children.filter(child => child.kind === "SCHEMA")) {
+          const grand = await loadChildren(active.sessionId, schema, true);
+          const found = grand.find(child => child.kind === "TABLE" && child.hasChildren);
+
+          if (found)
+            candidates.push(found);
+        }
+      }
+
+      /* 页面里的容器节点 id 每次加载都会变，按 catalog / schema 对齐 */
+      const page = tabs.find((tab): tab is TableListTab => {
+        if (tab.kind !== "tables")
+          return false;
+
+        return candidates.some(item => item.catalog === tab.node.catalog && item.schema === tab.node.schema);
+      });
+      const container = (page
+        ? candidates.find(item => item.catalog === page.node.catalog && item.schema === page.node.schema)
+        : undefined) ?? candidates[0];
+
+      if (!container) {
+        setStatus(`已刷新 ${node.label}`);
+        flash(`已刷新 ${node.label}`);
+        return;
+      }
+
+      /* 开着「对象」页 → 走顶部刷新按钮同一条路径（pending + 换数据 + 闪烁） */
+      if (page) {
+        await refreshTableList(page.id, container);
+        return;
+      }
+
+      /* 没开「对象」页：把树刷新掉就行（列表条数与提示由上面的分支负责） */
+      await loadTableNodes(container);
+      setStatus(`已刷新 ${node.label}`);
+      flash(`已刷新 ${node.label}`);
+    } catch (e) {
+      setError(messageOf(e));
     }
   }
 
@@ -1605,7 +1682,7 @@ export function App() {
       }));
 
       await loadDesign(tabId, node);
-      await refreshTableContainer(node);
+      await refreshObjectList(node);
       setStatus("DDL 已执行");
       flash("DDL 已执行");
     } catch (e) {
@@ -1723,22 +1800,6 @@ export function App() {
     });
   }
 
-  async function refreshTableContainer(node: SchemaNode) {
-    if (!session)
-      return;
-
-    const entry = Object.entries(treeChildren)
-      .find(([, children]) => children.some(child => child.id === node.id));
-
-    if (entry) {
-      const container = [treeRoot, ...Object.values(treeChildren).flat()]
-        .find(item => item.id === entry[0]);
-
-      if (container)
-        await loadChildren(session.sessionId, container, true);
-    }
-  }
-
   async function clearTable(node: SchemaNode) {
     const confirmed = await askConfirm(`确定清空表 ${node.label} 的全部数据？此操作不可恢复！`, "清空表", true);
 
@@ -1751,7 +1812,7 @@ export function App() {
 
     try {
       await executeStatement(sql);
-      await refreshTableContainer(node);
+      await refreshObjectList(node);
       setStatus(`已清空 ${node.label}`);
     } catch (e) {
       setError(messageOf(e));
@@ -1766,7 +1827,7 @@ export function App() {
 
     try {
       await executeStatement(`DROP TABLE ${node.label}`);
-      await refreshTableContainer(node);
+      await refreshObjectList(node);
       setStatus(`已删除 ${node.label}`);
     } catch (e) {
       setError(messageOf(e));
@@ -1786,7 +1847,7 @@ export function App() {
     try {
       for (const node of nodes) {
         await executeStatement(`DROP TABLE ${node.label}`);
-        await refreshTableContainer(node);
+        await refreshObjectList(node);
       }
 
       setStatus(`已删除 ${nodes.length} 张表`);
@@ -1870,7 +1931,7 @@ export function App() {
         { label: "新建表…", action: () => void createTableDraft(node.label) },
         { label: "新建查询", action: createQueryTab },
         { separator: true },
-        { label: "刷新", action: () => void refreshNode(node) },
+        { label: "刷新", action: () => void refreshObjectList(node) },
         { label: "复制名称", action: () => void copyText(node.label) }
       ];
     }
@@ -1882,7 +1943,7 @@ export function App() {
         { label: "新建表…", action: () => void createTableDraft(node.label) },
         { label: "新建查询", action: createQueryTab },
         { separator: true },
-        { label: "刷新列表", action: () => void refreshNode(node) },
+        { label: "刷新列表", action: () => void refreshObjectList(node) },
         { label: "复制名称", action: () => void copyText(node.label) }
       ];
     }
@@ -1892,7 +1953,7 @@ export function App() {
         { label: open ? "收起列表" : "展开列表", action: () => void toggleNode(node) },
         { label: "表列表", action: () => void openTableList(node) },
         { label: "新建表…", action: () => void createTableDraft(node.catalog) },
-        { label: "刷新列表", action: () => void refreshNode(node) },
+        { label: "刷新列表", action: () => void refreshObjectList(node) },
         { label: "新建查询", action: createQueryTab }
       ];
     }
@@ -1936,7 +1997,7 @@ export function App() {
         { label: "清空表", danger: true, action: () => void clearTable(node) },
         { label: "删除表", danger: true, action: () => void dropTable(node) },
         { separator: true },
-        { label: "刷新列表", action: () => void refreshTableContainer(node) }
+        { label: "刷新列表", action: () => void refreshObjectList(node) }
       ];
     }
 
@@ -2621,7 +2682,7 @@ export function App() {
         },
         { label: "新建表…", disabled: !session, action: () => void createTableDraft() },
         { label: "脚本列表", disabled: !session, action: () => void openScriptList() },
-        { label: "刷新对象", disabled: !session, action: () => void refreshNode(activeNode ?? roots[0]) }
+        { label: "刷新对象", disabled: !session, action: () => void refreshObjectList(activeNode ?? roots[0]) }
       ]
     },
     {
