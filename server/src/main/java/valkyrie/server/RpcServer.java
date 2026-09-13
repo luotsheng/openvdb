@@ -861,11 +861,8 @@ public class RpcServer
 
         private Object listQueryFiles(JSONObject params)
         {
-                String connection = params.getString("connection");
+                String connection = requiredText(params, "connection");
                 String catalog = params.getString("catalog");
-
-                if (connection == null || connection.isBlank())
-                        throw new IllegalArgumentException("connection 不能为空");
 
                 JSONArray files = new JSONArray();
 
@@ -892,7 +889,7 @@ public class RpcServer
 
         private Object readQueryFile(JSONObject params)
         {
-                String basePath = require(params.getString("connection"))
+                String basePath = requiredText(params, "connection")
                         + "/" + params.getString("catalog") + "/" + params.getString("name");
 
                 JSONObject ret = new JSONObject();
@@ -903,7 +900,7 @@ public class RpcServer
 
         private Object saveQueryFile(JSONObject params)
         {
-                String basePath = require(params.getString("connection"))
+                String basePath = requiredText(params, "connection")
                         + "/" + params.getString("catalog") + "/" + params.getString("name");
 
                 QueryFile file = QueryFileRepository.write(basePath, params.getString("content"));
@@ -917,7 +914,7 @@ public class RpcServer
 
         private Object renameQueryFile(JSONObject params)
         {
-                String prefix = require(params.getString("connection")) + "/" + params.getString("catalog") + "/";
+                String prefix = requiredText(params, "connection") + "/" + params.getString("catalog") + "/";
                 QueryFile source = QueryFileRepository.getFile(prefix + params.getString("oldName"));
 
                 if (!source.exists())
@@ -934,7 +931,7 @@ public class RpcServer
 
         private Object deleteQueryFile(JSONObject params)
         {
-                String basePath = require(params.getString("connection"))
+                String basePath = requiredText(params, "connection")
                         + "/" + params.getString("catalog") + "/" + params.getString("name");
 
                 QueryFileRepository.getFile(basePath).forceDelete();
@@ -1048,6 +1045,17 @@ public class RpcServer
                         throw new IllegalArgumentException("会话不存在或已关闭: " + sessionId);
 
                 return session;
+        }
+
+        /** 必填字符串参数（注意：连接名之类的普通文本不能用 require，那是校验会话号的） */
+        private String requiredText(JSONObject params, String key)
+        {
+                String value = params.getString(key);
+
+                if (value == null || value.isBlank())
+                        throw new IllegalArgumentException(key + " 不能为空");
+
+                return value;
         }
 
         private void closeQuietly(VkDataSource dataSource)
