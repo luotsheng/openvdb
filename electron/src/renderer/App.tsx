@@ -2619,11 +2619,10 @@ export function App() {
     {
       label: `运行已选择 (${KEY.run})`,
       icon: "play",
-      iconColor: "#15803d",
       disabled: !hasSelection || activeTab.running,
       action: () => void runSelectionOrAll()
     },
-    { label: "美化已选择", icon: "code", iconColor: "#2f6feb", action: () => void formatActiveQuery() },
+    { label: "美化已选择", icon: "code", action: () => void formatActiveQuery() },
     { separator: true },
     { label: `复制 (${KEY.copy})`, action: () => editorRef.current?.trigger("menu", "editor.action.clipboardCopyAction", null) },
     { label: `剪切 (${KEY.cut})`, action: () => editorRef.current?.trigger("menu", "editor.action.clipboardCutAction", null) },

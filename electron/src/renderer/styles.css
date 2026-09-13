@@ -47,6 +47,20 @@
   --red: light-dark(#b91c1c, #f85149);
   --violet: light-dark(#6d28d9, #a371f7);
   --cyan: light-dark(#0e7490, #39c5cf);
+
+  /*
+   * 图标语义色：界面里的图标按功能取鲜艳颜色（执行绿、删除红、数据蓝……），
+   * 浅色取深一档、深色取亮一档，两边都足够跳；具体映射见文件末尾的 .icon-* 规则。
+   */
+  --icon-green: light-dark(#15a34a, #4ade80);
+  --icon-red: light-dark(#dc2626, #f87171);
+  --icon-blue: light-dark(#2563eb, #60a5fa);
+  --icon-sky: light-dark(#0284c7, #38bdf8);
+  --icon-violet: light-dark(#7c3aed, #a78bfa);
+  --icon-amber: light-dark(#d97706, #fbbf24);
+  --icon-cyan: light-dark(#0891b2, #22d3ee);
+  --icon-orange: light-dark(#ea580c, #fb923c);
+  --icon-teal: light-dark(#0d9488, #2dd4bf);
   --mono: Consolas, "Cascadia Mono", "Courier New", monospace;
 
   font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
@@ -443,11 +457,9 @@ input, textarea, .console, .pre-wrap { user-select: text; }
 .menu-item[data-highlighted] { background: var(--hover); }
 .menu-item .menu-item-icon {
   flex: 0 0 auto;
-  color: var(--muted);
 }
 
-.menu-item[data-highlighted] .menu-item-icon { color: var(--accent); }
-.menu-item.is-danger[data-highlighted] .menu-item-icon { color: var(--red); }
+/* 菜单图标保持自己的语义色，不随悬停变蓝变红（见文件末尾的 .icon-* 规则） */
 
 .menu-item[data-disabled] { color: var(--muted); cursor: default; }
 .menu-item[data-disabled][data-highlighted] { background: transparent; }
@@ -1980,3 +1992,28 @@ table.script-list .table-name { min-width: 200px; max-width: 520px; }
   align-items: center;
   gap: 5px;
 }
+
+/* ------------------------------ 图标语义色 ------------------------------ */
+
+/* 正向动作：执行 / 新建 / 提交 / 保存 / 连接 */
+.icon-play, .icon-plus, .icon-check, .icon-save, .icon-plug, .icon-shield, .icon-ok { color: var(--icon-green); }
+/* 中断与危险：停止 / 删除 / 警告 */
+.icon-stop, .icon-trash, .icon-alert, .icon-fail { color: var(--icon-red); }
+/* 数据与导航：刷新 / 复制 / 库 / 服务器 / 编辑 / 信息 */
+.icon-refresh, .icon-copy, .icon-database, .icon-host, .icon-server,
+.icon-pencil, .icon-info, .icon-latest { color: var(--icon-blue); }
+/* 查找与终端 */
+.icon-search, .icon-terminal { color: var(--icon-sky); }
+/* 结构与显示选项 */
+.icon-wrap, .icon-columns, .icon-system { color: var(--icon-cyan); }
+/* 代码 / 主题 / 用户 */
+.icon-code, .icon-layers, .icon-download, .icon-moon, .icon-sliders, .icon-user { color: var(--icon-violet); }
+/* 目录 / 键 / 锁 / 浅色主题 */
+.icon-folder, .icon-folderOpen, .icon-key, .icon-lock, .icon-sun { color: var(--icon-amber); }
+.icon-eraser { color: var(--icon-orange); }
+.icon-list, .icon-file { color: var(--icon-teal); }
+/* 关闭、密码可见性这类保持中性，避免整屏都在闪 */
+.icon-close, .icon-eye, .icon-eyeOff { color: var(--muted); }
+
+/* 对象树的图标按节点类型着色（见 .tree-icon.kind-*），别被上面的语义色覆盖 */
+.tree-icon svg { color: inherit; }
