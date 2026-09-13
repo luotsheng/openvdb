@@ -47,6 +47,66 @@ import { Toaster, toast } from "sonner";
   getWorker: () => new EditorWorker()
 };
 
+/**
+ * 深色主题的 Monaco 配色：对齐 GitHub Dark 的 token 颜色
+ * （注释灰、关键字红、字符串浅蓝、数字 / 常量蓝、类型橙），编辑器底色 #0d1117。
+ * 只在首次切到深色时注册一次。
+ */
+let githubDarkReady = false;
+
+function ensureGithubDarkTheme() {
+  if (githubDarkReady)
+    return;
+
+  monaco.editor.defineTheme("valkyrie-github-dark", {
+    base: "vs-dark",
+    inherit: true,
+    rules: [
+      { token: "", foreground: "c9d1d9", background: "0d1117" },
+      { token: "comment", foreground: "8b949e", fontStyle: "italic" },
+      { token: "keyword", foreground: "ff7b72" },
+      { token: "string", foreground: "a5d6ff" },
+      { token: "number", foreground: "79c0ff" },
+      { token: "operator", foreground: "ff7b72" },
+      { token: "delimiter", foreground: "c9d1d9" },
+      { token: "identifier", foreground: "c9d1d9" },
+      { token: "predefined", foreground: "79c0ff" },
+      { token: "type", foreground: "ffa657" },
+      { token: "variable", foreground: "ffa657" }
+    ],
+    colors: {
+      "editor.background": "#0d1117",
+      "editor.foreground": "#c9d1d9",
+      "editorLineNumber.foreground": "#6e7681",
+      "editorLineNumber.activeForeground": "#e6edf3",
+      "editor.lineHighlightBackground": "#161b22",
+      "editor.selectionBackground": "#19416e",
+      "editor.inactiveSelectionBackground": "#13233a",
+      "editor.selectionHighlightBackground": "#13233a",
+      "editorCursor.foreground": "#58a6ff",
+      "editorWhitespace.foreground": "#21262d",
+      "editorIndentGuide.background1": "#21262d",
+      "editorIndentGuide.activeBackground1": "#30363d",
+      "editorGutter.background": "#0d1117",
+      "editorWidget.background": "#161b22",
+      "editorWidget.border": "#30363d",
+      "editorSuggestWidget.background": "#161b22",
+      "editorSuggestWidget.border": "#30363d",
+      "editorSuggestWidget.selectedBackground": "#21262d",
+      "editorSuggestWidget.highlightForeground": "#58a6ff",
+      "editorHoverWidget.background": "#161b22",
+      "editorHoverWidget.border": "#30363d",
+      "editorBracketMatch.background": "#13233a",
+      "editorBracketMatch.border": "#58a6ff",
+      "scrollbarSlider.background": "#484f5866",
+      "scrollbarSlider.hoverBackground": "#484f5880",
+      "scrollbarSlider.activeBackground": "#484f58b3"
+    }
+  });
+
+  githubDarkReady = true;
+}
+
 const DEFAULT_SQL = "";
 
 type ThemeMode = "light" | "dark" | "system";
@@ -345,7 +405,12 @@ export function App() {
     const resolved = theme === "system" ? (prefersDark ? "dark" : "light") : theme;
 
     document.documentElement.style.colorScheme = theme === "system" ? "light dark" : theme;
-    monaco.editor.setTheme(resolved === "dark" ? "vs-dark" : "vs");
+
+    /* 深色用 GitHub Dark 配色，浅色保持 Monaco 默认的 vs */
+    if (resolved === "dark")
+      ensureGithubDarkTheme();
+
+    monaco.editor.setTheme(resolved === "dark" ? "valkyrie-github-dark" : "vs");
     /* 系统原生菜单 / 对话框也跟随应用主题 */
     void setNativeTheme(theme);
   }, [theme]);

@@ -1,5 +1,10 @@
 /*
  * 设计稿对应：浅色为默认观感（不跟随 Windows 深色模式），可在工具栏切换主题。
+ *
+ * 深色主题取 GitHub Primer「dark default」色板：
+ * 画布 #0d1117 / 抬升面 #161b22 / 次级面 #21262d、
+ * 边框 #30363d（次 #21262d）、正文 #e6edf3、次要文字 #8b949e、链接蓝 #58a6ff。
+ * 状态色同样对齐 Primer：绿 #3fb950、黄 #d29922、红 #f85149、紫 #a371f7、青 #39c5cf。
  */
 
 :root {
@@ -9,33 +14,39 @@
    * 浅色主题整体压柔：面板不用纯白（#fff 长时间看很刺眼），
    * 统一走带一点蓝灰的浅色，靠层级而不是靠"白"来区分区域。
    */
-  --bg: light-dark(#e7e9ee, #0f1115);
-  --chrome: light-dark(#eff0f4, #16191e);
-  --chrome-2: light-dark(#e9ebf0, #1a1d23);
-  --panel: light-dark(#f7f8fa, #1a1d23);
-  --field: light-dark(#fbfbfc, #16191e);
-  --hover: light-dark(#e7eaef, #23272f);
-  --active: light-dark(#e3ecfa, #1d2a45);
-  --line: light-dark(#d8dde5, #2b3039);
-  --line-soft: light-dark(#e5e8ee, #23282f);
-  --text: light-dark(#232936, #e6e8ed);
-  --muted: light-dark(#6a7180, #98a1af);
-  --accent: light-dark(#2f6feb, #5b8dff);
-  --accent-soft: light-dark(#e1ebfa, #1d2a45);
+  --bg: light-dark(#e7e9ee, #0d1117);
+  --chrome: light-dark(#eff0f4, #161b22);
+  --chrome-2: light-dark(#e9ebf0, #21262d);
+  --panel: light-dark(#f7f8fa, #0d1117);
+  /* 浮层（菜单 / 下拉 / 弹窗）表面：深色下用抬升面，和画布拉开层级 */
+  --overlay: light-dark(#f7f8fa, #161b22);
+  /* 框架条（标题栏 / 菜单栏 / 状态栏）：浅色沿用面板色，深色用抬升面 */
+  --bar: light-dark(#f7f8fa, #161b22);
+  /* 工具条 / 标签条：浅色是略深一点的框体色，深色同样用抬升面 */
+  --bar-2: light-dark(#e9ebf0, #161b22);
+  --field: light-dark(#fbfbfc, #0d1117);
+  --hover: light-dark(#e7eaef, #161b22);
+  --active: light-dark(#e3ecfa, #13233a);
+  --line: light-dark(#d8dde5, #30363d);
+  --line-soft: light-dark(#e5e8ee, #21262d);
+  --text: light-dark(#232936, #e6edf3);
+  --muted: light-dark(#6a7180, #8b949e);
+  --accent: light-dark(#2f6feb, #58a6ff);
+  --accent-soft: light-dark(#e1ebfa, #13233a);
   /* 数据表格：斑马纹 / 选中（对齐 Navicat 观感） */
-  --row-alt: light-dark(#f0f3f7, #1e2128);
-  --row-selected: light-dark(#d3e3f8, #26364f);
+  --row-alt: light-dark(#f0f3f7, #161b22);
+  --row-selected: light-dark(#d3e3f8, #183051);
   /* 选中单元格（深蓝）/ 选中格所在整行（浅蓝） */
-  --cell-strong: light-dark(#9cc4f2, #3d5b93);
-  --cell-soft: light-dark(#e6f0fd, #22304a);
-  --row-dirty: light-dark(#f9f0dd, #3a2f1c);
+  --cell-strong: light-dark(#9cc4f2, #17458c);
+  --cell-soft: light-dark(#e6f0fd, #13233a);
+  --row-dirty: light-dark(#f9f0dd, #2b2415);
   /* 网格线比常规分割线更淡，长时间看数据不刺眼 */
-  --grid-line: light-dark(#dbe1ea, #333a45);
-  --green: light-dark(#15803d, #4ade80);
-  --amber: light-dark(#b45309, #fbbf24);
-  --red: light-dark(#b91c1c, #f87171);
-  --violet: light-dark(#6d28d9, #c4b5fd);
-  --cyan: light-dark(#0e7490, #5fc9e0);
+  --grid-line: light-dark(#dbe1ea, #21262d);
+  --green: light-dark(#15803d, #3fb950);
+  --amber: light-dark(#b45309, #d29922);
+  --red: light-dark(#b91c1c, #f85149);
+  --violet: light-dark(#6d28d9, #a371f7);
+  --cyan: light-dark(#0e7490, #39c5cf);
   --mono: Consolas, "Cascadia Mono", "Courier New", monospace;
 
   font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
@@ -75,7 +86,7 @@ input, textarea, .console, .pre-wrap { user-select: text; }
   gap: 10px;
   height: 34px;
   padding: 0 0 0 12px;
-  background: var(--panel);
+  background: var(--bar);
   border-bottom: 1px solid var(--line);
   /* 无边框窗口：标题栏可拖动，按钮区域除外 */
   -webkit-app-region: drag;
@@ -97,7 +108,7 @@ input, textarea, .console, .pre-wrap { user-select: text; }
   display: grid;
   place-items: center;
   border-radius: 5px;
-  background: linear-gradient(135deg, #2f6feb, #0e7490);
+  background: linear-gradient(135deg, light-dark(#2f6feb, #58a6ff), light-dark(#0e7490, #39c5cf));
   color: #fff;
   font-size: 10px;
   font-weight: 700;
@@ -125,7 +136,7 @@ input, textarea, .console, .pre-wrap { user-select: text; }
 }
 
 .win-btn:hover { background: var(--hover); color: var(--text); }
-.win-btn.is-close:hover { background: #e5484d; color: #fff; }
+.win-btn.is-close:hover { background: light-dark(#e5484d, #da3633); color: #fff; }
 
 /*
  * macOS：窗口用系统红绿灯，自绘的三个按钮要藏起来，并在左侧给红绿灯让位；
@@ -140,7 +151,7 @@ input, textarea, .console, .pre-wrap { user-select: text; }
   gap: 2px;
   height: 26px;
   padding: 0 8px;
-  background: var(--panel);
+  background: var(--bar);
   border-bottom: 1px solid var(--line-soft);
 }
 
@@ -162,10 +173,10 @@ input, textarea, .console, .pre-wrap { user-select: text; }
   flex-direction: column;
   gap: 1px;
   padding: 5px;
-  background: var(--panel);
+  background: var(--overlay);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 16px 40px light-dark(rgba(15, 23, 42, .18), rgba(0, 0, 0, .55));
+  box-shadow: 0 16px 40px light-dark(rgba(15, 23, 42, .18), rgba(1, 4, 9, .65));
 }
 
 
@@ -183,7 +194,7 @@ input, textarea, .console, .pre-wrap { user-select: text; }
   border-bottom: 1px solid var(--line);
 }
 
-.pane-toolbar { background: var(--chrome-2); }
+.pane-toolbar { background: var(--bar-2); }
 
 .tbtn {
   display: inline-flex;
@@ -226,7 +237,7 @@ input, textarea, .console, .pre-wrap { user-select: text; }
 
 /* 浮层提示（sonner）跟随应用主题 */
 .vk-toast {
-  background: var(--panel) !important;
+  background: var(--overlay) !important;
   border: 1px solid var(--line) !important;
   color: var(--text) !important;
 }
@@ -373,11 +384,11 @@ input, textarea, .console, .pre-wrap { user-select: text; }
 .tree-caret { width: 14px; flex: 0 0 14px; display: inline-flex; color: var(--muted); }
 /* 图标按节点类型着色，避免整棵树一片灰 */
 .tree-icon { display: inline-flex; color: var(--muted); }
-.tree-icon.kind-connection { color: #2f6feb; }
-.tree-icon.kind-catalog { color: #0e7490; }
-.tree-icon.kind-schema { color: #6d28d9; }
-.tree-icon.kind-table { color: #1d4ed8; }
-.tree-icon.is-script { color: #15803d; }
+.tree-icon.kind-connection { color: light-dark(#2f6feb, #58a6ff); }
+.tree-icon.kind-catalog { color: light-dark(#0e7490, #39c5cf); }
+.tree-icon.kind-schema { color: light-dark(#6d28d9, #a371f7); }
+.tree-icon.kind-table { color: light-dark(#1d4ed8, #79c0ff); }
+.tree-icon.is-script { color: light-dark(#15803d, #3fb950); }
 .tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 .tree-count {
   font-size: 11px;
@@ -471,15 +482,15 @@ input, textarea, .console, .pre-wrap { user-select: text; }
   display: flex;
   align-items: center;
   justify-content: center;
-  background: light-dark(rgba(15, 23, 42, .28), rgba(0, 0, 0, .5));
+  background: light-dark(rgba(15, 23, 42, .28), rgba(1, 4, 9, .8));
 }
 
 .modal {
   width: min(420px, calc(100% - 32px));
-  background: var(--panel);
+  background: var(--overlay);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 18px 48px light-dark(rgba(15, 23, 42, .22), rgba(0, 0, 0, .6));
+  box-shadow: 0 18px 48px light-dark(rgba(15, 23, 42, .22), rgba(1, 4, 9, .7));
   overflow: hidden;
 }
 
@@ -747,7 +758,7 @@ table.grid tbody tr td.rownum.is-range { background: var(--cell-strong); }
   align-items: stretch;
   gap: 2px;
   padding: 6px 8px 0;
-  background: var(--chrome-2);
+  background: var(--bar-2);
   border-bottom: 1px solid var(--line);
   overflow: hidden;
 }
@@ -855,7 +866,8 @@ table.grid tbody tr td.rownum.is-range { background: var(--cell-strong); }
   /* 编辑器底色跟随面板色，避免纯白刺眼 */
   --vscode-editor-background: var(--panel);
   --vscode-editorGutter-background: var(--panel);
-  --vscode-editorSuggestWidget-background: var(--panel);
+  /* 补全 / 悬浮提示用抬升面（比编辑器底色亮一档），深色下才看得出层级 */
+  --vscode-editorSuggestWidget-background: var(--chrome);
   --vscode-editorSuggestWidget-border: var(--line);
   --vscode-editorSuggestWidget-foreground: var(--text);
   --vscode-editorSuggestWidget-selectedBackground: var(--active);
@@ -864,14 +876,14 @@ table.grid tbody tr td.rownum.is-range { background: var(--cell-strong); }
   --vscode-editorSuggestWidget-highlightForeground: var(--accent);
   --vscode-editorSuggestWidget-focusHighlightForeground: var(--accent);
   --vscode-editorSuggestWidgetStatus-foreground: var(--muted);
-  --vscode-editorWidget-background: var(--panel);
+  --vscode-editorWidget-background: var(--chrome);
   --vscode-editorWidget-border: var(--line);
   --vscode-editorWidget-foreground: var(--text);
-  --vscode-editorHoverWidget-background: var(--panel);
+  --vscode-editorHoverWidget-background: var(--chrome);
   --vscode-editorHoverWidget-border: var(--line);
   --vscode-editorHoverWidget-foreground: var(--text);
   --vscode-list-hoverBackground: var(--hover);
-  --vscode-widget-shadow: light-dark(rgba(15, 23, 42, .18), rgba(0, 0, 0, .55));
+  --vscode-widget-shadow: light-dark(rgba(15, 23, 42, .18), rgba(1, 4, 9, .65));
   /* 候选图标配色与对象树 / 结果表里的类型色一致 */
   --vscode-symbolIcon-keywordForeground: var(--accent);
   --vscode-symbolIcon-functionForeground: var(--violet);
@@ -886,7 +898,7 @@ table.grid tbody tr td.rownum.is-range { background: var(--cell-strong); }
 .editor-wrap .monaco-editor .suggest-widget,
 .editor-wrap .monaco-editor .suggest-details {
   border-radius: 8px;
-  box-shadow: 0 16px 40px light-dark(rgba(15, 23, 42, .18), rgba(0, 0, 0, .55));
+  box-shadow: 0 16px 40px light-dark(rgba(15, 23, 42, .18), rgba(1, 4, 9, .65));
   overflow: hidden;
 }
 
@@ -954,10 +966,10 @@ table.grid tbody tr td.rownum.is-range { background: var(--cell-strong); }
   gap: 1px;
   padding: 4px;
   overflow: auto;
-  background: var(--panel);
+  background: var(--overlay);
   border: 1px solid var(--line);
   border-radius: 8px;
-  box-shadow: 0 16px 40px light-dark(rgba(15, 23, 42, .18), rgba(0, 0, 0, .55));
+  box-shadow: 0 16px 40px light-dark(rgba(15, 23, 42, .18), rgba(1, 4, 9, .65));
   /* Radix 会按可用空间限制高度 */
   max-height: var(--radix-select-content-available-height, 320px);
   min-width: var(--radix-select-trigger-width);
@@ -1061,7 +1073,7 @@ body.is-resizing * { cursor: inherit !important; }
   align-items: center;
   gap: 2px;
   padding: 0 8px;
-  background: var(--chrome-2);
+  background: var(--bar-2);
   border-bottom: 1px solid var(--line);
 }
 
@@ -1324,7 +1336,7 @@ table.table-list .table-name-text {
   min-height: 0;
   overflow: auto;
   padding: 8px 12px;
-  background: var(--panel);
+  background: light-dark(var(--panel), var(--chrome));
   font-family: var(--mono);
   font-size: 13px;
 }
@@ -1757,7 +1769,7 @@ table.design-table .is-null { color: var(--muted); font-style: italic; }
   display: flex;
   align-items: center;
   height: 26px;
-  background: var(--panel);
+  background: var(--bar);
   border-top: 1px solid var(--line);
   font-size: 11px;
   color: var(--muted);
