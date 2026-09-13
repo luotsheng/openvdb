@@ -27,6 +27,8 @@ interface ResultGridProps {
   onSelectionChange?: (selection: {
     r1: number; r2: number; c1: number; c2: number;
     row: number; col: number; rows: number; cols: number;
+    /** 选区里真正可见（未被搜索过滤掉）的行 / 列下标 */
+    rowList: number[]; colList: number[];
   } | null) => void;
 }
 
@@ -175,6 +177,24 @@ export function ResultGrid(props: ResultGridProps) {
   }, [columnSignature, rows, fontSize]);
 
   /*
+   * 全表搜索：按任意单元格内容过滤显示行（忽略大小写、纯子串，同 FX 版）。
+   * 保留真实行号，编辑 / 脏数据标记 / 选区都以原始下标为准，不会因过滤而错行。
+   */
+  const keyword = search.trim().toLowerCase();
+  const visibleRows = keyword
+    ? rows.reduce<{ row: (string | null)[]; index: number }[]>((list, row, index) => {
+        if (row.some(cell => cell !== null && String(cell).toLowerCase().includes(keyword)))
+          list.push({ row, index });
+
+        return list;
+      }, [])
+    : rows.map((row, index) => ({ row, index }));
+
+  useEffect(() => {
+    onSearchHitsChange?.(keyword ? visibleRows.length : null);
+  }, [keyword, visibleRows.length, onSearchHitsChange]);
+
+  /*
    * 选区范围：
    * - 行号列（#）起拖 → 整行选中（列范围全宽）
    * - 列头起拖 → 整列选中（行范围全高）
@@ -195,6 +215,15 @@ export function ResultGrid(props: ResultGridProps) {
     if (!bounds || !focus)
       return;
 
+    /*
+     * 上报的选区要按「当前可见的行」算：搜索过滤时被隐藏的行不算在内，
+     * 否则按范围做删除 / 置空会连带改掉看不见的数据。
+     */
+    const rowList = visibleRows
+      .map(item => item.index)
+      .filter(index => index >= bounds.r1 && index <= bounds.r2);
+    const colList = Array.from({ length: bounds.c2 - bounds.c1 + 1 }, (_, offset) => bounds.c1 + offset);
+
     onSelectionChange?.({
       r1: bounds.r1,
       r2: bounds.r2,
@@ -202,34 +231,22 @@ export function ResultGrid(props: ResultGridProps) {
       c2: bounds.c2,
       row: focus.row,
       col: focus.col,
-      rows: bounds.r2 - bounds.r1 + 1,
-      cols: bounds.c2 - bounds.c1 + 1
+      rows: rowList.length,
+      cols: colList.length,
+      rowList,
+      colList
     });
-  }, [bounds?.r1, bounds?.r2, bounds?.c1, bounds?.c2, focus?.row, focus?.col]);
+  }, [
+    bounds?.r1, bounds?.r2, bounds?.c1, bounds?.c2, focus?.row, focus?.col,
+    /* 过滤条件变了，可见行也跟着变 */
+    keyword, visibleRows.length
+  ]);
 
   const columnStyle = (index: number) => {
     const width = manualWidths[index] ?? autoWidths[index];
 
     return width ? { width, minWidth: width, maxWidth: width } : undefined;
   };
-
-  /*
-   * 全表搜索：按任意单元格内容过滤显示行（忽略大小写、纯子串，同 FX 版）。
-   * 保留真实行号，编辑 / 脏数据标记 / 选区都以原始下标为准，不会因过滤而错行。
-   */
-  const keyword = search.trim().toLowerCase();
-  const visibleRows = keyword
-    ? rows.reduce<{ row: (string | null)[]; index: number }[]>((list, row, index) => {
-        if (row.some(cell => cell !== null && String(cell).toLowerCase().includes(keyword)))
-          list.push({ row, index });
-
-        return list;
-      }, [])
-    : rows.map((row, index) => ({ row, index }));
-
-  useEffect(() => {
-    onSearchHitsChange?.(keyword ? visibleRows.length : null);
-  }, [keyword, visibleRows.length, onSearchHitsChange]);
 
   /* 拖动表头右边缘改列宽，双击恢复自适应 */
   function startResize(index: number, event: ReactMouseEvent<HTMLSpanElement>) {

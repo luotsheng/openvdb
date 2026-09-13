@@ -174,6 +174,8 @@ export function App() {
   const [gridSelection, setGridSelection] = useState<{
     r1: number; r2: number; c1: number; c2: number;
     row: number; col: number; rows: number; cols: number;
+    /** 选区里真正可见的行 / 列下标（搜索过滤时排除被隐藏的行） */
+    rowList: number[]; colList: number[];
   } | null>(null);
   const [tableFilter, setTableFilter] = useState("");
   /* 「脚本」页：过滤词、选中项（按脚本绝对路径）、刷新闪烁 */
@@ -2173,7 +2175,10 @@ export function App() {
     return () => window.clearTimeout(timer);
   }, [gridSearch]);
 
-  /* 搜索期间表格只读：过滤后行号与真实数据会错位，避免误编辑 / 误删除（同 FX 版） */
+  /*
+   * 搜索中依然可编辑：行下标用的始终是原始行号，删除 / 置空只作用于「可见行」
+   * （见 selectionRows），所以过滤状态下改数据是安全的。
+   */
   const searchingGrid = gridKeyword.trim().length > 0;
 
   /* 换标签页 / 换结果集时清掉上一个结果集的搜索 */
@@ -2403,10 +2408,18 @@ export function App() {
     ];
   }
 
+  /*
+   * 选区 → 行 / 列下标。优先用网格上报的「可见行」列表：搜索过滤时被隐藏的行
+   * 不参与删除 / 置空，避免误伤看不见的数据。
+   */
   const selectionRows = (selection: NonNullable<typeof gridSelection>) =>
-    Array.from({ length: selection.r2 - selection.r1 + 1 }, (_, index) => selection.r1 + index);
+    selection.rowList?.length
+      ? selection.rowList
+      : Array.from({ length: selection.r2 - selection.r1 + 1 }, (_, index) => selection.r1 + index);
   const selectionCols = (selection: NonNullable<typeof gridSelection>) =>
-    Array.from({ length: selection.c2 - selection.c1 + 1 }, (_, index) => selection.c1 + index);
+    selection.colList?.length
+      ? selection.colList
+      : Array.from({ length: selection.c2 - selection.c1 + 1 }, (_, index) => selection.c1 + index);
 
   /** 删除选中行：先确认（删除只是待提交的修改，可回滚） */
   async function deleteSelectedRows() {
@@ -2426,17 +2439,17 @@ export function App() {
 
   /* 结果表右键菜单（Radix ContextMenu 负责弹出/定位/关闭） */
   const gridMenuEntries: MenuEntry[] = [
-    { label: "提交修改", disabled: !currentResult?.dirty || searchingGrid, action: () => void runResultAction("result.commit", {}, "修改已提交") },
-    { label: "新增行", disabled: !currentResult?.addable || searchingGrid, action: () => void runResultAction("result.insert", {}, "已新增一行") },
+    { label: "提交修改", disabled: !currentResult?.dirty, action: () => void runResultAction("result.commit", {}, "修改已提交") },
+    { label: "新增行", disabled: !currentResult?.addable, action: () => void runResultAction("result.insert", {}, "已新增一行") },
     {
       label: "设置为 NULL",
-      disabled: !currentResult?.editable || !gridSelection || searchingGrid,
+      disabled: !currentResult?.editable || !gridSelection,
       action: () => gridSelection && void runResultAction("result.setNull", { rows: selectionRows(gridSelection), cols: selectionCols(gridSelection) }, "已设置为 NULL")
     },
     {
       label: "删除选中行",
       danger: true,
-      disabled: !currentResult?.editable || !gridSelection || searchingGrid,
+      disabled: !currentResult?.editable || !gridSelection,
       action: () => void deleteSelectedRows()
     },
     { separator: true },
@@ -3242,7 +3255,7 @@ export function App() {
                 <button
                   type="button"
                   className={`tbtn${pending === "result.insert" ? " is-busy" : ""}`}
-                  disabled={!currentResult.addable || searchingGrid}
+                  disabled={!currentResult.addable}
                   onClick={() => void runResultAction("result.insert", {}, "已新增一行")}
                 >
                   <Icon name="plus" />新增行
@@ -3250,7 +3263,7 @@ export function App() {
                 <button
                   type="button"
                   className={`tbtn${pending === "result.delete" ? " is-busy" : ""}`}
-                  disabled={!currentResult.editable || !gridSelection || searchingGrid}
+                  disabled={!currentResult.editable || !gridSelection}
                   onClick={() => gridSelection && void runResultAction("result.delete", { rows: selectionRows(gridSelection) }, "已删除选中行")}
                 >
                   <Icon name="trash" />删除行
@@ -3258,7 +3271,7 @@ export function App() {
                 <button
                   type="button"
                   className={`tbtn${pending === "result.setNull" ? " is-busy" : ""}`}
-                  disabled={!currentResult.editable || !gridSelection || searchingGrid}
+                  disabled={!currentResult.editable || !gridSelection}
                   onClick={() => gridSelection && void runResultAction("result.setNull", { rows: selectionRows(gridSelection), cols: selectionCols(gridSelection) }, "已设置为 NULL")}
                 >
                   设为 NULL
@@ -3267,7 +3280,7 @@ export function App() {
                 <button
                   type="button"
                   className={`tbtn is-primary${pending === "result.commit" ? " is-busy" : ""}`}
-                  disabled={!currentResult.dirty || searchingGrid}
+                  disabled={!currentResult.dirty}
                   onClick={() => void runResultAction("result.commit", {}, "修改已提交")}
                 >
                   <Icon name="check" />提交修改
@@ -3275,7 +3288,7 @@ export function App() {
                 <button
                   type="button"
                   className={`tbtn${pending === "result.rollback" ? " is-busy" : ""}`}
-                  disabled={!currentResult.dirty || searchingGrid}
+                  disabled={!currentResult.dirty}
                   onClick={() => void runResultAction("result.rollback", {}, "已回滚未提交的修改")}
                 >
                   <Icon name="refresh" />回滚
@@ -3316,7 +3329,7 @@ export function App() {
                   </span>
                 )}
                 <span className="toolbar-text">
-                  {searchingGrid ? "搜索中 · 只读" : currentResult.editable ? "可编辑" : "只读"}
+                  {currentResult.editable ? "可编辑" : "只读"}{searchingGrid ? " · 改动只作用于可见行" : ""}
                   {currentResult.dirty
                     ? ` · ${activeTab && "pending" in activeTab ? activeTab.pending ?? 0 : 0} 条未提交修改`
                     : ""}
@@ -3385,7 +3398,7 @@ export function App() {
                       fontSize={settings.gridFontSize}
                       onContextMenu={() => void popupNativeMenu(gridMenuEntries)}
                       offset={activeTab?.kind === "data" ? activeTab.result?.offset ?? 0 : 0}
-                      editable={Boolean(currentResult?.editable) && !searchingGrid}
+                      editable={Boolean(currentResult?.editable)}
                       dirtyRows={activeTab && "dirtyRows" in activeTab ? activeTab.dirtyRows : []}
                       search={gridKeyword}
                       onSearchHitsChange={setGridHits}
