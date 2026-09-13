@@ -451,23 +451,33 @@ public class RpcServer
          */
         private Object suggestSql(JSONObject params)
         {
-                OpenConnection session = require(params.getString("sessionId"));
                 String sql = params.getString("sql");
                 JSONArray suggestions = new JSONArray();
 
                 if (sql == null || sql.isBlank())
                         return suggestionResult(suggestions);
 
+                /*
+                 * 会话可选：连接已关闭时用 type 给出该方言的关键字提示，
+                 * 有会话时才带上表名与字段（那部分依赖元数据）。
+                 */
+                String sessionId = params.getString("sessionId");
+                OpenConnection session = sessionId == null ? null : sessions.get(sessionId);
+                String type = params.getString("type");
                 Session context = Session.of(params.getString("catalog"), params.getString("schema"));
                 int offset = params.containsKey("offset")
                         ? Math.min(params.getIntValue("offset"), sql.length())
                         : sql.length();
 
-                String cacheKey = session.id + "|" + context.catalog() + "|" + context.schema();
+                String cacheKey = session != null
+                        ? session.id + "|" + context.catalog() + "|" + context.schema()
+                        : "type|" + (type == null ? "sql" : type.toLowerCase());
                 SuggestionEngine engine = suggestionEngines.get(cacheKey);
 
                 if (engine == null) {
-                        engine = SuggestionEngine.of(session.driver, context);
+                        engine = session != null
+                                ? SuggestionEngine.of(session.driver, context)
+                                : SuggestionEngine.keywords(type);
                         suggestionEngines.put(cacheKey, engine);
                 }
 

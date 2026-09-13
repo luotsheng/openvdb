@@ -1,11 +1,18 @@
 package valkyrie.driver.suggestion;
 
+import valkyrie.driver.dm.DMSuggestions;
+import valkyrie.driver.mysql.MySQLSuggestions;
+import valkyrie.driver.postgresql.PostgresqlSuggestions;
+import valkyrie.driver.redis.RedisSuggestions;
+import valkyrie.driver.sqlite.SQLiteSuggestions;
 import valkyrie.driver.api.Column;
 import valkyrie.driver.api.Driver;
 import valkyrie.driver.api.Session;
 import valkyrie.driver.utils.SQLParser;
 
+import java.util.Collection;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -96,6 +103,33 @@ public class SuggestionEngine
                 keywords.forEach(s -> reserved.add(s.getLabel().toUpperCase()));
 
                 return new SuggestionEngine(keywords, tables, columnsByTable, reserved);
+        }
+
+        /**
+         * 只带关键字与函数的引擎：没有会话时用（连接已关闭 / 会话失效）。
+         * <p>
+         * 表名与字段来自数据库元数据，必须有活动会话才能取到，这里只按数据库类型
+         * 给出该方言的关键字、函数与类型名，保证断开连接后编辑器依然有基础提示。
+         *
+         * @param type 数据库类型（mysql / postgresql / sqlite / dm / redis），未知类型退化为 SQL 标准关键字
+         */
+        public static SuggestionEngine keywords(String type)
+        {
+                Collection<Suggestion> values = switch (type == null ? "" : type.toLowerCase()) {
+                        case "mysql" -> MySQLSuggestions.VALUES;
+                        case "postgresql" -> PostgresqlSuggestions.VALUES;
+                        case "sqlite" -> SQLiteSuggestions.VALUES;
+                        case "dm" -> DMSuggestions.VALUES;
+                        case "redis" -> RedisSuggestions.VALUES;
+                        default -> SqlStandardSuggestions.VALUES;
+                };
+
+                List<Suggestion> keywords = new ArrayList<>(values);
+                Set<String> reserved = new HashSet<>(EXTRA_RESERVED);
+
+                keywords.forEach(suggestion -> reserved.add(suggestion.getLabel().toUpperCase()));
+
+                return new SuggestionEngine(keywords, Collections.emptyList(), Collections.emptyMap(), reserved);
         }
 
         /**

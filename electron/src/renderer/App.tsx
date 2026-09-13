@@ -359,7 +359,9 @@ export function App() {
   const activeTabRef = useRef(activeTabId);
   const jobTabRef = useRef<Map<number, string>>(new Map());
   const runningJobRef = useRef<Map<string, number>>(new Map());
-  const suggestionContextRef = useRef<{ sessionId?: string; catalog?: string; schema?: string }>({});
+  const suggestionContextRef = useRef<{ sessionId?: string; catalog?: string; schema?: string; type?: string }>({});
+  /* 断开连接后仍要能提示：记住最近一次连接的数据库类型 */
+  const lastSessionTypeRef = useRef<string>("mysql");
   /* 用 ref 保存当前会话，避免异步回调里拿到已失效的 sessionId */
   const sessionRef = useRef<SessionState | null>(null);
 
@@ -480,7 +482,8 @@ export function App() {
       provideCompletionItems: async (model, position) => {
         const context = suggestionContextRef.current;
 
-        if (!context.sessionId)
+        /* 没有会话也还有该方言的关键字提示（连接关闭后的情况） */
+        if (!context.sessionId && !context.type)
           return { suggestions: [] };
 
         const word = model.getWordUntilPosition(position);
@@ -489,6 +492,7 @@ export function App() {
         try {
           const payload = await invoke<{ suggestions: SuggestionItem[] }>("sql.suggest", {
             sessionId: context.sessionId,
+            type: context.type,
             catalog: context.catalog,
             schema: context.schema,
             sql: model.getValue(),
@@ -616,14 +620,31 @@ export function App() {
   const activeCatalog = activeTab?.kind === "query" ? activeTab.path.catalog : undefined;
   const activeSchema = activeTab?.kind === "query" ? activeTab.path.schema : undefined;
 
-  suggestionContextRef.current = session
-    ? {
-        sessionId: session.sessionId,
-        /* 查询页没显式选库时按当前连接的第一个库取元数据，保证提示里有表与字段 */
-        catalog: activeCatalog ?? catalogOptions[0]?.label,
-        schema: activeSchema
-      }
-    : {};
+  /*
+   * 补全上下文：
+   * - 有会话时带上 sessionId，数据层会给出「关键字 + 本库表名 + 引用表的字段」；
+   * - 连接已关闭时只带数据库类型，数据层退回该方言的关键字 / 函数提示，
+   *   所以断开连接后编辑器里按 Ctrl+Space 仍然有词可补。
+   */
+  suggestionContextRef.current = {
+    sessionId: session?.sessionId,
+    /* 查询页没显式选库时按当前连接的第一个库取元数据，保证提示里有表与字段 */
+    catalog: activeCatalog ?? catalogOptions[0]?.label,
+    schema: activeSchema,
+    type: session ? undefined : suggestionType()
+  };
+
+  /**
+   * 没有活动会话时补全用的数据库类型：先看查询页绑定的脚本属于哪个连接，
+   * 再退回「最近一次连接过的类型」，这样关掉连接后仍然知道该给哪套关键字。
+   */
+  function suggestionType(): string {
+    const bound = activeTab?.kind === "query" && activeTab.script
+      ? connections.find(item => item.name === activeTab.script?.connection)?.type
+      : undefined;
+
+    return bound ?? lastSessionTypeRef.current;
+  }
 
   /* 连接后把根节点作为「数据库」候选，并给查询页一个默认上下文 */
   useEffect(() => {
@@ -765,6 +786,7 @@ export function App() {
       const opened = await withBusy(() => invoke<OpenConnectionPayload>("connection.open", { name: connection.name }));
 
       setSession({ sessionId: opened.sessionId, name: connection.name, product: opened.product });
+      lastSessionTypeRef.current = connection.type ?? opened.product.type ?? lastSessionTypeRef.current;
       setRoots(opened.nodes);
       setChildrenMap({});
       setActiveNode(null);
