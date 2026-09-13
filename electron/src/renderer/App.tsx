@@ -162,21 +162,35 @@ interface DesignTab extends BaseTab {
   loading: boolean;
 }
 
-interface TableListTab extends BaseTab {
-  kind: "tables";
-  /* 表列表所属的「数据表」容器节点 */
+/**
+ * 「对象」列：属于当前连接的一个固定页面，内容跟着对象树的选中项走 ——
+ * 选中库 / 表 → 数据表列表，选中脚本 → 脚本列表；断开连接时一起关闭。
+ */
+interface ObjectTabTables extends BaseTab {
+  kind: "objects";
+  view: "tables";
+  /* 数据表列表所属的「数据表」容器节点 */
   node: SchemaNode;
   tables: SchemaNode[];
-  loading: boolean;
-}
-
-interface ScriptListTab extends BaseTab {
-  kind: "scripts";
   scripts: ScriptFile[];
   loading: boolean;
 }
 
-type WorkTab = QueryTab | DataTab | DesignTab | TableListTab | ScriptListTab;
+interface ObjectTabScripts extends BaseTab {
+  kind: "objects";
+  view: "scripts";
+  node: null;
+  tables: SchemaNode[];
+  scripts: ScriptFile[];
+  loading: boolean;
+}
+
+type ObjectTab = ObjectTabTables | ObjectTabScripts;
+
+type WorkTab = QueryTab | DataTab | DesignTab | ObjectTab;
+
+/* 对象列的标签标题固定，不写成「xxx 对象」 */
+const OBJECT_TAB_TITLE = "对象";
 
 type ResultPane = "grid" | "msg" | "plan" | "log";
 
@@ -1060,8 +1074,8 @@ export function App() {
     if (index < 0)
       return;
 
-    /* 「对象」页是常驻页：不能被关闭，也不会被"关闭左侧/右侧/全部"带走 */
-    if (mode === "current" && tabs[index].kind === "tables")
+    /* 对象列是常驻页：不能被关闭，也不会被"关闭左侧/右侧/全部"带走（断连时随连接一起收走） */
+    if (mode === "current" && tabs[index].kind === "objects")
       return;
 
     const keep = mode === "current"
@@ -1072,7 +1086,7 @@ export function App() {
           ? (_tab: WorkTab, position: number) => position <= index
           : () => false;
 
-    const kept = (tab: WorkTab, position: number) => tab.kind === "tables" || keep(tab, position);
+    const kept = (tab: WorkTab, position: number) => tab.kind === "objects" || keep(tab, position);
     const closing = tabs.filter((tab, position) => !kept(tab, position));
     const unsaved = closing.filter(hasUnsaved);
 
@@ -1134,18 +1148,49 @@ export function App() {
   }
 
   /**
-   * 「对象」页（Navicat 风格）：整棵树共用一个标签页，
-   * 由右键「表列表」/ 顶部按钮 / 菜单显式打开；选中树节点不联动它。
+   * 对象树里选中节点 → 记住当前节点，并让「对象」列跟着走：
+   * 库 / 表 → 数据表列表（选中哪个表就高亮哪个），脚本 → 脚本列表；
+   * 连接与根节点不联动，免得点一下就把工作区跳走。
    */
-  async function openTableList(source: SchemaNode) {
+  function selectTreeNode(node: SchemaNode) {
+    setActiveNode(node);
+
+    if (!session)
+      return;
+
+    if (node.kind === "QUERY") {
+      void showScriptList({ highlightName: node.path ? node.label : undefined });
+      return;
+    }
+
+    if (node.kind === "CATALOG" || node.kind === "SCHEMA" || node.kind === "TABLE")
+      void showTableList(node, { quiet: true });
+  }
+
+  /** 当前连接共用的「对象」列（不存在时返回 null） */
+  function findObjectTab(): ObjectTab | null {
+    return tabs.find((tab): tab is ObjectTab => tab.kind === "objects") ?? null;
+  }
+
+  /**
+   * 让「对象」列显示某个节点下的数据表列表（Navicat 风格的对象页）。
+   *
+   * - 选中表 → 显示它所在的容器，并把该表高亮；
+   * - 选中库 / 模式 / 表容器 → 显示它们下面的表容器；
+   * - 页面已存在就地换内容（不会再开第二个「对象」标签），并且固定在最左侧；
+   * - `force` 为 false（树选中联动）时优先用已有内容，不重新读库。
+   */
+  async function showTableList(source: SchemaNode, options: { force?: boolean; quiet?: boolean } = {}) {
     if (!session) {
-      setError("请先在左侧选择一个连接");
+      if (!options.quiet)
+        setError("请先在左侧选择一个连接");
+
       return;
     }
 
     /* 选中的是表 → 展示它所在的容器，并把这个表标为当前项 */
     let target = source;
-    let highlight = source.kind === "TABLE" && !source.hasChildren ? source.label : null;
+    const highlight = source.kind === "TABLE" && !source.hasChildren ? source.label : null;
 
     if (highlight) {
       const parent = parentTreeNode(source.id);
@@ -1162,13 +1207,28 @@ export function App() {
     }
 
     if (!container) {
-      setError(`${target.label} 下没有数据表`);
+      /* 树选中联动时不要弹窗打扰，只在状态栏说一声 */
+      if (options.quiet)
+        setStatus(`${target.label} 下没有数据表`);
+      else
+        setError(`${target.label} 下没有数据表`);
+
       return;
     }
 
-    const tables = await loadTableNodes(container);
-    const existing = tabs.find(tab => tab.kind === "tables");
-    const title = `${container.catalog ?? session.name} 对象`;
+    const existing = findObjectTab();
+    const sameContainer = existing?.view === "tables" && existing.node
+      && existing.node.catalog === container.catalog
+      && existing.node.schema === container.schema;
+
+    /* 已经在看同一批表：只切过去 / 改高亮，不重新读库 */
+    if (existing && sameContainer && !options.force) {
+      setActiveTabId(existing.id);
+      setTableSelection(highlight ? [highlight] : []);
+      return;
+    }
+
+    const tables = await loadTableNodes(container, options.force ?? false);
 
     /* 切换库 / 模式时也让列表"空一下再出现"，和刷新一个观感 */
     setListFlash(previous => previous + 1);
@@ -1182,7 +1242,14 @@ export function App() {
           return previous;
 
         return [
-          { ...current, node: container, tables, loading: false, title } as WorkTab,
+          {
+            ...current,
+            view: "tables",
+            node: container,
+            tables,
+            loading: false,
+            title: OBJECT_TAB_TITLE
+          } as WorkTab,
           ...previous.filter(tab => tab.id !== existing.id)
         ];
       });
@@ -1192,14 +1259,16 @@ export function App() {
       return;
     }
 
-    const tab: TableListTab = {
+    const tab: ObjectTab = {
       id: `tab-${tabSequence++}`,
-      kind: "tables",
-      title,
+      kind: "objects",
+      view: "tables",
+      title: OBJECT_TAB_TITLE,
       running: false,
       messages: [],
       node: container,
       tables,
+      scripts: [],
       loading: false
     };
 
@@ -1209,24 +1278,29 @@ export function App() {
     setTableSelection(highlight ? [highlight] : []);
   }
 
-  async function loadTableNodes(container: SchemaNode): Promise<SchemaNode[]> {
+  /** 显式打开表列表（工具栏 / 右键 / 菜单）：重新读一遍表 */
+  async function openTableList(source: SchemaNode) {
+    await showTableList(source, { force: true });
+  }
+
+  async function loadTableNodes(container: SchemaNode, force = true): Promise<SchemaNode[]> {
     if (!session)
       return [];
 
-    const children = await loadChildren(session.sessionId, container, true);
+    const children = await loadChildren(session.sessionId, container, force);
 
     return children.filter(node => node.kind === "TABLE" && !node.hasChildren);
   }
 
   async function refreshTableList(tabId: string, container: SchemaNode) {
     setPending("tableList");
-    updateTab(tabId, { loading: true });
+    updateTab(tabId, { loading: true, view: "tables" });
 
     try {
       const tables = await loadTableNodes(container);
 
       /* 顺带把标签页绑定的容器节点换成刚读到的这份，后续刷新继续对齐 */
-      updateTab(tabId, { tables, node: container, loading: false });
+      updateTab(tabId, { view: "tables", tables, node: container, loading: false, title: OBJECT_TAB_TITLE });
       setStatus(`已刷新 ${tables.length} 张表`);
       setListFlash(previous => previous + 1);
     } catch (e) {
@@ -1252,7 +1326,8 @@ export function App() {
 
     try {
       const candidates = await containerCandidates(active.sessionId, node);
-      const page = tabs.find((tab): tab is TableListTab => tab.kind === "tables");
+      /* 对象列只要是打开的（哪怕是脚本视图）都接受刷新，refreshTableList 会把它切回表列表 */
+      const page = tabs.find((tab): tab is ObjectTab => tab.kind === "objects");
 
       if (page) {
         /*
@@ -1260,9 +1335,15 @@ export function App() {
          * 拿不到就直接用页面自己绑定的容器 —— 无论如何都走页面刷新这条路。
          */
         const fresh = candidates.find(item =>
-          item.catalog === page.node.catalog && item.schema === page.node.schema);
+          item.catalog === page.node?.catalog && item.schema === page.node?.schema);
+        const container = fresh ?? page.node;
 
-        await refreshTableList(page.id, fresh ?? page.node);
+        if (!container) {
+          setError("对象列表还没绑定数据库，请重新打开一次");
+          return;
+        }
+
+        await refreshTableList(page.id, container);
         return;
       }
 
@@ -1477,10 +1558,10 @@ export function App() {
 
       await refreshScriptTree();
 
-      /* 脚本页开着就同步刷新，不然新脚本看不见 */
-      const listTab = tabs.find(tab => tab.kind === "scripts");
+      /* 对象列正显示脚本就同步刷新，不然新脚本看不见；显示表列表时不要顶掉它 */
+      const listTab = findObjectTab();
 
-      if (listTab)
+      if (listTab?.view === "scripts")
         void refreshScriptList(listTab.id);
 
       await openScriptFile({ name: fileName, catalog });
@@ -1523,9 +1604,9 @@ export function App() {
 
       await refreshScriptTree();
 
-      const listTab = tabs.find(tab => tab.kind === "scripts");
+      const listTab = findObjectTab();
 
-      if (listTab)
+      if (listTab?.view === "scripts")
         void refreshScriptList(listTab.id);
 
       setStatus(`已重命名为 ${name}`);
@@ -1564,9 +1645,9 @@ export function App() {
 
       await refreshScriptTree();
 
-      const listTab = tabs.find(tab => tab.kind === "scripts");
+      const listTab = findObjectTab();
 
-      if (listTab)
+      if (listTab?.view === "scripts")
         void refreshScriptList(listTab.id);
 
       setScriptSelection([]);
@@ -1595,18 +1676,22 @@ export function App() {
    * 「脚本」对象页：和「对象」页一样是整连接共用一个标签页，
    * 列出所有数据库目录下的 .sql，双击打开、右键重命名 / 删除 / 在文件夹中显示。
    */
-  async function openScriptList() {
+  /**
+   * 让「对象」列显示脚本列表（当前连接下所有库的 .sql）。
+   * 与表列表共用同一个「对象」标签，只是切换内容；选中脚本节点时会定位到那一行。
+   */
+  async function showScriptList(options: { force?: boolean; highlightName?: string } = {}) {
     if (!session) {
       setError("请先在左侧选择一个连接");
       return;
     }
 
-    const existing = tabs.find(tab => tab.kind === "scripts");
+    const existing = findObjectTab();
 
-    if (existing) {
+    /* 已经在看脚本列表：只切过去 / 定位，不重新扫目录 */
+    if (existing?.view === "scripts" && !options.force) {
       setActiveTabId(existing.id);
-      setScriptFilter("");
-      await refreshScriptList(existing.id);
+      highlightScript(existing, options.highlightName);
       return;
     }
 
@@ -1615,36 +1700,57 @@ export function App() {
       return [] as ScriptFile[];
     });
 
-    const tab: ScriptListTab = {
+    setScriptFlash(previous => previous + 1);
+
+    if (existing) {
+      setTabs(previous => previous.map(tab => tab.id === existing.id
+        ? { ...tab, view: "scripts", scripts, loading: false, title: OBJECT_TAB_TITLE } as WorkTab
+        : tab));
+      setActiveTabId(existing.id);
+      setScriptFilter("");
+      highlightScript({ scripts }, options.highlightName);
+      return;
+    }
+
+    const tab: ObjectTab = {
       id: `tab-${tabSequence++}`,
-      kind: "scripts",
-      title: `脚本 · ${session.name}`,
+      kind: "objects",
+      view: "scripts",
+      title: OBJECT_TAB_TITLE,
       running: false,
       messages: [],
+      node: null,
+      tables: [],
       scripts,
       loading: false
     };
 
-    /* 紧跟在常驻「对象」页后面，别把对象页挤到后面去 */
-    setTabs(previous => {
-      const index = previous.findIndex(item => item.kind === "tables");
-      const next = [...previous];
-
-      next.splice(index < 0 ? 0 : index + 1, 0, tab);
-      return next;
-    });
+    /* 「对象」列固定在标签栏最左侧 */
+    setTabs(previous => [tab, ...previous]);
     setActiveTabId(tab.id);
     setScriptFilter("");
-    setScriptSelection([]);
+    highlightScript({ scripts }, options.highlightName);
+  }
+
+  /** 按脚本文件名定位选中项（树节点只有名字，选中状态用的是绝对路径） */
+  function highlightScript(source: { scripts: ScriptFile[] }, name?: string) {
+    const hit = name ? source.scripts.find(script => script.name === name) : undefined;
+
+    setScriptSelection(hit ? [hit.path] : []);
+  }
+
+  /** 显式打开脚本列表（工具栏 / 右键 / 菜单）：重新扫一遍脚本目录 */
+  async function openScriptList() {
+    await showScriptList({ force: true });
   }
 
   async function refreshScriptList(tabId: string) {
-    updateTab(tabId, { loading: true });
+    updateTab(tabId, { loading: true, view: "scripts" });
 
     try {
       const scripts = await loadScriptFiles();
 
-      updateTab(tabId, { scripts, loading: false });
+      updateTab(tabId, { view: "scripts", scripts, loading: false, title: OBJECT_TAB_TITLE });
       setScriptFlash(previous => previous + 1);
     } catch (e) {
       updateTab(tabId, { loading: false });
@@ -1706,9 +1812,9 @@ export function App() {
 
         await refreshScriptTree();
 
-        const listTab = tabs.find(tab => tab.kind === "scripts");
+        const listTab = findObjectTab();
 
-        if (listTab)
+        if (listTab?.view === "scripts")
           void refreshScriptList(listTab.id);
 
         setStatus(`已保存脚本 ${fileName}`);
@@ -1724,9 +1830,9 @@ export function App() {
 
       updateTab(activeTab.id, { savedSql: content });
 
-      const listTab = tabs.find(tab => tab.kind === "scripts");
+      const listTab = findObjectTab();
 
-      if (listTab)
+      if (listTab?.view === "scripts")
         void refreshScriptList(listTab.id);
 
       setStatus(`已保存脚本 ${script.name}`);
@@ -2262,13 +2368,13 @@ export function App() {
       return;
     }
 
-    if (activeTab?.kind === "tables" && activeTab.tables.length > 0) {
+    if (activeTab?.kind === "objects" && activeTab.view === "tables" && activeTab.tables.length > 0) {
       setTableSelection(activeTab.tables.map(node => node.label));
       setStatus(`已全选 ${activeTab.tables.length} 张表`);
       return;
     }
 
-    if (activeTab?.kind === "scripts" && activeTab.scripts.length > 0) {
+    if (activeTab?.kind === "objects" && activeTab.view === "scripts" && activeTab.scripts.length > 0) {
       setScriptSelection(activeTab.scripts.map(script => script.path));
       setStatus(`已全选 ${activeTab.scripts.length} 个脚本`);
       return;
@@ -2431,10 +2537,8 @@ export function App() {
     if (activeTab.kind === "design")
       return activeTab.columns;
 
-    if (activeTab.kind === "tables")
-      return [];
-
-    if (activeTab.kind === "scripts")
+    /* 「对象」列自己渲染列表，没有结果集 */
+    if (activeTab.kind === "objects")
       return [];
 
     return activeTab.result?.columns ?? [];
@@ -2450,19 +2554,19 @@ export function App() {
 
   /* 选区 → 行/列序号列表（右键菜单、按钮对整块选区生效） */
   /* 「对象」页当前选中的表（工具栏的打开/设计按钮作用于全部选中项） */
-  const objectSelections = activeTab?.kind === "tables"
+  const objectSelections = activeTab?.kind === "objects" && activeTab.view === "tables"
     ? activeTab.tables.filter(node => tableSelection.includes(node.label))
     : [];
 
-  /* 「脚本」页当前选中的脚本 */
-  const scriptSelections = activeTab?.kind === "scripts"
+  /* 对象列（脚本视图）里选中的脚本 */
+  const scriptSelections = activeTab?.kind === "objects" && activeTab.view === "scripts"
     ? activeTab.scripts.filter(script => scriptSelection.includes(script.path))
     : [];
 
-  /* 「对象」页与「脚本」页是整页列表：结果集那一套面板（消息 / 执行计划 / 日志）在这里不出现 */
-  const pageTab = activeTab?.kind === "tables" || activeTab?.kind === "scripts";
+  /* 对象列是整页列表：结果集那一套面板（消息 / 执行计划 / 日志）在这里不出现 */
+  const pageTab = activeTab?.kind === "objects";
 
-  /* 「脚本」页右键菜单：多选时换成批量版本 */
+  /* 对象列（脚本视图）右键菜单：多选时换成批量版本 */
   function buildScriptMenuEntries(script: ScriptFile): MenuEntry[] {
     const batch = scriptSelection.length > 1 && scriptSelection.includes(script.path);
 
@@ -2595,7 +2699,7 @@ export function App() {
       return [];
 
     return [
-      { label: "关闭", disabled: tabs[index].kind === "tables", action: () => void closeTabs("current", id) },
+      { label: "关闭", disabled: tabs[index].kind === "objects", action: () => void closeTabs("current", id) },
       { label: "关闭左侧标签", disabled: index === 0, action: () => void closeTabs("left", id) },
       { label: "关闭右侧标签", disabled: index === tabs.length - 1, action: () => void closeTabs("right", id) },
       { separator: true },
@@ -2682,7 +2786,8 @@ export function App() {
       return;
     }
 
-    const table = activeTab && "node" in activeTab ? activeTab.node.label : "table";
+    /* 数据页用真实表名，查询结果集没有表名就用占位符 */
+    const table = activeTab?.kind === "data" ? activeTab.node.label : "table";
     const name = (column: QueryColumn) => `\`${column.name || column.label}\``;
 
     if (format === "update") {
@@ -2967,7 +3072,7 @@ export function App() {
             activeId={activeNode?.id ?? null}
             filter={treeFilter}
             onToggle={node => void toggleNode(node)}
-            onSelect={setActiveNode}
+            onSelect={selectTreeNode}
             onActivate={activateNode}
             onOpenData={openTableData}
             onDesign={openTableDesign}
@@ -3008,17 +3113,16 @@ export function App() {
                   <Icon
                     name={tab.kind === "query" ? "terminal"
                       : tab.kind === "data" ? "table"
-                        : tab.kind === "tables" ? "list"
-                          : tab.kind === "scripts" ? "code"
-                            : "columns"}
+                        : tab.kind === "objects" ? (tab.view === "scripts" ? "code" : "list")
+                          : "columns"}
                     size={13}
                   />
                   <span className="work-tab-title">{tab.title}</span>
                   {/* 脚本有未保存的修改 → 标题后面点一个小圆点 */}
                   {isScriptDirty(tab) && <span className="work-tab-dot" title="有未保存的修改" aria-label="有未保存的修改" />}
                 </button>
-                {/* 「对象」页常驻，不给关闭按钮 */}
-                {tab.kind !== "tables" && (
+                {/* 「对象」列常驻，不给关闭按钮 */}
+                {tab.kind !== "objects" && (
                   <button
                     type="button"
                     className="work-tab-close"
@@ -3157,7 +3261,7 @@ export function App() {
               </>
             )}
 
-            {activeTab?.kind === "scripts" && (
+            {activeTab?.kind === "objects" && activeTab.view === "scripts" && (
               <>
                 <button type="button" className="tbtn" onClick={() => void createScript()}>
                   <Icon name="plus" />新建脚本
@@ -3219,7 +3323,7 @@ export function App() {
               </>
             )}
 
-            {activeTab?.kind === "tables" && (
+            {activeTab?.kind === "objects" && activeTab.view === "tables" && (
               <>
                 <button
                   type="button"
@@ -3466,7 +3570,7 @@ export function App() {
             )}
 
             <div className="result-body">
-              {activeTab?.kind === "tables" && (
+              {activeTab?.kind === "objects" && activeTab.view === "tables" && (
                 <div className="table-list-host">
                     <TableList
                       tables={activeTab.tables}
@@ -3491,7 +3595,7 @@ export function App() {
                 </div>
               )}
 
-              {activeTab?.kind === "scripts" && (
+              {activeTab?.kind === "objects" && activeTab.view === "scripts" && (
                 <div className="table-list-host">
                   <ScriptList
                     scripts={activeTab.scripts}
@@ -3517,7 +3621,7 @@ export function App() {
                 />
               )}
 
-              {resultPane === "grid" && activeTab?.kind !== "design" && activeTab?.kind !== "tables" && (
+              {resultPane === "grid" && !pageTab && activeTab?.kind !== "design" && (
                 <div className="grid-host">
                     <ResultGrid
                       columns={columns}
@@ -3754,10 +3858,8 @@ function tabKindLabel(kind: WorkTab["kind"] | undefined): string {
       return "数据浏览";
     case "design":
       return "表结构";
-    case "tables":
+    case "objects":
       return "对象列表";
-    case "scripts":
-      return "脚本列表";
     default:
       return "就绪";
   }
