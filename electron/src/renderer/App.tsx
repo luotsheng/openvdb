@@ -447,11 +447,15 @@ export function App() {
       }
     });
 
-    /* Ctrl+R 由窗口级快捷键统一处理（见下面的 useEffect），这里只留 Ctrl+Enter */
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => void runSelectionOrAll());
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => void formatActiveQuery());
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => void saveActiveScript());
-    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS, () => void saveActiveScript(true));
+    /*
+     * 快捷键命令必须通过 ref 取「当前」的处理函数：这个 effect 只在挂载时跑一次，
+     * 直接调用组件内的函数会闭包在首次渲染的状态上（那时 activeTab 还是 null，
+     * 于是 Ctrl+S / Ctrl+Enter 都会静默返回）。
+     */
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Enter, () => runShortcutRef.current());
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyF, () => formatShortcutRef.current());
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => saveShortcutRef.current(false));
+    editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS, () => saveShortcutRef.current(true));
 
     /* Ctrl/Cmd + W：智能扩选（按语法单元逐层扩大选区），Shift 版本收缩 */
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyW, () =>
@@ -1462,8 +1466,13 @@ export function App() {
   }
 
   async function saveActiveScript(saveAs = false) {
-    if (!activeTab || activeTab.kind !== "query" || !session)
+    if (!activeTab || activeTab.kind !== "query")
       return;
+
+    if (!session) {
+      setError("请先连接数据库，再保存脚本");
+      return;
+    }
 
     const script = activeTab.script;
     const content = activeTab.sql;
@@ -2129,6 +2138,13 @@ export function App() {
 
       /* 执行：Monaco 没绑 Ctrl+R，编辑器里也必须在这里处理，否则按了没反应 */
       if (!shift && key === "r") {
+        event.preventDefault();
+        runShortcutRef.current();
+        return;
+      }
+
+      /* ⌘/Ctrl+Enter 同样执行（编辑器里由 Monaco 处理，这里兜住其它焦点） */
+      if (!shift && key === "enter" && !target?.closest?.("input, textarea")) {
         event.preventDefault();
         runShortcutRef.current();
         return;
