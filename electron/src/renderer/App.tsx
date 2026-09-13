@@ -2053,9 +2053,31 @@ export function App() {
     await runQuery(activeTab.id, selected.trim() ? selected : activeTab.sql);
   }
 
+  /**
+   * 全选（Ctrl+A / 编辑菜单）：对象页与脚本页是全选表格里的行，
+   * 查询页仍是选中编辑器里的全部 SQL。
+   */
+  function selectAllInPage() {
+    if (activeTab?.kind === "tables" && activeTab.tables.length > 0) {
+      setTableSelection(activeTab.tables.map(node => node.label));
+      setStatus(`已全选 ${activeTab.tables.length} 张表`);
+      return;
+    }
+
+    if (activeTab?.kind === "scripts" && activeTab.scripts.length > 0) {
+      setScriptSelection(activeTab.scripts.map(script => script.path));
+      setStatus(`已全选 ${activeTab.scripts.length} 个脚本`);
+      return;
+    }
+
+    editorRef.current?.trigger("menu", "editor.action.selectAll", null);
+  }
+
   /*
-   * 窗口级快捷键：Ctrl+R 执行、Ctrl+Shift+F 格式化、Ctrl+S / Ctrl+Shift+S 保存脚本。
-   * 焦点在编辑器里时交给 Monaco 自己的命令处理，避免同一个动作触发两次。
+   * 窗口级快捷键：Ctrl+R 执行、Ctrl+A 全选、Ctrl+Shift+F 格式化、
+   * Ctrl+S / Ctrl+Shift+S 保存脚本。
+   * 编辑器有焦点时，除 Ctrl+R 外都交给 Monaco 自己的命令处理，避免同一个动作触发两次
+   * （Monaco 没有绑 Ctrl+R，所以执行必须在这里兜底）。
    */
   const runShortcutRef = useRef<() => void>(() => undefined);
   runShortcutRef.current = () => void runSelectionOrAll();
@@ -2063,6 +2085,8 @@ export function App() {
   formatShortcutRef.current = () => void formatActiveQuery();
   const saveShortcutRef = useRef<(saveAs?: boolean) => void>(() => undefined);
   saveShortcutRef.current = (saveAs?: boolean) => void saveActiveScript(saveAs);
+  const selectAllRef = useRef<() => void>(() => undefined);
+  selectAllRef.current = () => void selectAllInPage();
 
   /* 结果集搜索防抖：连续输入时只在停顿后过滤一次（同 FX 版 100ms） */
   useEffect(() => {
@@ -2086,17 +2110,25 @@ export function App() {
 
       const key = event.key.toLowerCase();
       const shift = event.shiftKey;
+      const target = event.target as HTMLElement | null;
 
-      /* 编辑器有焦点：Monaco 自己的 Ctrl+R / Ctrl+S / Ctrl+W 命令先处理 */
-      if ((event.target as HTMLElement | null)?.closest?.(".editor"))
-        return;
-
+      /* 执行：Monaco 没绑 Ctrl+R，编辑器里也必须在这里处理，否则按了没反应 */
       if (!shift && key === "r") {
-        /* 拦下浏览器刷新，交给「执行」 */
         event.preventDefault();
         runShortcutRef.current();
         return;
       }
+
+      /* 输入框里的 Ctrl+A 让浏览器自己全选文本，别抢 */
+      if (!shift && key === "a" && !target?.closest?.("input, textarea")) {
+        event.preventDefault();
+        selectAllRef.current();
+        return;
+      }
+
+      /* 其余快捷键在编辑器里交给 Monaco，避免同一个动作触发两次 */
+      if (target?.closest?.(".editor"))
+        return;
 
       if (shift && key === "f") {
         event.preventDefault();
@@ -2530,7 +2562,7 @@ export function App() {
         { label: "扩展选中 (Ctrl+W)", disabled: activeTab?.kind !== "query", action: () => editorRef.current?.trigger("menu", "editor.action.smartSelect.expand", null) },
         { label: "收窄选中 (Ctrl+Shift+W)", disabled: activeTab?.kind !== "query", action: () => editorRef.current?.trigger("menu", "editor.action.smartSelect.shrink", null) },
         { separator: true },
-        { label: "全选", action: () => editorRef.current?.trigger("menu", "editor.action.selectAll", null) },
+        { label: "全选 (Ctrl+A)", action: () => selectAllInPage() },
         { label: "复制", action: () => editorRef.current?.trigger("menu", "editor.action.clipboardCopyAction", null) },
         { label: "粘贴", action: () => editorRef.current?.trigger("menu", "editor.action.clipboardPasteAction", null) }
       ]
