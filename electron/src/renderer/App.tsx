@@ -1114,12 +1114,11 @@ export function App() {
   }
 
   /**
-   * 刷新对象：树里的刷新入口（右键 / 菜单 / 工具条）统一走这里。
+   * 刷新对象：树 / 菜单 / 对象页右键的刷新入口全部走这里。
    *
-   * - 先把节点对应的「表容器」找出来（表 → 父容器；库 / 模式 → 它下面的容器），
-   *   `loadTableNodes` 会强制重读容器子节点，所以树上的表列表一起是新的；
-   * - 「对象」页开着就交给 `refreshTableList` —— 和顶部刷新按钮同一条路径，
-   *   因此同样会走 pending、改列表内容并触发闪烁，不会再出现两套刷新行为。
+   * 只要「对象」页开着，就交给 `refreshTableList` —— 和顶部刷新按钮是同一个调用、
+   * 同一条路径（pending 忙碌态 → 重读表 → 列表闪烁），右键与按钮表现必然一致。
+   * 没开对象页时只重读树节点，不给不存在的列表闪。
    */
   async function refreshObjectList(node: SchemaNode) {
     const active = sessionRef.current;
@@ -1128,65 +1127,65 @@ export function App() {
       return;
 
     try {
-      /*
-       * 先找出这个节点下可能对应的「表容器」：
-       * 表容器 → 自己；表 → 父容器；库 / 模式 → 底下的容器（库还要再往下走一层模式）。
-       */
-      const candidates: SchemaNode[] = [];
+      const candidates = await containerCandidates(active.sessionId, node);
+      const page = tabs.find((tab): tab is TableListTab => tab.kind === "tables");
 
-      if (node.kind === "TABLE" && node.hasChildren) {
-        candidates.push(node);
-      } else if (node.kind === "TABLE") {
-        const parent = parentTreeNode(node.id);
+      if (page) {
+        /*
+         * 能拿到同一批对象的「新」容器节点就用它（节点 id 每次加载都会变），
+         * 拿不到就直接用页面自己绑定的容器 —— 无论如何都走页面刷新这条路。
+         */
+        const fresh = candidates.find(item =>
+          item.catalog === page.node.catalog && item.schema === page.node.schema);
 
-        if (parent && parent.kind === "TABLE" && parent.hasChildren)
-          candidates.push(parent);
-      } else if (node.kind === "CATALOG" || node.kind === "SCHEMA") {
-        const children = await loadChildren(active.sessionId, node, true);
-        const direct = children.find(child => child.kind === "TABLE" && child.hasChildren);
-
-        if (direct)
-          candidates.push(direct);
-
-        for (const schema of children.filter(child => child.kind === "SCHEMA")) {
-          const grand = await loadChildren(active.sessionId, schema, true);
-          const found = grand.find(child => child.kind === "TABLE" && child.hasChildren);
-
-          if (found)
-            candidates.push(found);
-        }
+        await refreshTableList(page.id, fresh ?? page.node);
+        return;
       }
 
-      /* 页面里的容器节点 id 每次加载都会变，按 catalog / schema 对齐 */
-      const page = tabs.find((tab): tab is TableListTab => {
-        if (tab.kind !== "tables")
-          return false;
-
-        return candidates.some(item => item.catalog === tab.node.catalog && item.schema === tab.node.schema);
-      });
-      const container = (page
-        ? candidates.find(item => item.catalog === page.node.catalog && item.schema === page.node.schema)
-        : undefined) ?? candidates[0];
-
-      if (!container) {
+      if (candidates.length === 0) {
         setStatus(`已刷新 ${node.label}`);
         flash(`已刷新 ${node.label}`);
         return;
       }
 
-      /* 开着「对象」页 → 走顶部刷新按钮同一条路径（pending + 换数据 + 闪烁） */
-      if (page) {
-        await refreshTableList(page.id, container);
-        return;
-      }
-
-      /* 没开「对象」页：把树刷新掉就行（列表条数与提示由上面的分支负责） */
-      await loadTableNodes(container);
+      await loadTableNodes(candidates[0]);
       setStatus(`已刷新 ${node.label}`);
       flash(`已刷新 ${node.label}`);
     } catch (e) {
       setError(messageOf(e));
     }
+  }
+
+  /**
+   * 一个节点可能对应的「表容器」新节点：
+   * 表容器 → 自己；表 → 父容器；库 / 模式 → 底下的容器（库还要再往下走一层模式）。
+   */
+  async function containerCandidates(sessionId: string, node: SchemaNode): Promise<SchemaNode[]> {
+    if (node.kind === "TABLE" && node.hasChildren)
+      return [node];
+
+    if (node.kind === "TABLE") {
+      const parent = parentTreeNode(node.id);
+
+      return parent && parent.kind === "TABLE" && parent.hasChildren ? [parent] : [];
+    }
+
+    if (node.kind !== "CATALOG" && node.kind !== "SCHEMA")
+      return [];
+
+    const children = await loadChildren(sessionId, node, true);
+    const direct = children.find(child => child.kind === "TABLE" && child.hasChildren);
+    const found = direct ? [direct] : [];
+
+    for (const schema of children.filter(child => child.kind === "SCHEMA")) {
+      const grand = await loadChildren(sessionId, schema, true);
+      const container = grand.find(child => child.kind === "TABLE" && child.hasChildren);
+
+      if (container)
+        found.push(container);
+    }
+
+    return found;
   }
 
   function openTableDesign(node: SchemaNode) {
@@ -2377,6 +2376,7 @@ export function App() {
       { label: `设计选中的 ${objectSelections.length} 张表`, action: () => objectSelections.forEach(item => openTableDesign(item)) },
       { separator: true },
       { label: "复制表名", action: () => void copyText(tableSelection.join("\n")) },
+      { label: "刷新列表", action: () => void refreshObjectList(node) },
       { separator: true },
       { label: `删除选中的 ${objectSelections.length} 张表`, danger: true, action: () => void dropTables(objectSelections) }
     ];
