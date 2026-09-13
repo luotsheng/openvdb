@@ -80,6 +80,11 @@ public class RpcServer
         private final Map<String, OpenConnection> sessions = new ConcurrentHashMap<>();
         /* 每个会话（按 catalog/schema 维度）缓存一次智能提示引擎，避免每次按键都读元数据 */
         private final Map<String, SuggestionEngine> suggestionEngines = new ConcurrentHashMap<>();
+        /*
+         * 补全元数据快照：key = 连接名|catalog|schema。
+         * 连接打开期间算好的引擎在这里留一份，断开连接后查询控制台仍能提示表名与字段。
+         */
+        private final Map<String, SuggestionEngine> suggestionSnapshots = new ConcurrentHashMap<>();
         /* 已执行的结果集缓存：编辑、提交、删除都作用在同一个 QueryResult 上 */
         private final Map<Long, QueryResult> resultCache = new ConcurrentHashMap<>();
         private final Map<Long, String> resultOwner = new ConcurrentHashMap<>();
@@ -144,6 +149,7 @@ public class RpcServer
                         case "table.ddl" -> tableDdl(params);
                         case "sql.format" -> formatSql(params);
                         case "sql.suggest" -> suggestSql(params);
+                        case "sql.warmSuggest" -> warmSuggest(params);
                         case "result.update" -> updateCell(params);
                         case "result.insert" -> insertRow(params);
                         case "result.delete" -> deleteRows(params);
@@ -261,6 +267,34 @@ public class RpcServer
                         throw new IllegalArgumentException("name 不能为空");
 
                 ConnectionRepository.deleteConnection(name);
+                /* 连接配置都删了，它的补全快照也没用了 */
+                suggestionSnapshots.keySet().removeIf(key -> key.startsWith(name + "|"));
+                return new JSONObject();
+        }
+
+        /** 补全快照的键：连接名 + 库 + 模式 */
+        private String snapshotKey(String connection, Session context)
+        {
+                return connection + "|" + context.catalog() + "|" + context.schema();
+        }
+
+        /**
+         * 预热补全引擎并留下元数据快照：打开查询页时调用一次，
+         * 这样即使用户没敲过字就断开连接，控制台里也已经有这份快照可用。
+         */
+        private Object warmSuggest(JSONObject params)
+        {
+                OpenConnection session = require(params.getString("sessionId"));
+                Session context = Session.of(params.getString("catalog"), params.getString("schema"));
+                String cacheKey = session.id + "|" + context.catalog() + "|" + context.schema();
+                SuggestionEngine engine = suggestionEngines.get(cacheKey);
+
+                if (engine == null) {
+                        engine = SuggestionEngine.of(session.driver, context);
+                        suggestionEngines.put(cacheKey, engine);
+                }
+
+                suggestionSnapshots.put(snapshotKey(session.name, context), engine);
                 return new JSONObject();
         }
 
@@ -464,21 +498,35 @@ public class RpcServer
                 String sessionId = params.getString("sessionId");
                 OpenConnection session = sessionId == null ? null : sessions.get(sessionId);
                 String type = params.getString("type");
+                String connection = params.getString("connection");
                 Session context = Session.of(params.getString("catalog"), params.getString("schema"));
                 int offset = params.containsKey("offset")
                         ? Math.min(params.getIntValue("offset"), sql.length())
                         : sql.length();
 
-                String cacheKey = session != null
-                        ? session.id + "|" + context.catalog() + "|" + context.schema()
-                        : "type|" + (type == null ? "sql" : type.toLowerCase());
-                SuggestionEngine engine = suggestionEngines.get(cacheKey);
+                SuggestionEngine engine = null;
 
+                if (session != null) {
+                        String cacheKey = session.id + "|" + context.catalog() + "|" + context.schema();
+
+                        engine = suggestionEngines.get(cacheKey);
+
+                        if (engine == null) {
+                                engine = SuggestionEngine.of(session.driver, context);
+                                suggestionEngines.put(cacheKey, engine);
+                        }
+
+                        /* 同步留一份「连接级」快照：连接关闭后查询控制台靠它继续提示 */
+                        suggestionSnapshots.put(snapshotKey(session.name, context), engine);
+                } else if (connection != null) {
+                        engine = suggestionSnapshots.get(snapshotKey(connection, context));
+                }
+
+                /* 既没有会话也没有快照：退回该方言的关键字 */
                 if (engine == null) {
-                        engine = session != null
-                                ? SuggestionEngine.of(session.driver, context)
-                                : SuggestionEngine.keywords(type);
-                        suggestionEngines.put(cacheKey, engine);
+                        String cacheKey = "type|" + (type == null ? "sql" : type.toLowerCase());
+
+                        engine = suggestionEngines.computeIfAbsent(cacheKey, key -> SuggestionEngine.keywords(type));
                 }
 
                 for (Suggestion suggestion : engine.resolve(sql, offset)) {

@@ -141,7 +141,7 @@ interface QueryTab extends BaseTab {
   /* 绑定到本地查询脚本文件时才有 */
   script?: { connection: string; catalog: string; name: string };
   /* 执行上下文：连接 → 数据库 → 模式 → 表 */
-  path: { catalog?: string; schema?: string; table?: string };
+  path: { connection?: string; catalog?: string; schema?: string; table?: string };
 }
 
 interface DataTab extends BaseTab {
@@ -359,9 +359,15 @@ export function App() {
   const activeTabRef = useRef(activeTabId);
   const jobTabRef = useRef<Map<number, string>>(new Map());
   const runningJobRef = useRef<Map<string, number>>(new Map());
-  const suggestionContextRef = useRef<{ sessionId?: string; catalog?: string; schema?: string; type?: string }>({});
-  /* 断开连接后仍要能提示：记住最近一次连接的数据库类型 */
-  const lastSessionTypeRef = useRef<string>("mysql");
+  const suggestionContextRef = useRef<{
+    sessionId?: string;
+    connection?: string;
+    catalog?: string;
+    schema?: string;
+    type?: string;
+  }>({});
+  /* 断开连接后仍要能提示：记住最近一次连接的连接名与数据库类型 */
+  const lastSessionRef = useRef<{ name?: string; type: string }>({ type: "mysql" });
   /* 用 ref 保存当前会话，避免异步回调里拿到已失效的 sessionId */
   const sessionRef = useRef<SessionState | null>(null);
 
@@ -492,6 +498,7 @@ export function App() {
         try {
           const payload = await invoke<{ suggestions: SuggestionItem[] }>("sql.suggest", {
             sessionId: context.sessionId,
+            connection: context.connection,
             type: context.type,
             catalog: context.catalog,
             schema: context.schema,
@@ -622,12 +629,14 @@ export function App() {
 
   /*
    * 补全上下文：
-   * - 有会话时带上 sessionId，数据层会给出「关键字 + 本库表名 + 引用表的字段」；
-   * - 连接已关闭时只带数据库类型，数据层退回该方言的关键字 / 函数提示，
-   *   所以断开连接后编辑器里按 Ctrl+Space 仍然有词可补。
+   * - 有会话时带 sessionId，数据层给「关键字 + 本库表名 + 引用表的字段」，
+   *   同时按连接名留一份元数据快照；
+   * - 连接已关闭时改带连接名，数据层用那份快照继续提示表名 / 字段（内容是断开前的），
+   *   快照也没有（比如从没在这个连接上敲过字）才退化成该方言的关键字。
    */
   suggestionContextRef.current = {
     sessionId: session?.sessionId,
+    connection: session?.name ?? consoleConnection(),
     /* 查询页没显式选库时按当前连接的第一个库取元数据，保证提示里有表与字段 */
     catalog: activeCatalog ?? catalogOptions[0]?.label,
     schema: activeSchema,
@@ -635,16 +644,40 @@ export function App() {
   };
 
   /**
-   * 没有活动会话时补全用的数据库类型：先看查询页绑定的脚本属于哪个连接，
-   * 再退回「最近一次连接过的类型」，这样关掉连接后仍然知道该给哪套关键字。
+   * 当前查询控制台属于哪个连接：优先用标签自己记的（断开后仍在），
+   * 再看它绑定的脚本，最后退回最近一次连接过的连接名。
    */
-  function suggestionType(): string {
-    const bound = activeTab?.kind === "query" && activeTab.script
-      ? connections.find(item => item.name === activeTab.script?.connection)?.type
-      : undefined;
+  function consoleConnection(): string | undefined {
+    if (activeTab?.kind !== "query")
+      return lastSessionRef.current.name;
 
-    return bound ?? lastSessionTypeRef.current;
+    return activeTab.path.connection ?? activeTab.script?.connection ?? lastSessionRef.current.name;
   }
+
+  /** 没有活动会话时补全用的数据库类型：同上看连接，再退回最近连接过的类型 */
+  function suggestionType(): string {
+    const name = consoleConnection();
+    const found = name ? connections.find(item => item.name === name)?.type : undefined;
+
+    return found ?? lastSessionRef.current.type;
+  }
+
+  /*
+   * 进入查询页（或切库 / 切模式）时预热该上下文的补全引擎：
+   * 数据层顺手留下元数据快照，之后断开连接仍然能提示表名与字段。
+   */
+  const warmPath = activeTab?.kind === "query" ? activeTab.path : undefined;
+
+  useEffect(() => {
+    if (!session || !warmPath)
+      return;
+
+    void invoke("sql.warmSuggest", {
+      sessionId: session.sessionId,
+      catalog: warmPath.catalog ?? catalogOptions[0]?.label,
+      schema: warmPath.schema
+    }).catch(() => undefined);
+  }, [session?.sessionId, activeTab?.id, warmPath?.catalog, warmPath?.schema, catalogOptions]);
 
   /* 连接后把根节点作为「数据库」候选，并给查询页一个默认上下文 */
   useEffect(() => {
@@ -786,7 +819,10 @@ export function App() {
       const opened = await withBusy(() => invoke<OpenConnectionPayload>("connection.open", { name: connection.name }));
 
       setSession({ sessionId: opened.sessionId, name: connection.name, product: opened.product });
-      lastSessionTypeRef.current = connection.type ?? opened.product.type ?? lastSessionTypeRef.current;
+      lastSessionRef.current = {
+        name: connection.name,
+        type: connection.type ?? opened.product.type ?? lastSessionRef.current.type
+      };
       setRoots(opened.nodes);
       setChildrenMap({});
       setActiveNode(null);
@@ -965,7 +1001,8 @@ export function App() {
     }
 
     const tab = newQueryTab();
-    tab.path = { catalog: context.catalog, schema: context.schema };
+    /* 记住这个控制台属于哪个连接：断开连接后补全靠它的快照 */
+    tab.path = { connection: context.connection, catalog: context.catalog, schema: context.schema };
 
     setTabs(previous => [...previous, tab]);
     setActiveTabId(tab.id);
@@ -1364,7 +1401,7 @@ export function App() {
       tab.sql = payload.content;
       tab.savedSql = payload.content;
       tab.script = { connection: session.name, catalog: file.catalog, name: file.name };
-      tab.path = { catalog: file.catalog };
+      tab.path = { connection: session.name, catalog: file.catalog };
 
       setTabs(previous => [...previous, tab]);
       setActiveTabId(tab.id);
@@ -3057,8 +3094,12 @@ export function App() {
                       ]}
                       onChange={name => {
                         const connection = connections.find(item => item.name === name);
-                        if (connection)
+
+                        if (connection) {
+                          /* 标签记住新连接，之后断开也还能用它的补全快照 */
+                          updateQueryPath({ connection: name, catalog: undefined, schema: undefined, table: undefined });
                           void openConnection(connection);
+                        }
                       }}
                     />
                   </span>
