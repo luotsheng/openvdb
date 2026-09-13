@@ -52,6 +52,8 @@ export interface SchemaNode {
   table?: TableMeta;
   connected?: boolean;
   badge?: string;
+  /** 连接节点带上对应的数据库类型，用于显示品牌 logo */
+  dbType?: string;
   path?: string;
   size?: number;
   modified?: number;

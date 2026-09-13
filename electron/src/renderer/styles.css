@@ -24,6 +24,8 @@
   --bar: light-dark(#f7f8fa, #161b22);
   /* 工具条 / 标签条：浅色是略深一点的框体色，深色同样用抬升面 */
   --bar-2: light-dark(#e9ebf0, #161b22);
+  /* 数据库品牌 logo 在深色下提亮 / 加饱和，单色 logo 才不会糊在底上 */
+  --logo-filter: none;
   --field: light-dark(#fbfbfc, #0d1117);
   --hover: light-dark(#e7eaef, #161b22);
   --active: light-dark(#e3ecfa, #13233a);
@@ -399,10 +401,21 @@ input, textarea, .console, .pre-wrap { user-select: text; }
 /* 图标按节点类型着色，避免整棵树一片灰 */
 .tree-icon { display: inline-flex; color: var(--muted); }
 .tree-icon.kind-connection { color: light-dark(#2f6feb, #58a6ff); }
-.tree-icon.kind-catalog { color: light-dark(#0e7490, #39c5cf); }
+.tree-icon.kind-catalog { color: light-dark(#2563eb, #58a6ff); }
 .tree-icon.kind-schema { color: light-dark(#6d28d9, #a371f7); }
 .tree-icon.kind-table { color: light-dark(#1d4ed8, #79c0ff); }
 .tree-icon.is-script { color: light-dark(#15803d, #3fb950); }
+
+/* 数据库品牌 logo（连接节点、连接下拉、连接管理器） */
+.db-logo {
+  display: inline-block;
+  flex: 0 0 auto;
+  object-fit: contain;
+  vertical-align: middle;
+  filter: var(--logo-filter);
+}
+
+.app.is-dark { --logo-filter: brightness(1.35) saturate(1.12); }
 .tree-label { flex: 1; overflow: hidden; text-overflow: ellipsis; }
 .tree-count {
   font-size: 11px;

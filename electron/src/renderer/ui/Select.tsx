@@ -1,9 +1,12 @@
 import * as RadixSelect from "@radix-ui/react-select";
+import { DbLogo } from "./dbLogo";
 import { Icon } from "./icons";
 
 export interface SelectOption {
   value: string;
   label: string;
+  /** 这一项自己的数据库 logo（连接列表这种混合类型时用） */
+  logo?: string;
 }
 
 interface SelectProps {
@@ -15,6 +18,8 @@ interface SelectProps {
   title?: string;
   /** 触发器左侧的图标名（lucide 映射名） */
   icon?: string;
+  /** 触发器左侧显示数据库品牌 logo（优先于 icon） */
+  logo?: string;
 }
 
 /* Radix 不允许空字符串作为选项值，这里做一层编解码 */
@@ -27,8 +32,12 @@ const decode = (value: string) => (value === EMPTY ? "" : value);
  * 下拉框（Radix Select）：键盘导航、typeahead、焦点管理与浮层定位都交给组件，
  * 视觉仍走应用自己的样式类（.vk-select-*）。
  */
-export function Select({ value, options, onChange, disabled, id, title, icon }: SelectProps) {
+export function Select({ value, options, onChange, disabled, id, title, icon, logo }: SelectProps) {
   const current = options.find(option => option.value === value);
+  const triggerLogo = current?.logo ?? logo;
+  const prefix = triggerLogo
+    ? <DbLogo type={triggerLogo} size={13} className="vk-select-icon" />
+    : icon ? <Icon name={icon} size={13} className="vk-select-icon" /> : null;
 
   return (
     <RadixSelect.Root
@@ -42,7 +51,7 @@ export function Select({ value, options, onChange, disabled, id, title, icon }: 
         title={title ?? current?.label}
         aria-label={title}
       >
-        {icon && <Icon name={icon} size={13} className="vk-select-icon" />}
+        {prefix}
         <RadixSelect.Value className="vk-select-value" placeholder="—" />
         <RadixSelect.Icon className="vk-select-caret">
           <Icon name="chevronDown" size={12} />
@@ -55,7 +64,11 @@ export function Select({ value, options, onChange, disabled, id, title, icon }: 
             {options.map(option => (
               <RadixSelect.Item key={option.value} value={encode(option.value)} className="vk-select-option">
                 {/* 下拉列表里的每一项也带上图标，和触发器保持一致 */}
-                {icon && <Icon name={icon} size={13} className="vk-select-option-icon" />}
+                {(option.logo ?? logo) ? (
+                  <DbLogo type={option.logo ?? logo} size={13} className="vk-select-option-icon" />
+                ) : icon && (
+                  <Icon name={icon} size={13} className="vk-select-option-icon" />
+                )}
                 <RadixSelect.ItemText>{option.label}</RadixSelect.ItemText>
                 <RadixSelect.ItemIndicator className="vk-select-check">
                   <Icon name="check" size={12} />

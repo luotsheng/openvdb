@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { invoke, messageOf, type SavedConnection } from "../api";
 import { Dialog } from "./Dialog";
+import { DbLogo } from "./dbLogo";
 import { Icon } from "./icons";
 
 interface ConnectionManagerProps {
@@ -154,7 +155,7 @@ export function ConnectionManager(props: ConnectionManagerProps) {
                     onDoubleClick={() => onOpen(connection)}
                   >
                     <td className="table-name">
-                      <Icon name={connection.type === "sqlite" ? "file" : "database"} size={13} />
+                      <DbLogo type={connection.type} size={14} />
                       <span className="table-name-text">{connection.name}</span>
                     </td>
                     <td>{TYPE_LABEL[connection.type] ?? connection.type}</td>

@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { chooseOpenPath, invoke, messageOf, type SavedConnection } from "../api";
+import { DbLogo } from "./dbLogo";
 import { Icon } from "./icons";
 import { Dialog } from "./Dialog";
 import { Select } from "./Select";
@@ -32,13 +33,13 @@ interface FormState {
   extraParams: string;
 }
 
-/** 连接类型预设：图标 / 默认端口 / 颜色 / 说明 */
+/** 连接类型预设：默认端口与说明（图标统一用各库的品牌 logo） */
 const DB_TYPES = [
-  { value: "mysql", label: "MySQL", port: "3306", icon: "server", color: "#0e7490", hint: "MySQL 5.7 / 8.x" },
-  { value: "postgresql", label: "PostgreSQL", port: "5432", icon: "server", color: "#2f6feb", hint: "PostgreSQL 12 及以上" },
-  { value: "sqlite", label: "SQLite", port: "", icon: "file", color: "#0f766e", hint: "本地单文件数据库" },
-  { value: "dm", label: "达梦数据库", port: "5236", icon: "server", color: "#b45309", hint: "DM8" },
-  { value: "redis", label: "Redis", port: "6379", icon: "layers", color: "#dc2626", hint: "键值数据库" }
+  { value: "mysql", label: "MySQL", port: "3306", hint: "MySQL 5.7 / 8.x" },
+  { value: "postgresql", label: "PostgreSQL", port: "5432", hint: "PostgreSQL 12 及以上" },
+  { value: "sqlite", label: "SQLite", port: "", hint: "本地单文件数据库" },
+  { value: "dm", label: "达梦数据库", port: "5236", hint: "DM8" },
+  { value: "redis", label: "Redis", port: "6379", hint: "键值数据库" }
 ];
 
 const TIMEZONES = ["Asia/Shanghai", "Asia/Hong_Kong", "Asia/Singapore", "Asia/Tokyo", "UTC"];
@@ -308,8 +309,8 @@ export function ConnectionDialog({ mode, source, onClose, onSaved }: ConnectionD
     <Dialog
       title={(
         <>
-          <span className="conn-title-icon" style={{ color: preset.color }}>
-            <Icon name={preset.icon} size={15} />
+          <span className="conn-title-icon">
+            <DbLogo type={form.type} size={16} />
           </span>
           {title}
         </>
@@ -371,9 +372,9 @@ export function ConnectionDialog({ mode, source, onClose, onSaved }: ConnectionD
                 <label htmlFor="conn-type">类型 <span className="conn-req">*</span></label>
                 <Select
                   id="conn-type"
-                  icon={preset.icon}
+                  logo={form.type}
                   value={form.type}
-                  options={DB_TYPES.map(item => ({ value: item.value, label: item.label }))}
+                  options={DB_TYPES.map(item => ({ value: item.value, label: item.label, logo: item.value }))}
                   onChange={type => {
                     const next = DB_TYPES.find(item => item.value === type);
 

@@ -2847,7 +2847,7 @@ export function App() {
         kind: "CONNECTION" as const,
         hasChildren: true,
         connected: session?.name === connection.name,
-        badge: connection.type?.toUpperCase()
+        dbType: connection.type
       }))
     };
 
@@ -2866,6 +2866,11 @@ export function App() {
   }
 
   const currentConnection = connections.find(item => item.name === session?.name) ?? null;
+
+  /* 主题的解析结果（system 时看系统偏好）：供样式分支用，和主题 effect 同一套判断 */
+  const themeResolved = theme === "system"
+    ? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light")
+    : theme;
 
   const menus: { label: string; items: MenuItemDef[] }[] = [
     {
@@ -2961,7 +2966,7 @@ export function App() {
   ];
 
   return (
-    <div className={`app${settings.gridZebra ? "" : " no-zebra"}${settings.gridRowNumbers ? "" : " no-rownum"}${IS_MAC ? " is-mac" : ""}`}>
+    <div className={`app${settings.gridZebra ? "" : " no-zebra"}${settings.gridRowNumbers ? "" : " no-rownum"}${IS_MAC ? " is-mac" : ""}${themeResolved === "dark" ? " is-dark" : " is-light"}`}>
       <header className="titlebar">
         <span className="brand">VALKYRIE</span>
         <span className="brand-sub">
@@ -3188,12 +3193,15 @@ export function App() {
                     <label htmlFor={`path-conn-${activeTab.id}`}>连接</label>
                     <Select
                       id={`path-conn-${activeTab.id}`}
-                      icon="database"
                       value={session?.name ?? ""}
                       disabled={connections.length === 0}
                       options={[
                         { value: "", label: "未连接" },
-                        ...connections.map(connection => ({ value: connection.name, label: connection.name }))
+                        ...connections.map(connection => ({
+                          value: connection.name,
+                          label: connection.name,
+                          logo: connection.type
+                        }))
                       ]}
                       onChange={name => {
                         const connection = connections.find(item => item.name === name);

@@ -1,4 +1,5 @@
 import type { SchemaNode } from "../api";
+import { DbLogo } from "./dbLogo";
 import { Icon } from "./icons";
 import { popupNativeMenu, type MenuEntry } from "./Menu";
 
@@ -89,7 +90,10 @@ export function Tree(props: TreeProps) {
           <span
             className={`tree-icon kind-${node.kind.toLowerCase()}${node.path ? " is-script" : ""}`}
           >
-            <Icon name={iconFor(node)} size={14} />
+            {/* 连接节点直接显示对应数据库的品牌 logo */}
+            {node.kind === "CONNECTION" && node.dbType
+              ? <DbLogo type={node.dbType} size={14} />
+              : <Icon name={iconFor(node)} size={14} />}
           </span>
           <span className="tree-label">{node.label}</span>
 
