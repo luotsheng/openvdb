@@ -127,6 +127,13 @@ input, textarea, .console, .pre-wrap { user-select: text; }
 .win-btn:hover { background: var(--hover); color: var(--text); }
 .win-btn.is-close:hover { background: #e5484d; color: #fff; }
 
+/*
+ * macOS：窗口用系统红绿灯，自绘的三个按钮要藏起来，并在左侧给红绿灯让位；
+ * 标题栏整体保持可拖动（-webkit-app-region: drag），按钮自身设成 no-drag。
+ */
+.app.is-mac .window-buttons { display: none; }
+.app.is-mac .titlebar { padding-left: 78px; }
+
 .menubar {
   display: flex;
   align-items: center;

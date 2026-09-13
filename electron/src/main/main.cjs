@@ -18,11 +18,54 @@ function rendererEntry() {
   return path.join(__dirname, "..", "..", "dist", "renderer", "index.html");
 }
 
+/**
+ * 菜单栏：Windows / Linux 不需要浏览器默认菜单（里面的刷新、开发者工具等快捷键一并去掉），
+ * macOS 则必须保留一份，否则 ⌘Q、⌘H 以及输入框里的 ⌘C / ⌘V 都会失效。
+ * ⌘A 不注册成 selectAll role，改为转发给渲染层 —— 对象页 / 脚本页要全选表格里的行。
+ */
+function installApplicationMenu() {
+  if (process.platform !== "darwin") {
+    Menu.setApplicationMenu(null);
+    return;
+  }
+
+  Menu.setApplicationMenu(Menu.buildFromTemplate([
+    { role: "appMenu" },
+    {
+      label: "编辑",
+      submenu: [
+        { role: "undo" },
+        { role: "redo" },
+        { type: "separator" },
+        { role: "cut" },
+        { role: "copy" },
+        { role: "paste" },
+        { role: "pasteAndMatchStyle" },
+        { type: "separator" },
+        {
+          label: "全选",
+          accelerator: "CommandOrControl+A",
+          click: (_item, window) => window?.webContents.send("valkyrie:shortcut", "select-all")
+        }
+      ]
+    },
+    /* 自己列窗口菜单，避免默认模板里带 ⌘W 关闭窗口（那个键留给编辑器的智能扩选） */
+    {
+      label: "窗口",
+      submenu: [
+        { role: "minimize" },
+        { role: "zoom" },
+        { type: "separator" },
+        { role: "front" }
+      ]
+    }
+  ]));
+}
+
 function createWindow() {
   const isMac = process.platform === "darwin";
 
-  /* 桌面客户端不需要浏览器默认菜单（其中的刷新 / 开发者工具等快捷键一并去掉） */
-  Menu.setApplicationMenu(null);
+  installApplicationMenu();
 
   mainWindow = new BrowserWindow({
     width: 1320,

@@ -47,7 +47,9 @@ function attachWindowState(window) {
  */
 function disableBrowserShortcuts(window) {
   const blockedWithCtrl = new Set([
-    "p", "u", "f", "g", "j", "h", "n", "o", "t",
+    "p", "u", "f", "g", "j", "n", "o", "t",
+    /* macOS 的 ⌘H 是「隐藏应用」，交给系统处理 */
+    ...(process.platform === "darwin" ? [] : ["h"])
   ]);
   /* 缩放快捷键不管带不带 Shift 都拦掉，网页缩放对桌面客户端没意义 */
   const zoomKeys = new Set(["+", "-", "=", "0"]);

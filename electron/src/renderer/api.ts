@@ -150,10 +150,13 @@ export interface NativeMenuItem {
 declare global {
   interface Window {
     valkyrie?: {
+      /** 运行平台：darwin / win32 / linux */
+      platform?: string;
       invoke: (method: string, params?: Record<string, unknown>) => Promise<InvokeResponse<unknown>>;
       onEvent: (callback: (params: ProgressEvent) => void) => () => void;
       windowControl?: (action: "minimize" | "maximize" | "close") => void;
       onWindowState?: (callback: (state: { maximized: boolean }) => void) => () => void;
+      onShortcut?: (callback: (action: string) => void) => () => void;
       chooseSavePath?: (options: { title?: string; defaultPath?: string; filters?: { name: string; extensions: string[] }[] }) => Promise<string | null>;
       chooseOpenPath?: (options: { title?: string; defaultPath?: string; directory?: boolean; filters?: { name: string; extensions: string[] }[] }) => Promise<string | null>;
       revealPath?: (target: string) => Promise<boolean>;
@@ -189,6 +192,11 @@ export function windowControl(action: "minimize" | "maximize" | "close"): void {
 
 export function onWindowState(callback: (state: { maximized: boolean }) => void): () => void {
   return window.valkyrie?.onWindowState?.(callback) ?? (() => undefined);
+}
+
+/** 订阅原生菜单转发过来的快捷键（目前只有 macOS 的 ⌘A） */
+export function onShortcut(callback: (action: string) => void): () => void {
+  return window.valkyrie?.onShortcut?.(callback) ?? (() => undefined);
 }
 
 export function chooseSavePath(options: { title?: string; defaultPath?: string; filters?: { name: string; extensions: string[] }[] }): Promise<string | null> {

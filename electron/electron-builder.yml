@@ -25,6 +25,13 @@ win:
     - nsis
   artifactName: ${productName}-${version}-setup.${ext}
 
+mac:
+  target:
+    - dmg
+    - zip
+  category: public.app-category.developer-tools
+  artifactName: ${productName}-${version}-${arch}.${ext}
+
 nsis:
   oneClick: false
   perMachine: false

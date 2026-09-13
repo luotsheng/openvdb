@@ -6,6 +6,7 @@ import {
   invoke,
   messageOf,
   onEvent,
+  onShortcut,
   onWindowState,
   revealPath,
   setNativeTheme,
@@ -38,6 +39,7 @@ import { Select } from "./ui/Select";
 import { Icon } from "./ui/icons";
 import { LogConsole, appendLog, errorRecord, progressRecord, type LogRecord } from "./ui/LogConsole";
 import { loadSettings, saveSettings, type AppSettings } from "./settings";
+import { IS_MAC, KEY } from "./keys";
 import { Group, Panel, Separator, useDefaultLayout, usePanelRef } from "react-resizable-panels";
 import { Toaster, toast } from "sonner";
 
@@ -1243,7 +1245,7 @@ export function App() {
       sql: createTableTemplate(name, type),
       path: { ...tab.path, catalog }
     });
-    setStatus("已生成建表草稿，确认无误后按 Ctrl+R 执行");
+    setStatus(`已生成建表草稿，确认无误后按 ${KEY.run} 执行`);
   }
 
   /** 新建脚本：问到名字后写进当前上下文所在的数据库目录，并直接打开 */
@@ -2054,10 +2056,17 @@ export function App() {
   }
 
   /**
-   * 全选（Ctrl+A / 编辑菜单）：对象页与脚本页是全选表格里的行，
-   * 查询页仍是选中编辑器里的全部 SQL。
+   * 全选（⌘/Ctrl+A、编辑菜单、macOS 菜单栏转发过来）：
+   * 输入框里选中文本、对象页/脚本页全选行、其余情况选编辑器全文。
    */
   function selectAllInPage() {
+    const focused = document.activeElement as HTMLElement | null;
+
+    if (focused && (focused.tagName === "INPUT" || focused.tagName === "TEXTAREA")) {
+      (focused as HTMLInputElement).select();
+      return;
+    }
+
     if (activeTab?.kind === "tables" && activeTab.tables.length > 0) {
       setTableSelection(activeTab.tables.map(node => node.label));
       setStatus(`已全选 ${activeTab.tables.length} 张表`);
@@ -2102,6 +2111,12 @@ export function App() {
     setGridSearch("");
     setGridKeyword("");
   }, [activeTabId]);
+
+  /* macOS 菜单栏把 ⌘A 转发过来（原生菜单会先吃掉这个组合键） */
+  useEffect(() => onShortcut(action => {
+    if (action === "select-all")
+      selectAllRef.current();
+  }), []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -2292,7 +2307,7 @@ export function App() {
 
     return [
     {
-      label: "运行已选择 (Ctrl+R)",
+      label: `运行已选择 (${KEY.run})`,
       icon: "play",
       iconColor: "#15803d",
       disabled: !hasSelection || activeTab.running,
@@ -2300,10 +2315,10 @@ export function App() {
     },
     { label: "美化已选择", icon: "code", iconColor: "#2f6feb", action: () => void formatActiveQuery() },
     { separator: true },
-    { label: "复制 (Ctrl+C)", action: () => editorRef.current?.trigger("menu", "editor.action.clipboardCopyAction", null) },
-    { label: "剪切 (Ctrl+X)", action: () => editorRef.current?.trigger("menu", "editor.action.clipboardCutAction", null) },
-    { label: "粘贴 (Ctrl+V)", action: () => editorRef.current?.trigger("menu", "editor.action.clipboardPasteAction", null) },
-    { label: "全选 (Ctrl+A)", action: () => editorRef.current?.trigger("menu", "editor.action.selectAll", null) },
+    { label: `复制 (${KEY.copy})`, action: () => editorRef.current?.trigger("menu", "editor.action.clipboardCopyAction", null) },
+    { label: `剪切 (${KEY.cut})`, action: () => editorRef.current?.trigger("menu", "editor.action.clipboardCutAction", null) },
+    { label: `粘贴 (${KEY.paste})`, action: () => editorRef.current?.trigger("menu", "editor.action.clipboardPasteAction", null) },
+    { label: `全选 (${KEY.selectAll})`, action: () => editorRef.current?.trigger("menu", "editor.action.selectAll", null) },
     { separator: true },
     { label: "注释/取消注释", action: () => editorRef.current?.trigger("menu", "editor.action.commentLine", null) },
     { label: "转大写", action: () => editorRef.current?.trigger("menu", "editor.action.transformToUppercase", null) },
@@ -2548,8 +2563,8 @@ export function App() {
         { label: "新建脚本…", disabled: !session, action: () => void createScript() },
         { label: "脚本列表", disabled: !session, action: () => void openScriptList() },
         { separator: true },
-        { label: "保存脚本 (Ctrl+S)", disabled: activeTab?.kind !== "query", action: () => void saveActiveScript() },
-        { label: "脚本另存为… (Ctrl+Shift+S)", disabled: activeTab?.kind !== "query", action: () => void saveActiveScript(true) },
+        { label: `保存脚本 (${KEY.save})`, disabled: activeTab?.kind !== "query", action: () => void saveActiveScript() },
+        { label: `脚本另存为… (${KEY.saveAs})`, disabled: activeTab?.kind !== "query", action: () => void saveActiveScript(true) },
         { separator: true },
         { label: "退出", action: () => windowControl("close") }
       ]
@@ -2557,12 +2572,12 @@ export function App() {
     {
       label: "编辑",
       items: [
-        { label: "格式化 SQL (Ctrl+Shift+F)", disabled: activeTab?.kind !== "query", action: () => void formatActiveQuery() },
+        { label: `格式化 SQL (${KEY.format})`, disabled: activeTab?.kind !== "query", action: () => void formatActiveQuery() },
         { separator: true },
-        { label: "扩展选中 (Ctrl+W)", disabled: activeTab?.kind !== "query", action: () => editorRef.current?.trigger("menu", "editor.action.smartSelect.expand", null) },
-        { label: "收窄选中 (Ctrl+Shift+W)", disabled: activeTab?.kind !== "query", action: () => editorRef.current?.trigger("menu", "editor.action.smartSelect.shrink", null) },
+        { label: `扩展选中 (${KEY.expand})`, disabled: activeTab?.kind !== "query", action: () => editorRef.current?.trigger("menu", "editor.action.smartSelect.expand", null) },
+        { label: `收窄选中 (${KEY.shrink})`, disabled: activeTab?.kind !== "query", action: () => editorRef.current?.trigger("menu", "editor.action.smartSelect.shrink", null) },
         { separator: true },
-        { label: "全选 (Ctrl+A)", action: () => selectAllInPage() },
+        { label: `全选 (${KEY.selectAll})`, action: () => selectAllInPage() },
         { label: "复制", action: () => editorRef.current?.trigger("menu", "editor.action.clipboardCopyAction", null) },
         { label: "粘贴", action: () => editorRef.current?.trigger("menu", "editor.action.clipboardPasteAction", null) }
       ]
@@ -2599,7 +2614,7 @@ export function App() {
         { label: "新建查询", action: createQueryTab },
         { label: "新建脚本…", disabled: !session, action: () => void createScript() },
         { separator: true },
-        { label: "执行 (Ctrl+R)", disabled: activeTab?.kind !== "query", action: () => void runSelectionOrAll() },
+        { label: `执行 (${KEY.run})`, disabled: activeTab?.kind !== "query", action: () => void runSelectionOrAll() },
         { label: "停止", disabled: !activeTab?.running, action: () => void stopQuery() },
         { label: "执行计划", disabled: activeTab?.kind !== "query", action: () => void explainActiveQuery() }
       ]
@@ -2628,14 +2643,14 @@ export function App() {
   ];
 
   return (
-    <div className={`app${settings.gridZebra ? "" : " no-zebra"}${settings.gridRowNumbers ? "" : " no-rownum"}`}>
+    <div className={`app${settings.gridZebra ? "" : " no-zebra"}${settings.gridRowNumbers ? "" : " no-rownum"}${IS_MAC ? " is-mac" : ""}`}>
       <header className="titlebar">
         <span className="brand">VALKYRIE</span>
         <span className="brand-sub">
           {session ? `${session.name} · ${currentDatabase}` : "数据库客户端"}
         </span>
         <span className="titlebar-spacer" />
-        <span className="titlebar-hint">Ctrl+R 执行 · Ctrl+Shift+F 格式化</span>
+        <span className="titlebar-hint">{KEY.run} 执行 · {KEY.format} 格式化</span>
         <span className="window-buttons">
           <button type="button" className="win-btn" aria-label="最小化" onClick={() => windowControl("minimize")}>
             <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M0 5h10" stroke="currentColor" strokeWidth="1" /></svg>
@@ -2828,7 +2843,7 @@ export function App() {
                   type="button"
                   className={`tbtn is-primary${activeTab.running ? " is-busy" : ""}`}
                   disabled={activeTab.running}
-                  title="执行 (Ctrl+R)"
+          title={`执行 (${KEY.run})`}
                   onClick={() => void runSelectionOrAll()}
                 >
                   <Icon name="play" />执行

@@ -7,6 +7,9 @@ const { contextBridge, ipcRenderer } = require("electron");
  * 渲染层不接触任何 Node / Electron API。
  */
 contextBridge.exposeInMainWorld("valkyrie", {
+  /* 平台标识：界面据此切换 ⌘ / Ctrl 的快捷键提示、macOS 的窗口按钮 */
+  platform: process.platform,
+
   invoke: (method, params) => ipcRenderer.invoke("valkyrie:invoke", method, params),
 
   onEvent: callback => {
@@ -26,6 +29,15 @@ contextBridge.exposeInMainWorld("valkyrie", {
     ipcRenderer.on("valkyrie:window-state", listener);
 
     return () => ipcRenderer.off("valkyrie:window-state", listener);
+  },
+
+  /* macOS 菜单栏转发过来的快捷键（原生菜单会先吃掉 ⌘A） */
+  onShortcut: callback => {
+    const listener = (_event, action) => callback(action);
+
+    ipcRenderer.on("valkyrie:shortcut", listener);
+
+    return () => ipcRenderer.off("valkyrie:shortcut", listener);
   },
 
   /* 导出另存为 / 在文件夹中显示 */

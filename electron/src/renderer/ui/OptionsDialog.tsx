@@ -1,5 +1,6 @@
 import { Dialog } from "./Dialog";
 import { Select } from "./Select";
+import { KEY } from "../keys";
 import {
   FONT_SIZE_OPTIONS,
   GRID_FONT_SIZE_OPTIONS,
@@ -77,7 +78,7 @@ export function OptionsDialog(props: OptionsDialogProps) {
               checked={settings.suggestEnabled}
               onChange={event => onChange({ suggestEnabled: event.target.checked })}
             />
-            <span>智能提示（Ctrl+Space 可手动触发）</span>
+            <span>智能提示（{KEY.space} 可手动触发）</span>
           </label>
         </section>
 
