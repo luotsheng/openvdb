@@ -226,7 +226,7 @@ input, textarea, .console, .pre-wrap { user-select: text; }
 }
 
 .tbtn:hover:not(:disabled) { background: var(--hover); border-color: var(--line); }
-.tbtn:disabled { color: var(--muted); cursor: default; }
+.tbtn:disabled { cursor: default; }
 .tbtn.is-primary { color: var(--accent); }
 .tbtn.is-danger { color: var(--red); }
 
@@ -2030,3 +2030,49 @@ table.script-list .table-name { min-width: 200px; max-width: 520px; }
 
 /* 对象树的图标按节点类型着色（见 .tree-icon.kind-*），别被上面的语义色覆盖 */
 .tree-icon svg { color: inherit; }
+
+/* ------------------------------ 禁用态 ------------------------------ */
+
+/*
+ * 禁用按钮统一置灰：文字、图标、品牌 logo 一起变灰。
+ * 图标自带的语义色（.icon-*）、is-primary / is-danger / is-default 的颜色都要压掉，
+ * 否则「提交修改」「回滚」这类按钮禁用了还留着蓝的 / 绿的，看起来像能点。
+ * 正在执行的按钮（.is-busy）不算禁用，保留它的底色与转圈反馈。
+ */
+.app .tbtn:disabled:not(.is-busy),
+.app .tbtn:disabled:not(.is-busy).is-primary,
+.app .tbtn:disabled:not(.is-busy).is-danger,
+.app .mini-btn:disabled,
+.app .mini-btn:disabled.is-default,
+.app .mini-btn:disabled.is-danger,
+.app .icon-btn:disabled {
+  color: var(--muted);
+  background: transparent;
+  opacity: .55;
+  cursor: default;
+}
+
+/* 工具条按钮平时是透明描边，禁用时保持无框；实体小按钮则把强调色边框换成灰 */
+.app .tbtn:disabled,
+.app .tbtn:disabled.is-primary,
+.app .tbtn:disabled.is-danger,
+.app .icon-btn:disabled { border-color: transparent; }
+
+.app .mini-btn:disabled { border-color: var(--line); }
+
+.app .tbtn:disabled:not(.is-busy) svg,
+.app .mini-btn:disabled svg,
+.app .icon-btn:disabled svg { color: var(--muted); }
+
+.app .tbtn:disabled .db-logo,
+.app .mini-btn:disabled .db-logo,
+.app .icon-btn:disabled .db-logo { filter: grayscale(1) opacity(.55); }
+
+/* 禁用态不响应悬停 */
+.app .tbtn:disabled:not(.is-busy):hover,
+.app .mini-btn:disabled:hover,
+.app .icon-btn:disabled:hover { background: transparent; }
+
+/* 下拉框禁用：图标与品牌 logo 同样压成灰 */
+.app .vk-select-btn:disabled svg { color: var(--muted); }
+.app .vk-select-btn:disabled .db-logo { filter: grayscale(1) opacity(.55); }
