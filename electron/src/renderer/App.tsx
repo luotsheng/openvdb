@@ -2841,9 +2841,10 @@ export function App() {
               <>
                 <button
                   type="button"
-                  className={`tbtn is-primary${activeTab.running ? " is-busy" : ""}`}
+                  /* 执行中只置灰，不加转圈 / 闪烁动画（进度看状态栏与日志页） */
+                  className="tbtn is-primary"
                   disabled={activeTab.running}
-          title={`执行 (${KEY.run})`}
+                  title={`执行 (${KEY.run})`}
                   onClick={() => void runSelectionOrAll()}
                 >
                   <Icon name="play" />执行
